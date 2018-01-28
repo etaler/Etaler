@@ -35,7 +35,11 @@ template<class Archive>
 void serialize(Archive & archive,
 	half & m)
 {
+	#ifndef __aarch64__
 	archive(m.storage_);
+	#else
+	archive((unsigned short)m);
+	#endif
 }
 
 

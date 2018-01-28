@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <variant>
+#include <numeric>
 
 #include "TensorImpl.hpp"
 #include "Error.hpp"

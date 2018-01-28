@@ -7,6 +7,7 @@
 #include "TypeHelpers.hpp"
 
 #include <memory>
+#include <numeric>
 
 namespace et
 {
