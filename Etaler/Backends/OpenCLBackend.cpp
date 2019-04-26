@@ -20,7 +20,7 @@ static std::string readAll(const std::string& path)
 inline size_t selectWorkSize(size_t max, size_t mul_of, size_t size)
 {
 	auto round = [mul_of](auto v){return ((v/mul_of)*mul_of) + (v%mul_of == 0 ? 0 : mul_of);};
-	return std::min((size_t)4096, round(size));
+	return std::min((size_t)max, round(size));
 }
 
 inline std::string hash_string(const std::string& str)
@@ -119,33 +119,55 @@ cl::Kernel KernelManager::compileKernel(const std::string& src, const std::strin
 	, bool force_override, const std::string& flags)
 {
 	compileKernel(src, program_name, std::vector<std::string>{kernel_name}, force_override, flags);
+	assert(exists(program_name, kernel_name)!=false);
 	return kernel(program_name, kernel_name);
 }
 
 void KernelManager::compileKernel(const std::string& src, const std::string& program_name, const std::vector<std::string>& kernel_names
 	, bool force_override, const std::string& flags)
 {
-	for(const auto& name : kernel_names) {
-		if(force_override == true && kernels_.find(program_name + "." + name) != kernels_.end())
-			throw EtError("OpenCL backend error: Program " + program_name + "Already exists.");
-	}
-	if(src == "")
-		throw EtError("OpenCL backend error: Program " + program_name + "has empty source");
+	compileKernel(std::vector<std::string>{src}, program_name, kernel_names, force_override, flags);
+}
+
+void KernelManager::compileKernel(const std::vector<std::string>& srcs, const std::string& program_name, const std::vector<std::string>& kernel_names
+	, bool force_override, const std::string& flags)
+{
+	if(apps_.find(program_name) != apps_.end() && force_override == false)
+		return;
 	cl::Program::Sources sources;
-	sources.push_back({src.c_str(), src.size()});
+	for(const auto& src : srcs)
+		sources.push_back({src.c_str(), src.size()});
+
 	cl::Program program(context_,sources);
-	cl_int err = program.build({device_}, (flags).c_str());
+	cl_int err = program.build({device_}, flags.c_str());
 	if(err != CL_SUCCESS) {
 		throw EtError("Error building OpenCL program: " + program_name
 			+ ", Error:" + std::to_string(err) +"\n" + program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(device_));
 	}
+
+	auto& app = apps_[program_name];
 	for(const auto& name : kernel_names) {
 		cl_int err;
-		cl::Kernel k(program, name.c_str(),&err);
+		cl::Kernel k(program, name.c_str(), &err);
 		if(err != CL_SUCCESS)
 			throw EtError("Kernel " + name + " not found in program " + program_name);
-		kernels_[program_name + "." + name] = Application{program, k};
+		app.kernels[name] = k;
 	}
+}
+
+void KernelManager::compileFromFile(const std::string& path, const std::string& program_name, const std::vector<std::string>& kernel_names
+	, bool force_override, const std::string& flags)
+{
+	compileFromFile(std::vector<std::string>{path}, program_name, kernel_names, force_override, flags);
+}
+
+void KernelManager::compileFromFile(const std::vector<std::string>& paths, const std::string& program_name, const std::vector<std::string>& kernel_names
+	, bool force_override, const std::string& flags)
+{
+	std::vector<std::string> sources;
+	for(const auto& path : paths)
+		sources.emplace_back(readAll(path));
+	compileKernel(sources, program_name, kernel_names, force_override, flags);
 }
 
 
@@ -169,13 +191,8 @@ void OpenCLBackend::overlapScore(const TensorImpl* x, const TensorImpl* connecti
 	auto hash = hash_string(args);
 	auto program_name = "overlapScore"+hash;
 
-	cl::Kernel k;
-	if(kernel_manager_.exists(program_name, "overlapScore") == false) {
-		k = kernel_manager_.compileKernel(readAll(kernel_root_ + "overlapScore.cl"), program_name, "overlapScore"
-			, false, args);
-	}
-	else
-		k = kernel_manager_.kernel(program_name, "overlapScore");
+	kernel_manager_.compileFromFile(kernel_root_+"overlapScore.cl", program_name, {"overlapScore"}, false, args);
+	cl::Kernel k = kernel_manager_.kernel(program_name, "overlapScore");
 
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
 	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(connections)->buffer());
@@ -186,7 +203,7 @@ void OpenCLBackend::overlapScore(const TensorImpl* x, const TensorImpl* connecti
 	k.setArg(6, (int)y->size());
 
 	size_t local_size = 64;
-	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size())), cl::NDRange(local_size));
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(8152, local_size, x->size())), cl::NDRange(local_size));
 
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
@@ -208,10 +225,7 @@ void OpenCLBackend::globalInhibition(const TensorImpl* x, TensorImpl* y, float f
 	auto program_name = "overlapScore"+hash;
 
 	cl::Kernel topKKernel, thresholdKernel;
-	if(kernel_manager_.exists(program_name, "fastTopK") == false) {
-		kernel_manager_.compileKernel(readAll(kernel_root_ + "globalInhibition.cl"), program_name, std::vector<std::string>{"fastTopK", "threshold"}
-			, false, args);
-	}
+	kernel_manager_.compileFromFile(kernel_root_+"globalInhibition.cl", program_name, {"fastTopK", "threshold"}, false, args);
 
 	topKKernel = kernel_manager_.kernel(program_name, "fastTopK");
 	thresholdKernel = kernel_manager_.kernel(program_name, "threshold");
@@ -236,13 +250,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toTyp
 	auto args = "-DInType="+to_ctype_string(x->dtype())+" -DOutType="+to_ctype_string(toType);
 	auto hash = hash_string(args);
 	auto program_name = "cast"+hash;
-	cl::Kernel k;
-	if(kernel_manager_.exists(program_name, "cast") == false) {
-		k = kernel_manager_.compileKernel(readAll(kernel_root_ + "cast.cl"), program_name, "cast"
-			, false, args);
-	}
-	else
-		k = kernel_manager_.kernel(program_name, "cast");
+	kernel_manager_.compileFromFile(kernel_root_+"cast.cl", program_name, {"cast"}, false, args);
+	cl::Kernel k = kernel_manager_.kernel(program_name, "cast");
 
 	auto res = createTensor(x->shape(), toType);
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
@@ -293,13 +302,9 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE=true";
 	auto hash = hash_string(args);
 	auto program_name = "learnCorrilation"+hash;
-	cl::Kernel k;
-	if(kernel_manager_.exists(program_name, "cast") == false) {
-		k = kernel_manager_.compileKernel(readAll(kernel_root_ + "learnCorrilation.cl"), program_name, "learnCorrilation"
-			, false, args);
-	}
-	else
-		k = kernel_manager_.kernel(program_name, "learnCorrilation");
+
+	kernel_manager_.compileFromFile(kernel_root_+"learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args);
+	cl::Kernel k = kernel_manager_.kernel(program_name, "learnCorrilation");
 
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
 	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(learn)->buffer());
@@ -328,13 +333,8 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 	auto args = "-DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back());
 	auto hash = hash_string(args);
 	auto program_name = "sortSynapse"+hash;
-	cl::Kernel k;
-	if(kernel_manager_.exists(program_name, "sortSynapse") == false) {
-		k = kernel_manager_.compileKernel(readAll(kernel_root_ + "sort.cl"), program_name, "sortSynapse"
-			, false, args);
-	}
-	else
-		k = kernel_manager_.kernel(program_name, "sort");
+	kernel_manager_.compileFromFile(kernel_root_+"sort.cl", program_name, {"sortSynapse"}, false, args);
+	cl::Kernel k = kernel_manager_.kernel(program_name, "sortSynapse");
 
 	int num_cells = connections->size()/connections->shape().back();
 

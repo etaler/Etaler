@@ -44,18 +44,32 @@ struct KernelManager
 	struct Application
 	{
 		cl::Program program;
-		cl::Kernel kernel;
+		std::map<std::string, cl::Kernel> kernels;
 	};
 
 	cl::Kernel compileKernel(const std::string& src, const std::string& program_name, const std::string& kernel_name
-		, bool force_override=false, const std::string& flag="");
-	void compileKernel(const std::string& src, const std::string& program_name, const std::vector<std::string>& kernel_name
-		, bool force_override=false, const std::string& flag="");;
-	bool exists(const std::string& program_name, const std::string& kernel_name) {return kernels_.find(program_name+"."+kernel_name) != kernels_.end();}
-	const cl::Kernel& kernel(const std::string& program_name, const std::string& kernel_name) const {return kernels_.at(program_name+"."+kernel_name).kernel;}
+		, bool force_override=false, const std::string& flags="");
+	void compileKernel(const std::string& src, const std::string& program_name, const std::vector<std::string>& kernel_names
+		, bool force_override=false, const std::string& flags="");
+	void compileKernel(const std::vector<std::string>& srcs, const std::string& program_name, const std::vector<std::string>& kernel_names
+		, bool force_override=false, const std::string& flags="");
+	void compileFromFile(const std::string& paths, const std::string& program_name, const std::vector<std::string>& kernel_names
+		, bool force_override=false, const std::string& flags="");
+	void compileFromFile(const std::vector<std::string>& paths, const std::string& program_name, const std::vector<std::string>& kernel_names
+		, bool force_override=false, const std::string& flags="");
+	inline bool exists(const std::string& program_name, const std::string& kernel_name)
+	{
+		auto it = apps_.find(program_name);
+		if(it == apps_.end())
+			return false;
+		if(it->second.kernels.find(kernel_name) == it->second.kernels.end())
+			return false;
+		return true;
+	}
+	const cl::Kernel& kernel(const std::string& program_name, const std::string& kernel_name) const {return apps_.at(program_name).kernels.at(kernel_name);}
 	const cl::Kernel& kernel(const std::string& name) const {return kernel(name, name);}
 
-	std::map<std::string, Application> kernels_;
+	std::map<std::string, Application> apps_;
 	cl::Device device_;
 	cl::Context context_;
 };
@@ -84,6 +98,9 @@ struct OpenCLBackend : public Backend
 	virtual void sortSynapse(TensorImpl* connections, TensorImpl* permeances) override;
 
 protected:
+
+	cl_ulong localMemorySize() {return device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();}
+	cl_device_local_mem_type localMemoryType() {return device_.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>();}
 
 	inline cl::Buffer allocBuffer(size_t size)
 	{

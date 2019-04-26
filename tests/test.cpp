@@ -36,6 +36,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(t.dtype() == DType::Float);
 		CHECK(t.dimentions() == 5);
 		CHECK(t.backend() == defaultBackend());
+		CHECK(t.dimentions() == t.shape().size());
 
 		//Should not be able to convert from shape {1,2,5,3,7} to {60}
 		CHECK_THROWS_AS(t.resize({60}), EtError);
@@ -147,6 +148,7 @@ TEST_CASE("Backend functions", "[Backend]")
 		b->globalInhibition(t.pimpl(), y.pimpl(), 0.5);
 		uint8_t pred[8] = {0,0,0,0,1,1,1,1};
 		Tensor should_be = createTensor({8}, DType::Bool, pred);
+		CHECK(y.dtype() == DType::Bool);
 		CHECK(y.isSame(should_be));
 	}
 
@@ -168,6 +170,10 @@ TEST_CASE("Backend functions", "[Backend]")
 		CHECK(q.isSame(perm_should_be));
 	}
 
+	SECTION("Sync") {
+		CHECK_NOTHROW(defaultBackend()->sync());
+	}
+
 }
 
 TEST_CASE("StateDict", "[StateDict]")
@@ -175,18 +181,15 @@ TEST_CASE("StateDict", "[StateDict]")
 	using namespace et;
 	StateDict state;
 
-	SECTION("Shape")
-	{
-		Shape s = {4,5,6};
-		state["key"] = s;
-		CHECK(s.size() == 3);
-		CHECK(state.size() == 1);
-		CHECK_NOTHROW(state.at("key"));
-		CHECK_THROWS(state.at("should_fail"));
-		CHECK_NOTHROW(std::any_cast<Shape>(state["key"]));
-		Shape s2 = std::any_cast<Shape>(state["key"]);
-		CHECK(s == s2);
-	}
+	Shape s = {4,5,6};
+	state["key"] = s;
+	CHECK(s.size() == 3);
+	CHECK(state.size() == 1);
+	CHECK_NOTHROW(state.at("key"));
+	CHECK_THROWS(state.at("should_fail"));
+	CHECK_NOTHROW(std::any_cast<Shape>(state["key"]));
+	Shape s2 = std::any_cast<Shape>(state["key"]);
+	CHECK(s == s2);
 }
 
 // TEST_CASE("Serealize")

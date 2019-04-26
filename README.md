@@ -145,7 +145,8 @@ Etaler tho provides basically the same feature, is very different from NuPIC. So
 * [ ] C++20 Modules when C++20 is released
 * [ ] OpenCL support
   * [x] Printable OpenCL Tensors
-  * [ ] SP/TM in OpenCL
+  * [x] SP in OpenCL
+  * [ ] TM in OpenCL
   * [ ] Pack OpenCL kernels for distribution
 * [ ] Python binding
   * [ ] Numpy inter-op via xtensor
