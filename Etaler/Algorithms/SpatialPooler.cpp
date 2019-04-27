@@ -50,7 +50,7 @@ Tensor SpatialPooler::compute(const Tensor& x) const
 {
 	et_assert(x.shape() == input_shape_);
 
-	Tensor t= backend_->overlapScore(x, connections_, permances_
+	Tensor t = backend_->overlapScore(x, connections_, permances_
 		, connected_permance_, active_threshold_, false);
 
 	Tensor res = backend_->globalInhibition(t, global_density_);

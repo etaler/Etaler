@@ -33,7 +33,7 @@ struct Backend : public std::enable_shared_from_this<Backend>
 	virtual void sortSynapse(TensorImpl* connections, TensorImpl* permeances) {throw notImplemented("sortSynapse");}
 	virtual std::shared_ptr<TensorImpl> applyBurst(const TensorImpl* x, const TensorImpl* s) {throw notImplemented("applyBurst");}
 	virtual std::shared_ptr<TensorImpl> reverseBurst(const TensorImpl* x) {throw notImplemented("reverseBurst");}
-	virtual void growSynapses(const TensorImpl* x, TensorImpl* connections
+	virtual void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm) {throw notImplemented("growSynapses");}
 
 	inline EtError notImplemented(std::string func) const { return EtError(func + " not implemented on backend: " + name()); }

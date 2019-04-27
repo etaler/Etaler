@@ -24,15 +24,16 @@ struct TemporalMemory
 
 	std::pair<Tensor, Tensor> compute(const Tensor& x, const Tensor& last_state)
 	{
-		Tensor active_cells = last_state.copy();
-		backend_->applyBurst(x, active_cells);
+		Tensor active_cells = backend_->applyBurst(x, last_state);
+		Tensor overlap = backend_->overlapScore(active_cells, connections_, permances_, 0.21, 2);
+		Tensor predictive_cells = backend_->cast(overlap, DType::Bool);
+		return {predictive_cells, active_cells};
 
 	}
 
 	void learn(const Tensor& active_cells, const Tensor& last_active)
 	{
-		Tensor learning_cells = last_active.copy();
-		backend_->reverseBurst(learning_cells);
+		Tensor learning_cells = backend_->reverseBurst(last_active);
 
 		backend_->learnCorrilation(active_cells, learning_cells, connections_, permances_, 0.1, 0.1);
 		backend_->growSynapses(active_cells, learning_cells, connections_, permances_, 0.21);
@@ -40,8 +41,6 @@ struct TemporalMemory
 
 	Tensor connections_;
 	Tensor permances_;
-	Tensor predictive_cells_;
-	Tensor active_cells_;
 	Backend* backend_;
 };
 

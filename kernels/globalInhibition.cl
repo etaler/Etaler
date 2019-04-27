@@ -18,7 +18,7 @@
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 kernel void fastTopK(global int* restrict x, global int* restrict result, int k)
 {
-	local int res[MAX_INPUT_VALUE];
+	local unsigned int res[MAX_INPUT_VALUE];
 	int size = get_local_size(0);
 	int id = get_local_id(0);
 
@@ -29,7 +29,7 @@ kernel void fastTopK(global int* restrict x, global int* restrict result, int k)
 
 	for(int i=id;i<INPUT_SIZE;i+=size) {
 		int v = x[i];
-		if(v < MAX_INPUT_VALUE && v >= 0);
+		if(v < MAX_INPUT_VALUE)
 			atomic_inc(res+v);
 	}
 
@@ -40,6 +40,7 @@ kernel void fastTopK(global int* restrict x, global int* restrict result, int k)
 		int occur_sum = res[0];
 		int max_val = 0;
 		bool solved = 0;
+		#pragma unroll 4
 		for(int i=1;i<MAX_INPUT_VALUE;i++) {
 			int occur = res[i];
 			occur_sum += occur;
