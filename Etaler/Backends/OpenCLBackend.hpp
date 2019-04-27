@@ -88,11 +88,11 @@ struct OpenCLBackend : public Backend
 	//Generats a string consisting the current device infomation for debug purpose
 	std::string deviceInfo() const;
 
-	virtual void overlapScore(const TensorImpl* x, const TensorImpl* connections,
-		const TensorImpl* permeances, float connected_permeance, size_t active_threshold, TensorImpl* y, bool has_unconnected_synapse=true) override;
+	virtual std::shared_ptr<TensorImpl> overlapScore(const TensorImpl* x, const TensorImpl* connections,
+		const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true) override;
 	virtual void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
 		TensorImpl* permeances, float perm_inc, float perm_dec) override;
-	virtual void globalInhibition(const TensorImpl* x, TensorImpl* y, float fraction) override;
+	virtual std::shared_ptr<TensorImpl> globalInhibition(const TensorImpl* x, float fraction) override;
 	virtual std::shared_ptr<TensorImpl> cast(const TensorImpl* x, DType toType) override;
 	virtual std::shared_ptr<TensorImpl> copy(const TensorImpl* x) override;
 	virtual void sortSynapse(TensorImpl* connections, TensorImpl* permeances) override;

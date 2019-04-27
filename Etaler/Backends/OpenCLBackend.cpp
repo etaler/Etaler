@@ -170,19 +170,22 @@ void KernelManager::compileFromFile(const std::vector<std::string>& paths, const
 	compileKernel(sources, program_name, kernel_names, force_override, flags);
 }
 
-void OpenCLBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections,
-	const TensorImpl* permeances, float connected_permeance, size_t active_threshold, TensorImpl* y, bool has_unconnected_synapse)
+std::shared_ptr<TensorImpl> OpenCLBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections,
+	const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
 	et_assert(points_to<const OpenCLTensor>(x));
 	et_assert(points_to<const OpenCLTensor>(connections));
 	et_assert(points_to<const OpenCLTensor>(permeances));
-	et_assert(points_to<OpenCLTensor>(y));
 
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
-	et_assert(y->dtype() == DType::Int32);
 	et_assert(connections->shape() == permeances->shape());
+	et_assert(connections->dimentions() >= 2);
+
+	Shape s = connections->shape();
+	s.pop_back();
+	auto y = createTensor(s, DType::Int32);
 
 	auto str = [](auto s){return std::to_string(s);};
 
@@ -196,26 +199,27 @@ void OpenCLBackend::overlapScore(const TensorImpl* x, const TensorImpl* connecti
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
 	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(connections)->buffer());
 	k.setArg(2, reinterpret_cast<const OpenCLTensor*>(permeances)->buffer());
-	k.setArg(3, reinterpret_cast<OpenCLTensor*>(y)->buffer());
+	k.setArg(3, reinterpret_cast<OpenCLTensor*>(y.get())->buffer());
 	k.setArg(4, (float)connected_permeance);
 	k.setArg(5, (int)active_threshold);
 	k.setArg(6, (int)y->size());
 
 	size_t local_size = 64;
-	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(8152, local_size, x->size())), cl::NDRange(local_size));
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size())), cl::NDRange(local_size));
 
 	if(err != CL_SUCCESS)
-		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+		throw EtError("overlapScore kernel execution failed. Code " + str(err));
+
+	return y;
 }
 
-void OpenCLBackend::globalInhibition(const TensorImpl* x, TensorImpl* y, float fraction)
+std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
 	et_assert(points_to<OpenCLTensor>(x));
-	et_assert(points_to<OpenCLTensor>(y));
 
 	et_assert(x->dtype() == DType::Int32);
-	et_assert(y->dtype() == DType::Bool);
-	et_assert(x->shape() == y->shape());
+
+	auto y = createTensor(x->shape(), DType::Bool);
 
 	auto str = [](auto s){return std::to_string(s);};
 
@@ -238,9 +242,11 @@ void OpenCLBackend::globalInhibition(const TensorImpl* x, TensorImpl* y, float f
 	queue_.enqueueNDRangeKernel(topKKernel, cl::NullRange, cl::NDRange(256), cl::NDRange(256));
 
 	thresholdKernel.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
-	thresholdKernel.setArg(1, reinterpret_cast<const OpenCLTensor*>(y)->buffer());
+	thresholdKernel.setArg(1, reinterpret_cast<const OpenCLTensor*>(y.get())->buffer());
 	thresholdKernel.setArg(2, threshold);
 	queue_.enqueueNDRangeKernel(thresholdKernel, cl::NullRange, cl::NDRange(1024), cl::NDRange(32));
+
+	return y;
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toType)

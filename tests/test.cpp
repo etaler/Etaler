@@ -130,9 +130,8 @@ TEST_CASE("Backend functions", "[Backend]")
 		uint8_t in[2] = {1,1};
 		Tensor x = createTensor({2}, DType::Bool, in);
 
-		Tensor y = createTensor({2});
-
-		b->overlapScore(x, s, p, 0.1, 1, y);
+		Tensor y = b->overlapScore(x, s, p, 0.1, 1);
+		CHECK(y.size() == 2);
 
 		auto res = y.toHost<int32_t>();
 		REQUIRE(res.size() == 2);
@@ -143,9 +142,9 @@ TEST_CASE("Backend functions", "[Backend]")
 	SECTION("Global Inhibition") {
 		int32_t in[8] = {0,0,1,2,7,6,5,3};
 		Tensor t = createTensor({8}, DType::Int32, in);
-		Tensor y = createTensor({8}, DType::Bool);
 
-		b->globalInhibition(t, y, 0.5);
+		Tensor y = b->globalInhibition(t, 0.5);
+		CHECK(y.size() == 8);
 		uint8_t pred[8] = {0,0,0,0,1,1,1,1};
 		Tensor should_be = createTensor({8}, DType::Bool, pred);
 		CHECK(y.dtype() == DType::Bool);

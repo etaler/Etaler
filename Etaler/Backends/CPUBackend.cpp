@@ -39,20 +39,23 @@ const void* CPUTensor::data() const
 	return std::visit([](const auto& v){return (const void*)v.data();}, storage_);
 }
 
-void CPUBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances
-	, float connected_permeance, size_t active_threshold, TensorImpl* y, bool has_unconnected_synapse)
+std::shared_ptr<TensorImpl> CPUBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances
+	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
 	//Checks the input are sane
 	et_assert(points_to<CPUTensor>(x));
 	et_assert(points_to<CPUTensor>(connections));
 	et_assert(points_to<CPUTensor>(permeances));
-	et_assert(points_to<CPUTensor>(y));
 
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
-	et_assert(y->dtype() == DType::Int32);
 	et_assert(connections->shape() == permeances->shape());
+	et_assert(connections->dimentions() >= 2);
+
+	Shape s = connections->shape();
+	s.pop_back();
+	auto y = createTensor(s, DType::Int32);
 
 
 	const bool* input = (const bool*)x->data();
@@ -82,6 +85,8 @@ void CPUBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections
 		else
 			result[i] = 0;
 	});
+
+	return y;
 }
 
 void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections, TensorImpl* permeances, float perm_inc, float perm_dec)
@@ -128,14 +133,13 @@ void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, 
 	});
 }
 
-void CPUBackend::globalInhibition(const TensorImpl* x, TensorImpl* y, float fraction)
+std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
 	et_assert(points_to<CPUTensor>(x));
-	et_assert(points_to<CPUTensor>(y));
 
 	et_assert(x->dtype() == DType::Int32);
-	et_assert(y->dtype() == DType::Bool);
-	et_assert(x->shape() == y->shape());
+
+	auto y = createTensor(x->shape(), DType::Bool);
 
 	const int32_t* input = (const int32_t*)x->data();
 	bool* output = (bool*)y->data();
@@ -156,6 +160,7 @@ void CPUBackend::globalInhibition(const TensorImpl* x, TensorImpl* y, float frac
 
 	for(auto it=v.begin();it!=bound_end;++it)
 		output[it->second] = true;
+	return y;
 }
 
 template <typename Ret, typename Op>
@@ -244,14 +249,16 @@ void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 	});
 }
 
-void CPUBackend::applyBurst(const TensorImpl* x, TensorImpl* y)
+std::shared_ptr<TensorImpl> CPUBackend::applyBurst(const TensorImpl* x, const TensorImpl* s)
 {
 	et_assert(points_to<CPUTensor>(x));
-	et_assert(points_to<CPUTensor>(y));
+	et_assert(points_to<CPUTensor>(s));
 	et_assert(x->dtype() == DType::Bool);
-	et_assert(y->dtype() == DType::Bool);
+	et_assert(s->dtype() == DType::Bool);
 
-	{Shape s = y->shape(); s.pop_back();et_assert(x->shape() == s);}
+	Shape shape = s->shape();
+	shape.pop_back();
+	auto y = createTensor(shape, DType::Bool);
 
 	const bool* in = (const bool*)x->data();
 	bool* out = (bool*)y->data();
@@ -263,4 +270,5 @@ void CPUBackend::applyBurst(const TensorImpl* x, TensorImpl* y)
 		if(std::accumulate(out+i*column_size, out+(i+1)*column_size, 0) == 0)
 			std::generate(out+i*column_size, out+(i+1)*column_size, [](){return 1;});
 	});
+	return y;
 }

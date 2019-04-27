@@ -49,7 +49,7 @@ protected:
 
 struct CPUBackend : public Backend
 {
-	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data) override
+	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data=nullptr) override
 	{
 		CPUTensor* ptr = new CPUTensor(shape, dtype, shared_from_this(), data);
 		return std::shared_ptr<CPUTensor>(ptr, [this](TensorImpl* ptr){releaseTensor(ptr);});
@@ -61,16 +61,16 @@ struct CPUBackend : public Backend
 		delete pimpl;
 	}
 
-	virtual void overlapScore(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances,
-		float connected_permeance, size_t active_threshold, TensorImpl* y, bool has_unconnected_synapse=true) override;
+	virtual std::shared_ptr<TensorImpl> overlapScore(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances,
+		float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true) override;
 	virtual void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
 		TensorImpl* permeances, float perm_inc, float perm_dec) override;
-	virtual void globalInhibition(const TensorImpl* x, TensorImpl* y, float fraction) override;
+	virtual std::shared_ptr<TensorImpl> globalInhibition(const TensorImpl* x, float fraction) override;
 	virtual std::shared_ptr<TensorImpl> cast(const TensorImpl* x, DType toType) override;
 	virtual void copyToHost(const TensorImpl* pimpl, void* dest) override;
 	virtual std::shared_ptr<TensorImpl> copy(const TensorImpl* x) override;
 	virtual void sortSynapse(TensorImpl* connections, TensorImpl* permeances) override;
-	virtual void applyBurst(const TensorImpl* x, TensorImpl* y) override;
+	virtual std::shared_ptr<TensorImpl> applyBurst(const TensorImpl* x, const TensorImpl* s) override;
 
 	virtual std::string name() const override {return "CPU";}
 };

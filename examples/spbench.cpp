@@ -1,6 +1,6 @@
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Backends/CPUBackend.hpp>
-//#include <Etaler/Backends/OpenCLBackend.hpp>
+#include <Etaler/Backends/OpenCLBackend.hpp>
 #include <Etaler/Algorithms/SpatialPooler.hpp>
 #include <Etaler/Encoders/Scalar.hpp>
 using namespace et;
@@ -39,7 +39,7 @@ std::vector<Tensor> generateRandomData(size_t input_length, size_t num_data)
 
 int main()
 {
-	std::shared_ptr<Backend> backend = std::make_shared<CPUBackend>();
+	std::shared_ptr<Backend> backend = std::make_shared<OpenCLBackend>();
 	setDefaultBackend(backend);
 
 	std::cout << "Benchmarking SpatialPooler algorithm on backend: " << backend->name() <<" \n\n";
