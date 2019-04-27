@@ -124,3 +124,27 @@ bool Tensor::isSame(const Tensor& other) const
 	et_assert(dtype() != DType::Unknown);
 	return false;
 }
+
+Tensor et::zeros(const Shape& shape, DType dtype, Backend* backend)
+{
+	if(dtype == DType::Bool)
+		return constant<uint8_t>(shape, 0, backend);
+	else if(dtype == DType::Int32)
+		return constant<int32_t>(shape, 0, backend);
+	else if(dtype == DType::Float)
+		return constant<float>(shape, 0, backend);
+	else
+		throw EtError("Cannot creatr a tensor of ones of type " + to_ctype_string(dtype));
+}
+
+Tensor et::ones(const Shape& shape, DType dtype, Backend* backend)
+{
+	if(dtype == DType::Bool)
+		return constant<uint8_t>(shape, 1, backend);
+	else if(dtype == DType::Int32)
+		return constant<int32_t>(shape, 1, backend);
+	else if(dtype == DType::Float)
+		return constant<float>(shape, 1, backend);
+	else
+		throw EtError("Cannot creatr a tensor of zeros of type " + to_ctype_string(dtype));
+}

@@ -71,6 +71,9 @@ struct CPUBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> copy(const TensorImpl* x) override;
 	virtual void sortSynapse(TensorImpl* connections, TensorImpl* permeances) override;
 	virtual std::shared_ptr<TensorImpl> applyBurst(const TensorImpl* x, const TensorImpl* s) override;
+	virtual std::shared_ptr<TensorImpl> reverseBurst(const TensorImpl* x) override;
+	virtual void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
+		, TensorImpl* permeances, float initial_perm) override;
 
 	virtual std::string name() const override {return "CPU";}
 };

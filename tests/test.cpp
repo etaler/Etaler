@@ -173,6 +173,67 @@ TEST_CASE("Backend functions", "[Backend]")
 		CHECK_NOTHROW(defaultBackend()->sync());
 	}
 
+	SECTION("Burst") {
+		uint8_t s[] = {0, 0, 0, 0,
+				1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 1, 1, 0};
+		Tensor state = createTensor({4,4}, DType::Bool, s);
+
+		uint8_t in[] = {1,0,1,1};
+		Tensor x = createTensor({4}, DType::Bool, in);
+		Tensor y = defaultBackend()->applyBurst(x, state);
+
+		uint8_t p[] = {1, 1, 1, 1,
+				0, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 1, 1, 0};
+		Tensor pred = createTensor({4,4}, DType::Bool, p);
+		CHECK(pred.isSame(y));
+	}
+
+	SECTION("Reverse Burst") {
+		uint8_t in[] = {1, 1, 1, 1,
+				1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 1, 1, 0,
+				0, 0, 0, 0};
+		Tensor x = createTensor({4,4}, DType::Bool, in);
+		Tensor y = defaultBackend()->reverseBurst(x);
+
+		auto vec = y.toHost<uint8_t>();
+		std::vector<uint8_t> pred_sum = {1,1,1,2,0};
+
+		for(size_t i=0;i<4;i++) {
+			size_t sum = 0;
+			for(size_t j=0;j<4;j++)
+				sum += vec[i*4+j];
+			CHECK(sum == pred_sum[i]);
+		}
+	}
+
+	SECTION("Reverse Burst") {
+		int32_t synapses[4] = {0, 1, 1, -1};
+		Tensor s = createTensor({2,2}, DType::Int32, synapses);
+
+		float perm[4] = {0.5, 0.4, 0.7, 0.0};
+		Tensor p = createTensor({2,2}, DType::Float, perm);
+
+		uint8_t in[2] = {1,1};
+		Tensor x = createTensor({2}, DType::Bool, in);
+		Tensor y = createTensor({2}, DType::Bool, in); //the same for test
+
+		defaultBackend()->growSynapses(x, y, s, p, 0.21);
+
+		int32_t pred[] = {0,1 ,0,1};
+		Tensor pred_conn = createTensor({2,2}, DType::Int32, pred);
+
+		float perms[] = {0.5, 0.4, 0.21, 0.7};
+		Tensor pred_perm = createTensor({2,2}, DType::Float, perms);
+
+		CHECK(s.isSame(pred_conn));
+		CHECK(p.isSame(pred_perm));
+	}
 }
 
 TEST_CASE("StateDict", "[StateDict]")

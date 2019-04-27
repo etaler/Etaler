@@ -6,6 +6,10 @@ project(spbench CXX)
 add_executable(spbench spbench.cpp)
 target_link_libraries(spbench Etaler)
 
+project(tmexample CXX)
+add_executable(tmexample tmexample.cpp)
+target_link_libraries(tmexample Etaler)
+
 if(ETALER_ENABLE_OPENCL)
 	project(backend2backend CXX)
 	add_executable(backend2backend backend2backend.cpp)

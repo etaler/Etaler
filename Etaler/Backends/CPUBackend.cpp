@@ -1,4 +1,5 @@
 #include "CPUBackend.hpp"
+#include "Etaler/Core/Random.hpp"
 
 #include <numeric>
 
@@ -70,13 +71,14 @@ std::shared_ptr<TensorImpl> CPUBackend::overlapScore(const TensorImpl* x, const 
 		size_t sum = 0;
 		for(size_t j=0;j<max_connections_per_cell;j++) {
 			size_t index = i*max_connections_per_cell+j;
-			size_t target = synapses[index];
+			int32_t target = synapses[index];
 			float strength = synapse_strengths[index];
 
-			assert(target < x->size());
-
-			if(target == (size_t)-1)
+			if(target == -1)
 				break;
+
+			assert(target < (int32_t)x->size());
+
 			if(input[target] == 1 && strength > connected_permeance)
 				sum += 1;
 		}
@@ -111,7 +113,7 @@ void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, 
 	size_t max_connections_per_cell = connections->shape().back();
 	size_t num_cells = connections->size()/max_connections_per_cell;
 
-	tbb::parallel_for(size_t(0), connections->size(), [&](size_t i) {
+	tbb::parallel_for(size_t(0), learn->size(), [&](size_t i) {
 		if(learning[i] == false)
 			return;
 
@@ -190,6 +192,7 @@ std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 	return run<std::shared_ptr<TensorImpl>>(t, [&x, toType, this](const auto* ptr){
 		if(toType == DType::Bool) {
 			auto castedData = castData<uint8_t>(ptr, x->size());
+			std::transform(castedData.begin(), castedData.end(), castedData.begin(), [](auto v) {return bool(v);});
 			return createTensor(x->shape(), toType, castedData.data());
 		}
 		else if(toType == DType::Int32) {
@@ -251,24 +254,129 @@ void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> CPUBackend::applyBurst(const TensorImpl* x, const TensorImpl* s)
 {
-	et_assert(points_to<CPUTensor>(x));
-	et_assert(points_to<CPUTensor>(s));
+	et_assert(points_to<const CPUTensor>(x));
+	et_assert(points_to<const CPUTensor>(s));
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(s->dtype() == DType::Bool);
 
 	Shape shape = s->shape();
 	shape.pop_back();
-	auto y = createTensor(shape, DType::Bool);
+	et_assert(shape == x->shape());
+
+	auto y = createTensor(s->shape(), DType::Bool);
 
 	const bool* in = (const bool*)x->data();
+	const bool* state = (const bool*)s->data();
 	bool* out = (bool*)y->data();
 
 	size_t column_size = y->shape().back();
-	tbb::parallel_for(size_t(0), x->size(), [&](size_t i){
+	tbb::parallel_for(size_t(0), x->size(), [&](size_t i) {
 		if(in[i] == false)
-			return;
-		if(std::accumulate(out+i*column_size, out+(i+1)*column_size, 0) == 0)
-			std::generate(out+i*column_size, out+(i+1)*column_size, [](){return 1;});
+			std::generate(out+i*column_size, out+(i+1)*column_size, [](){return 0;});
+		else
+		{
+			if(std::accumulate(state+i*column_size, state+(i+1)*column_size, 0) == 0)
+				std::generate(out+i*column_size, out+(i+1)*column_size, [](){return 1;});
+			else
+				std::copy(state+i*column_size, state+(i+1)*column_size, out+i*column_size);
+		}
 	});
 	return y;
+}
+
+std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
+{
+	et_assert(points_to<const CPUTensor>(x));
+	et_assert(x->dtype() == DType::Bool);
+
+	size_t cells_per_column = x->shape().back();
+	size_t num_columns = x->size()/cells_per_column;
+	static pcg64 rng; //Static so the behavor hangees every time, breaking symmetry
+	std::uniform_int_distribution<size_t> dist(0, cells_per_column-1);
+
+	auto y = copy(x);
+
+	const bool* in = (const bool*) x->data();
+	bool* out = (bool*) y->data();
+
+	tbb::parallel_for(size_t(0), num_columns, [&](size_t i) {
+		if(std::accumulate(in+i*cells_per_column, in+(i+1)*cells_per_column, size_t(0)) == cells_per_column) {
+			std::generate(out+i*cells_per_column, out+(i+1)*cells_per_column, [](){return 0;});
+			out[i*cells_per_column+dist(rng)] = 1;
+		}
+	});
+	return y;
+
+}
+
+void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
+	, TensorImpl* permeances, float initial_perm)
+{
+	et_assert(points_to<const CPUTensor>(x));
+	et_assert(points_to<const CPUTensor>(y));
+	et_assert(points_to<CPUTensor>(connections));
+	et_assert(points_to<CPUTensor>(permeances));
+
+	et_assert(x->dtype() == DType::Bool);
+	et_assert(y->dtype() == DType::Bool);
+	et_assert(connections->dtype() == DType::Int32);
+	et_assert(permeances->dtype() == DType::Float);
+
+	et_assert(x->shape() == y->shape());
+	et_assert(connections->shape() == permeances->shape());
+	Shape s = connections->shape();
+	s.pop_back();
+	et_assert(s == y->shape());
+
+	size_t max_synapses_per_cell = connections->shape().back();
+	size_t input_cell_count = x->size();
+
+	const bool* in = (const bool*) x->data();
+	const bool* out = (const bool*) y->data();
+	int32_t* conns = (int32_t*)connections->data();
+	float* perms = (float*)permeances->data();
+
+	tbb::parallel_for(size_t(0), y->size(), [&](size_t i) {
+		if(out[i] == 0)
+			return;
+
+		int32_t* synapses = conns+i*max_synapses_per_cell;
+		float* strengths = perms+i*max_synapses_per_cell;
+
+		int32_t* end = synapses+max_synapses_per_cell;
+
+		int32_t* it = synapses;
+		for(;it!=end && *it !=-1;it++);
+		size_t avliable_space = end - it;
+		size_t used_space = it - synapses;
+		if(avliable_space == 0)
+			return;
+
+		size_t write_idx = it - synapses;
+		size_t read_idx = 0;
+
+		for(size_t j=0;avliable_space!=0 && j < input_cell_count;j++) {
+			if(in[j] == 0)
+				continue;
+
+			bool connected = false;
+			for(;read_idx<used_space;read_idx++) {
+				if(synapses[read_idx] == (int)j) {
+					connected = true;
+					break;
+				}
+				if(synapses[read_idx] > (int)j)
+					break;
+			}
+
+			if(connected == false) {
+				synapses[write_idx] = j;
+				strengths[write_idx] = initial_perm;
+				avliable_space--;
+				write_idx++;
+			}
+		}
+	});
+
+	sortSynapse(connections, permeances);
 }

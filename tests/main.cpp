@@ -8,7 +8,7 @@
 
 int main( int argc, char* argv[] )
 {
-	auto backend = std::make_shared<et::OpenCLBackend>();
+	auto backend = std::make_shared<et::CPUBackend>();
 	et::setDefaultBackend(backend.get());
 
 	std::cout << "Running with backend: " << backend->name() << std::endl;

@@ -64,6 +64,8 @@ struct Tensor
 
 	operator TensorImpl* () {return pimpl();}
 	operator const TensorImpl* () const {return pimpl();}
+
+	bool has_value() const {return (bool)pimpl_;}
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };
@@ -90,5 +92,16 @@ inline Tensor createTensor(const Shape& shape, const T* data)
 {
 	return createTensor(shape, data, defaultBackend());
 }
+
+template <typename T>
+Tensor constant(const Shape& shape, T value, Backend* backend=defaultBackend())
+{
+	static_assert(typeToDType<T>() != DType::Unknown);
+	std::vector<T> v(shape.volume(), value);
+	return backend->createTensor(shape, typeToDType<T>(), v.data());
+}
+
+Tensor zeros(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
+Tensor ones(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
 
 }
