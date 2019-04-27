@@ -134,7 +134,7 @@ Etaler tho provides basically the same feature, is very different from NuPIC. So
 
 * [x] Implement SP
 * [x] Implement Encoders
-* [ ] Implement TM
+* [x] Implement TM
 * [ ] Anomaly detectors
 * [ ] Classifier
 * [ ] Serialization

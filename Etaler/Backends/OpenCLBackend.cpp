@@ -1,5 +1,7 @@
 #include "OpenCLBackend.hpp"
 
+#include "Etaler/Core/Random.hpp"
+
 #include <map>
 #include <sstream>
 
@@ -29,6 +31,13 @@ inline std::string hash_string(const std::string& str)
 	std::stringstream ss;
 	ss << std::hex << hash;
 	return ss.str();
+}
+
+
+template <typename T>
+std::string str(T&& s)
+{
+	return std::to_string(s);
 }
 
 OpenCLBackend::OpenCLBackend()
@@ -187,8 +196,6 @@ std::shared_ptr<TensorImpl> OpenCLBackend::overlapScore(const TensorImpl* x, con
 	s.pop_back();
 	auto y = createTensor(s, DType::Int32);
 
-	auto str = [](auto s){return std::to_string(s);};
-
 	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE=" + str(!has_unconnected_synapse);
 	auto hash = hash_string(args);
 	auto program_name = "overlapScore"+hash;
@@ -220,8 +227,6 @@ std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x,
 	et_assert(x->dtype() == DType::Int32);
 
 	auto y = createTensor(x->shape(), DType::Bool);
-
-	auto str = [](auto s){return std::to_string(s);};
 
 	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_INPUT_VALUE="+str(2000);
 	auto hash = hash_string(args);
@@ -303,7 +308,6 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 
-	auto str = [](auto s){return std::to_string(s);};
 	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE=true";
 	auto hash = hash_string(args);
 	auto program_name = "learnCorrilation"+hash;
@@ -334,10 +338,8 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 
-	auto str = [](auto s){return std::to_string(s);};
 	auto args = "-DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back());
-	auto hash = hash_string(args);
-	auto program_name = "sortSynapse"+hash;
+	auto program_name = "sortSynapse"+hash_string(args);
 	kernel_manager_.compileFromFile(kernel_root_+"sort.cl", program_name, {"sortSynapse"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "sortSynapse");
 
@@ -356,4 +358,62 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, num_cells)), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::applyBurst(const TensorImpl* x, const TensorImpl* s)
+{
+	et_assert(points_to<const OpenCLTensor>(x));
+	et_assert(points_to<const OpenCLTensor>(s));
+	et_assert(x->dtype() == DType::Bool);
+	et_assert(s->dtype() == DType::Bool);
+
+	Shape shape = s->shape();
+	shape.pop_back();
+	et_assert(shape == x->shape());
+
+	auto res = copy(s);
+
+	size_t num_columns = shape.volume();
+
+	auto args = "-DCELLS_PER_COLUMN="+str(s->shape().back())+" -DNUM_COLUMNS="+str(num_columns);
+	auto program_name = "applyBurst"+hash_string(args);
+	kernel_manager_.compileFromFile(kernel_root_+"applyBurst.cl", program_name, {"applyBurst"}, false, args);
+	cl::Kernel k = kernel_manager_.kernel(program_name, "applyBurst");
+
+	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
+	k.setArg(1, reinterpret_cast<OpenCLTensor*>(res.get())->buffer());
+
+	size_t local_size = 128;
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, num_columns)), cl::NDRange(local_size));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+	return res;
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
+{
+	et_assert(points_to<const OpenCLTensor>(x));
+	et_assert(x->dtype() == DType::Bool);
+
+	size_t cells_per_column = x->shape().back();
+	size_t num_columns = x->size()/cells_per_column;
+	static pcg32 rng; //Static so the behavor hangees every time, breaking symmetry
+	std::uniform_int_distribution<size_t> dist(0, cells_per_column-1);
+
+	auto res = copy(x);
+
+	auto args = "-DCELLS_PER_COLUMN="+str(cells_per_column)+" -DNUM_COLUMNS="+str(num_columns);
+	auto program_name = "reverseBurst"+hash_string(args);
+	kernel_manager_.compileFromFile(kernel_root_+"reverseBurst.cl", program_name, {"reverseBurst"}, false, args);
+	cl::Kernel k = kernel_manager_.kernel(program_name, "reverseBurst");
+
+	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(res.get())->buffer());
+	k.setArg(1, rng());
+	k.setArg(2, rng());
+
+	size_t local_size = 128;
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, num_columns)), cl::NDRange(local_size));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+	return res;
 }

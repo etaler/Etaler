@@ -96,6 +96,8 @@ struct OpenCLBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> cast(const TensorImpl* x, DType toType) override;
 	virtual std::shared_ptr<TensorImpl> copy(const TensorImpl* x) override;
 	virtual void sortSynapse(TensorImpl* connections, TensorImpl* permeances) override;
+	virtual std::shared_ptr<TensorImpl> applyBurst(const TensorImpl* x, const TensorImpl* s) override;
+	virtual std::shared_ptr<TensorImpl> reverseBurst(const TensorImpl* x) override;
 
 protected:
 
