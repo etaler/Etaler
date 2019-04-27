@@ -42,8 +42,8 @@ struct TemporalMemory
 
 		Tensor learning_cells = backend_->reverseBurst(active_cells);
 
-		backend_->learnCorrilation(learning_cells, last_active, connections_, permances_, 0.1, 0.1);
-		backend_->growSynapses(learning_cells, last_active, connections_, permances_, 0.21);
+		backend_->learnCorrilation(last_active, learning_cells, connections_, permances_, 0.1, 0.1);
+		backend_->growSynapses(last_active, learning_cells, connections_, permances_, 0.21);
 	}
 
 	size_t cells_per_column_;
