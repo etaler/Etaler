@@ -7,6 +7,9 @@ Backends are how Etaler supports computing on different device/processors. They 
 
 They should cover more than 99% of the use cases. When needed, other backends can be added to support new devices.
 
+## Front/backend speration
+
+
 ## Backend name
 You can get the backend's name usging the `name()` method.
 ```C++

@@ -61,6 +61,9 @@ struct Tensor
 	Tensor copy() const {return pimpl_->backend()->copy(pimpl_.get());}
 
 	bool isSame (const Tensor& other) const;
+
+	operator TensorImpl* () {return pimpl();}
+	operator const TensorImpl* () const {return pimpl();}
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };

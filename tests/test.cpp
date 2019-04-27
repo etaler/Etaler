@@ -132,7 +132,7 @@ TEST_CASE("Backend functions", "[Backend]")
 
 		Tensor y = createTensor({2});
 
-		b->overlapScore(x.pimpl(), s.pimpl(), p.pimpl(), 0.1, 1, y.pimpl());
+		b->overlapScore(x, s, p, 0.1, 1, y);
 
 		auto res = y.toHost<int32_t>();
 		REQUIRE(res.size() == 2);
@@ -145,7 +145,7 @@ TEST_CASE("Backend functions", "[Backend]")
 		Tensor t = createTensor({8}, DType::Int32, in);
 		Tensor y = createTensor({8}, DType::Bool);
 
-		b->globalInhibition(t.pimpl(), y.pimpl(), 0.5);
+		b->globalInhibition(t, y, 0.5);
 		uint8_t pred[8] = {0,0,0,0,1,1,1,1};
 		Tensor should_be = createTensor({8}, DType::Bool, pred);
 		CHECK(y.dtype() == DType::Bool);
@@ -159,7 +159,7 @@ TEST_CASE("Backend functions", "[Backend]")
 		float b[] = {0,1,2,3, 1,3,2,0, -1,1,2,3, 2,3,1,-1};
 		Tensor q = createTensor({4,4}, DType::Float, b);
 
-		defaultBackend()->sortSynapse(t.pimpl(), q.pimpl());
+		defaultBackend()->sortSynapse(t, q);
 
 		int pred[] = {0,1,2,3, 0,1,2,3, 1,2,3,-1, 1,2,3,-1};
 		float pred2[] = {0,1,2,3, 0,1,2,3, 1,2,3,-1, 1,2,3,-1};

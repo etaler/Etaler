@@ -243,3 +243,24 @@ void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 		apply_permutation_in_place(perms+start_index, perms+end_index, sort_indices);
 	});
 }
+
+void CPUBackend::applyBurst(const TensorImpl* x, TensorImpl* y)
+{
+	et_assert(points_to<CPUTensor>(x));
+	et_assert(points_to<CPUTensor>(y));
+	et_assert(x->dtype() == DType::Bool);
+	et_assert(y->dtype() == DType::Bool);
+
+	{Shape s = y->shape(); s.pop_back();et_assert(x->shape() == s);}
+
+	const bool* in = (const bool*)x->data();
+	bool* out = (bool*)y->data();
+
+	size_t column_size = y->shape().back();
+	tbb::parallel_for(size_t(0), x->size(), [&](size_t i){
+		if(in[i] == false)
+			return;
+		if(std::accumulate(out+i*column_size, out+(i+1)*column_size, 0) == 0)
+			std::generate(out+i*column_size, out+(i+1)*column_size, [](){return 1;});
+	});
+}

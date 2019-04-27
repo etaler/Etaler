@@ -51,11 +51,11 @@ Tensor SpatialPooler::compute(const Tensor& x) const
 	et_assert(x.shape() == input_shape_);
 
 	Tensor t = backend_->createTensor(output_shape_, DType::Int32);
-	backend_->overlapScore(x.pimpl(), connections_.pimpl(), permances_.pimpl()
-		, connected_permance_, active_threshold_, t.pimpl(), false);
+	backend_->overlapScore(x, connections_, permances_
+		, connected_permance_, active_threshold_, t, false);
 
 	Tensor res = backend_->createTensor(output_shape_, DType::Bool);
-	backend_->globalInhibition(t.pimpl(), res.pimpl(), global_density_);
+	backend_->globalInhibition(t, res, global_density_);
 
 	return res;
 }

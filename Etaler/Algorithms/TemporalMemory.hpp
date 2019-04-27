@@ -4,7 +4,7 @@
 #include "Etaler/Core/Backend.hpp"
 #include "Etaler/Core/Error.hpp"
 #include "Etaler/Core/Tensor.hpp"
-#include "Etaler/Core/Serealize.hpp"
+#include "Etaler/Core/Serialize.hpp"
 #include "Etaler/Core/DefaultBackend.hpp"
 
 namespace et
@@ -22,12 +22,26 @@ struct TemporalMemory
 		permances_ = backend->createTensor(connection_shape, DType::Float);
 	}
 
-	Tensor compute(const Tensor& x)
+	std::pair<Tensor, Tensor> compute(const Tensor& x, const Tensor& last_state)
 	{
+		Tensor active_cells = last_state.copy();
+		backend_->applyBurst(x, active_cells);
+
+	}
+
+	void learn(const Tensor& active_cells, const Tensor& last_active)
+	{
+		Tensor learning_cells = last_active.copy();
+		backend_->reverseBurst(learning_cells);
+
+		backend_->learnCorrilation(active_cells, learning_cells, connections_, permances_, 0.1, 0.1);
+		backend_->growSynapses(active_cells, learning_cells, connections_, permances_, 0.21);
 	}
 
 	Tensor connections_;
 	Tensor permances_;
+	Tensor predictive_cells_;
+	Tensor active_cells_;
 	Backend* backend_;
 };
 

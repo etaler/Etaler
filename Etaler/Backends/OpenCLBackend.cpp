@@ -170,9 +170,8 @@ void KernelManager::compileFromFile(const std::vector<std::string>& paths, const
 	compileKernel(sources, program_name, kernel_names, force_override, flags);
 }
 
-
 void OpenCLBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections,
-		const TensorImpl* permeances, float connected_permeance, size_t active_threshold, TensorImpl* y, bool has_unconnected_synapse)
+	const TensorImpl* permeances, float connected_permeance, size_t active_threshold, TensorImpl* y, bool has_unconnected_synapse)
 {
 	et_assert(points_to<const OpenCLTensor>(x));
 	et_assert(points_to<const OpenCLTensor>(connections));
