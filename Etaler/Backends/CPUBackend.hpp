@@ -64,7 +64,7 @@ struct CPUBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> overlapScore(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances,
 		float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true) override;
 	virtual void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
-		TensorImpl* permeances, float perm_inc, float perm_dec) override;
+		TensorImpl* permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse=true) override;
 	virtual std::shared_ptr<TensorImpl> globalInhibition(const TensorImpl* x, float fraction) override;
 	virtual std::shared_ptr<TensorImpl> cast(const TensorImpl* x, DType toType) override;
 	virtual void copyToHost(const TensorImpl* pimpl, void* dest) override;

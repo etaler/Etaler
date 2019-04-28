@@ -42,7 +42,6 @@ kernel void overlapScore(global bool* restrict x, global int* restrict synapses
 
 		for(int i=start;i<end;i++) {
 			int sum = 0;
-			#pragma unroll 8
 			for(int j=0;j<MAX_SYNAPSE_PER_CELL;j++) {
 				int idx = i*MAX_SYNAPSE_PER_CELL+j;
 				int target_cell = synapses[idx];
@@ -64,6 +63,8 @@ kernel void overlapScore(global bool* restrict x, global int* restrict synapses
 			}
 			if(sum >= active_threshold)
 				y[i] = sum;
+			else
+				y[i] = 0;
 		}
 	}
 }

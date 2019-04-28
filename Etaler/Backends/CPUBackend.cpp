@@ -103,7 +103,8 @@ std::shared_ptr<TensorImpl> CPUBackend::overlapScore(const TensorImpl* x, const 
 	return y;
 }
 
-void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections, TensorImpl* permeances, float perm_inc, float perm_dec)
+void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections, TensorImpl* permeances
+	, float perm_inc, float perm_dec, bool has_unconnected_synapse)
 {
 	et_assert(points_to<CPUTensor>(x));
 	et_assert(points_to<CPUTensor>(connections));
@@ -351,8 +352,8 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 	float* perms = (float*)permeances->data();
 
 	std::vector<int> on_bits;
-	on_bits.reserve(x->size()*0.1);
-	for(size_t i=0;i<x->size();i++) {
+	on_bits.reserve(input_cell_count*0.1);
+	for(size_t i=0;i<input_cell_count;i++) {
 		if(in[i] == true)
 			on_bits.push_back(i);
 	}

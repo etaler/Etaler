@@ -91,13 +91,15 @@ struct OpenCLBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> overlapScore(const TensorImpl* x, const TensorImpl* connections,
 		const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true) override;
 	virtual void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
-		TensorImpl* permeances, float perm_inc, float perm_dec) override;
+		TensorImpl* permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse=true) override;
 	virtual std::shared_ptr<TensorImpl> globalInhibition(const TensorImpl* x, float fraction) override;
 	virtual std::shared_ptr<TensorImpl> cast(const TensorImpl* x, DType toType) override;
 	virtual std::shared_ptr<TensorImpl> copy(const TensorImpl* x) override;
 	virtual void sortSynapse(TensorImpl* connections, TensorImpl* permeances) override;
 	virtual std::shared_ptr<TensorImpl> applyBurst(const TensorImpl* x, const TensorImpl* s) override;
 	virtual std::shared_ptr<TensorImpl> reverseBurst(const TensorImpl* x) override;
+	virtual void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
+		, TensorImpl* permeances, float initial_perm) override;
 
 protected:
 

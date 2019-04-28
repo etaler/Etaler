@@ -10,6 +10,6 @@ kernel void cast(global InType* restrict x, global OutType* restrict y, int prob
 {
 	int id = get_global_id(0);
 	int size = get_global_size(0);
-	for(int i=0;i<problem_size;i+=size)
-		y[i] = x[i];
+	for(int i=id;i<problem_size;i+=size)
+		y[i] = (OutType)x[i];
 }

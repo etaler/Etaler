@@ -212,7 +212,7 @@ TEST_CASE("Backend functions", "[Backend]")
 		}
 	}
 
-	SECTION("Reverse Burst") {
+	SECTION("Grow Synapses") {
 		int32_t synapses[4] = {0, 1, 1, -1};
 		Tensor s = createTensor({2,2}, DType::Int32, synapses);
 

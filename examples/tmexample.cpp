@@ -23,6 +23,8 @@ Tensor sum(Tensor t)
 
 int main()
 {
+	auto backend = std::make_shared<et::OpenCLBackend>();
+	et::setDefaultBackend(backend.get());
 	size_t num_category = 3;
 	size_t bits_per_category = 5;
 

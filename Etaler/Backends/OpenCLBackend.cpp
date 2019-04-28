@@ -294,7 +294,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 }
 
 void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
-	TensorImpl* permeances, float perm_inc, float perm_dec)
+	TensorImpl* permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse)
 {
 	et_assert(points_to<OpenCLTensor>(x));
 	et_assert(points_to<OpenCLTensor>(connections));
@@ -308,7 +308,8 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 
-	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE=true";
+	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE="+str(!has_unconnected_synapse)
+		+" -DOUTPUT_SIZE="+str(learn->size());
 	auto hash = hash_string(args);
 	auto program_name = "learnCorrilation"+hash;
 
@@ -416,4 +417,51 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
 	return res;
+}
+
+void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
+		, TensorImpl* permeances, float initial_perm)
+{
+	et_assert(points_to<const OpenCLTensor>(x));
+	et_assert(points_to<const OpenCLTensor>(y));
+	et_assert(points_to<OpenCLTensor>(connections));
+	et_assert(points_to<OpenCLTensor>(permeances));
+
+	et_assert(x->dtype() == DType::Bool);
+	et_assert(y->dtype() == DType::Bool);
+	et_assert(connections->dtype() == DType::Int32);
+	et_assert(permeances->dtype() == DType::Float);
+
+	et_assert(x->shape() == y->shape());
+	et_assert(connections->shape() == permeances->shape());
+	Shape s = connections->shape();
+	s.pop_back();
+	et_assert(s == y->shape());
+
+	size_t max_synapses_per_cell = connections->shape().back();
+	size_t input_cell_count = x->size();
+
+	auto args = "-DNUM_CELLS="+str(y->size())+" -DNUM_INPUT_BITS="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell);
+	auto program_name = "growSynapses"+hash_string(args);
+	kernel_manager_.compileFromFile(kernel_root_+"growSynapses.cl", program_name, {"growSynapses"}, false, args);
+	cl::Kernel k = kernel_manager_.kernel(program_name, "growSynapses");
+
+	size_t local_size = 128;
+	size_t work_size = selectWorkSize(4096, local_size, y->size());
+
+	static cl::Buffer aux = allocBuffer(x->size()*work_size);
+	//if(x->size()*work_size > aux.getInfo<CL_MEM_SIZE>())
+	//	aux = allocBuffer(x->size()*work_size);
+
+	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
+	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(y)->buffer());
+	k.setArg(2, reinterpret_cast<OpenCLTensor*>(connections)->buffer());
+	k.setArg(3, reinterpret_cast<OpenCLTensor*>(permeances)->buffer());
+	k.setArg(4, initial_perm);
+	//k.setArg(5, aux);
+
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(work_size), cl::NDRange(local_size));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+	sortSynapse(connections, permeances);
 }
