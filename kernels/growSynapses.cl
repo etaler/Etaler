@@ -10,7 +10,7 @@
 	#error "MAX_SYNAPSE_PER_CELL is not defined"
 #endif
 
-kernel void growSynapses(constant bool* restrict x, global bool* restrict y, global int* restrict connections
+kernel void growSynapses(constant int* restrict x, global bool* restrict y, global int* restrict connections
 	, global float* restrict permeances, float initial_perm, global bool* restrict aux)
 {
 	int global_size = get_global_size(0);
@@ -41,13 +41,13 @@ kernel void growSynapses(constant bool* restrict x, global bool* restrict y, glo
 
 		int write_idx = synapse_end;
 
-		for(int j=0;write_idx!=MAX_SYNAPSE_PER_CELL && j<NUM_INPUT_BITS;j++) {
-			if(x[j] == false)
-				continue;
-			bool connected = connection_list[j];
+
+		for(int j=0;write_idx!=MAX_SYNAPSE_PER_CELL && x[j]!=-1;j++) {
+			int idx = x[j];
+			bool connected = connection_list[idx];
 
 			if(connected == false) {
-				synapses[write_idx] = j;
+				synapses[write_idx] = idx;
 				strengths[write_idx] = initial_perm;
 				write_idx++;
 			}

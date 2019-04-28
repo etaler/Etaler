@@ -100,6 +100,7 @@ struct OpenCLBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> reverseBurst(const TensorImpl* x) override;
 	virtual void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm) override;
+	cl::Buffer toSparse(const TensorImpl* x);
 
 protected:
 

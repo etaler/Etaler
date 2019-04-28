@@ -446,14 +446,15 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 	kernel_manager_.compileFromFile(kernel_root_+"growSynapses.cl", program_name, {"growSynapses"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "growSynapses");
 
-	size_t local_size = 128;
+	size_t local_size = 256;
 	size_t work_size = selectWorkSize(4096, local_size, y->size());
 
-	static cl::Buffer aux = allocBuffer(x->size()*work_size);
-	if(x->size()*work_size > aux.getInfo<CL_MEM_SIZE>())
-		aux = allocBuffer(x->size()*work_size);
+	static cl::Buffer aux = allocBuffer(input_cell_count*work_size);
+	if(input_cell_count*work_size > aux.getInfo<CL_MEM_SIZE>())
+		aux = allocBuffer(input_cell_count*work_size);
+	cl::Buffer sparse_x = toSparse(x);
 
-	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
+	k.setArg(0, sparse_x);
 	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(y)->buffer());
 	k.setArg(2, reinterpret_cast<OpenCLTensor*>(connections)->buffer());
 	k.setArg(3, reinterpret_cast<OpenCLTensor*>(permeances)->buffer());
@@ -463,4 +464,35 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(work_size), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+}
+
+cl::Buffer OpenCLBackend::toSparse(const TensorImpl* x)
+{
+	et_assert(points_to<const OpenCLTensor>(x));
+	et_assert(x->dtype() == DType::Bool);
+
+	auto args = "-DINPUT_SIZE="+str(x->size());
+	auto program_name = "toSparse"+hash_string(args);
+	kernel_manager_.compileFromFile(kernel_root_+"toSparse.cl", program_name, {"toSparse", "onBits"}, false, args);
+
+	cl::Kernel on_bits = kernel_manager_.kernel(program_name, "onBits");
+	cl::Kernel k = kernel_manager_.kernel(program_name, "toSparse");
+
+	cl::Buffer num = allocBuffer(sizeof(int));
+
+	on_bits.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
+	on_bits.setArg(1, num);
+	cl_int err = queue_.enqueueNDRangeKernel(on_bits, cl::NullRange, cl::NDRange(256), cl::NDRange(256));
+
+	int* num_on = (int*) queue_.enqueueMapBuffer(num, CL_TRUE, CL_MAP_READ, 0, sizeof(int));
+	cl::Buffer buf = allocBuffer((*num_on)*sizeof(int));
+
+	queue_.enqueueUnmapMemObject(num, num_on);
+
+	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
+	k.setArg(1, buf);
+	err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(256), cl::NDRange(256));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+	return buf;
 }

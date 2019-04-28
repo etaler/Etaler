@@ -48,7 +48,7 @@ int main()
 	std::shared_ptr<Backend> backend = std::make_shared<OpenCLBackend>();
 	setDefaultBackend(backend);
 
-	std::cout << "Benchmarking TemporalMemory algorithm on backend: " << backend->name() <<" \n\n";
+	std::cout << "Benchmarking TemporalMemory algorithm on backend: " << defaultBackend()->name() <<" \n\n";
 
 	std::vector<Tensor> input_data;
 	std::vector<size_t> input_size = {64, 128, 256, 512, 1024, 16384};
