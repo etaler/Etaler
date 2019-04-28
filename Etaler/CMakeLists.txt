@@ -1,6 +1,6 @@
 project(Etaler CXX)
 
-list(APPEND ETLAR_SOURCE Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/Serialize.cpp Core/Tensor.cpp Algorithms/SpatialPooler.cpp)
+list(APPEND ETLAR_SOURCE Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/Serialize.cpp Core/Tensor.cpp Algorithms/SpatialPooler.cpp Algorithms/TemporalMemory.cpp)
 list(APPEND ETALER_LINK_LIBRARIES tbb)
 
 if(ETALER_ENABLE_OPENCL)

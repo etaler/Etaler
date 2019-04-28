@@ -146,7 +146,7 @@ Etaler tho provides basically the same feature, is very different from NuPIC. So
 * [ ] OpenCL support
   * [x] Printable OpenCL Tensors
   * [x] SP in OpenCL
-  * [ ] TM in OpenCL
+  * [x] TM in OpenCL
   * [ ] Pack OpenCL kernels for distribution
 * [ ] Python binding
   * [ ] Numpy inter-op via xtensor
