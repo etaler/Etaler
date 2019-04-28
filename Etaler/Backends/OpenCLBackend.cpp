@@ -450,18 +450,17 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 	size_t work_size = selectWorkSize(4096, local_size, y->size());
 
 	static cl::Buffer aux = allocBuffer(x->size()*work_size);
-	//if(x->size()*work_size > aux.getInfo<CL_MEM_SIZE>())
-	//	aux = allocBuffer(x->size()*work_size);
+	if(x->size()*work_size > aux.getInfo<CL_MEM_SIZE>())
+		aux = allocBuffer(x->size()*work_size);
 
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
 	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(y)->buffer());
 	k.setArg(2, reinterpret_cast<OpenCLTensor*>(connections)->buffer());
 	k.setArg(3, reinterpret_cast<OpenCLTensor*>(permeances)->buffer());
 	k.setArg(4, initial_perm);
-	//k.setArg(5, aux);
+	k.setArg(5, aux);
 
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(work_size), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
-	sortSynapse(connections, permeances);
 }
