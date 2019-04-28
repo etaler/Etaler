@@ -9,7 +9,13 @@
 #ifndef MAX_SYNAPSE_PER_CELL
 	#error "MAX_SYNAPSE_PER_CELL is not defined"
 #endif
-
+//global_size: Arbitrary
+//local_size:  Arbitrary, but prefer multipel of CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE
+//NUM_CELLS: The number of cells in the layer
+//NUM_INPUT_BITS: Number of bits the input SDR has
+//MAX_SYNAPSE_PER_CELL: The max amount of connections a cell can have
+//x: The input SDR **IN SPARSE FORMAT**
+//aux: temporary buffer for storage, must be size of NUM_INPUT_BITS*global_size[0]
 kernel void growSynapses(constant int* restrict x, global bool* restrict y, global int* restrict connections
 	, global float* restrict permeances, float initial_perm, global bool* restrict aux)
 {
@@ -27,8 +33,10 @@ kernel void growSynapses(constant int* restrict x, global bool* restrict y, glob
 		if(*(end-1) != -1) //If the last slot is not empty, we are full and we don't need to dod anything
 			continue;
 
+		#pragma unroll 4
 		for(int j=0;j<NUM_INPUT_BITS;j++)
 			connection_list[j] = false;
+
 		int synapse_end = MAX_SYNAPSE_PER_CELL;
 		for(int j=0;j<MAX_SYNAPSE_PER_CELL;j++) {
 			int idx = synapses[j];

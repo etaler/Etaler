@@ -14,7 +14,6 @@
 //global_size: Arbitrary
 //local_size:  Arbitrary, but prefer multipel of CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE
 //INPUT_SIZE: The size of input SDR, must be smaller then CL_DEVICE_LOCAL_MEMORY_SIZE
-
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 kernel void fastTopK(global int* restrict x, global int* restrict result, int k)
 {

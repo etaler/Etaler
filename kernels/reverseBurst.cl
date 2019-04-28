@@ -13,6 +13,9 @@ unsigned int random(int seed1, int seed2)
 	return seed2 ^ (seed2 >> 19) ^ (t ^ (t >> 8));
 }
 
+//CELLS_PER_COLUMN: number of cells in each column
+//NUM_COLUMNS: number of mini-coluumns
+//seed: seed for RNG
 kernel void reverseBurst(global bool* x, int seed1, int seed2)
 {
 	int global_size = get_global_size(0);

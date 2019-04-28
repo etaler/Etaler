@@ -68,6 +68,8 @@ void mergeSort(global unsigned int* restrict connections, global float* restrict
 	}
 }
 
+//CELLS_PER_COLUMN: number of cells in each column
+//aux_buffer: Buffer for tempory storage when sorting, must be the sizeof(int)*global_size[0]
 kernel void sortSynapse(global unsigned int* restrict connections, global float* restrict permeances, int num_cells
 	, global unsigned int* restrict aux_buffer1, global float* restrict aux_buffer2)
 {

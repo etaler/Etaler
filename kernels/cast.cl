@@ -6,6 +6,9 @@
 	#error OutType not defined
 #endif
 
+//InType: Input Type
+//OutType: OutputType
+//global_size: arbitrary
 kernel void cast(global InType* restrict x, global OutType* restrict y, int problem_size)
 {
 	int id = get_global_id(0);

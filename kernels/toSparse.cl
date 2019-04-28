@@ -1,5 +1,10 @@
-//Not used
+#ifndef INPUT_SIZE
+	#error "INPUT_SIZE not defined"
+#endif
 
+//INPUT_SIZE: The size of the input SDR
+//x: The input SDR
+//y:(output) How many bits in x in 1
 #pragma OPENCL EXTENSION cl_khr_local_int32_base_atomics : enable
 kernel void onBits(global bool* restrict x, global int* restrict y)
 {
@@ -17,7 +22,9 @@ kernel void onBits(global bool* restrict x, global int* restrict y)
 	*y = count;
 }
 
-
+//INPUT_SIZE: The size of the input SDR
+//x: The input SDR
+//y: (output) The sparse representation of x
 kernel void toSparse(global bool* restrict x, global int* restrict y)
 {
 	local int count;

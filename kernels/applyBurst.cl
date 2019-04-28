@@ -6,6 +6,9 @@
 	#error "NUM_COLUMNS is not defined"
 #endif
 
+//x: the input SDR
+//y: the output SDR
+//global_size: arbitrary
 kernel void applyBurst(global bool* restrict x, global bool* restrict y)
 {
 	int global_size = get_global_size(0);
