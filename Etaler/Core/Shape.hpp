@@ -10,21 +10,21 @@ namespace et
 {
 
 const constexpr unsigned shapeSmallVecSize = 4;
-class Shape : public SmallVector<intmax_t, shapeSmallVecSize>
+class Shape : public svector<intmax_t, shapeSmallVecSize>
 {
 public:
 	const static intmax_t None = -1;
-	Shape(std::initializer_list<intmax_t> l) : SmallVector<intmax_t, shapeSmallVecSize>(l)
+	Shape(std::initializer_list<intmax_t> l) : svector<intmax_t, shapeSmallVecSize>(l)
 	{
 	}
 
 	template<class InputIt>
 	Shape(InputIt first, InputIt last)
-		: SmallVector<intmax_t, shapeSmallVecSize>(first, last)
+		: svector<intmax_t, shapeSmallVecSize>(first, last)
 	{
 	}
 
-	Shape() : SmallVector<intmax_t, shapeSmallVecSize>()
+	Shape() : svector<intmax_t, shapeSmallVecSize>()
 	{}
 
 	intmax_t volume() const
