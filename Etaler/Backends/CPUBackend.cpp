@@ -33,6 +33,18 @@ void apply_permutation_in_place(
 	}
 }
 
+template <typename T>
+void apply_permutation(
+	const T* start,
+	const T* end,
+	T* dest,
+	const std::vector<std::size_t>& p)
+{
+	std::vector<T> sorted_vec(p.size());
+	std::transform(p.begin(), p.end(), dest,
+		[&](std::size_t i){ return start[i]; });
+}
+
 
 const void* CPUTensor::data() const
 {
@@ -294,7 +306,7 @@ std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 	static pcg64 rng; //Static so the behavor hangees every time, breaking symmetry
 	std::uniform_int_distribution<size_t> dist(0, cells_per_column-1);
 
-	auto y = copy(x);
+	auto y = createTensor(x->shape(), DType::Bool);
 
 	const bool* in = (const bool*) x->data();
 	bool* out = (bool*) y->data();
@@ -304,6 +316,8 @@ std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 			std::generate(out+i*cells_per_column, out+(i+1)*cells_per_column, [](){return 0;});
 			out[i*cells_per_column+dist(rng)] = 1;
 		}
+		else
+			std::copy(in+i*cells_per_column, in+(i+1)*cells_per_column, out+i*cells_per_column);
 	});
 	return y;
 
@@ -336,47 +350,57 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 	int32_t* conns = (int32_t*)connections->data();
 	float* perms = (float*)permeances->data();
 
+	std::vector<int> on_bits;
+	on_bits.reserve(x->size()*0.1);
+	for(size_t i=0;i<x->size();i++) {
+		if(in[i] == true)
+			on_bits.push_back(i);
+	}
+
 	tbb::parallel_for(size_t(0), y->size(), [&](size_t i) {
 		if(out[i] == 0)
 			return;
 
 		int32_t* synapses = conns+i*max_synapses_per_cell;
 		float* strengths = perms+i*max_synapses_per_cell;
-
 		int32_t* end = synapses+max_synapses_per_cell;
 
-		int32_t* it = synapses;
-		for(;it!=end && *it !=-1;it++);
+		if(*(end-1) != -1) //If there is no space for new synapse. Ignore
+			return;
+
+		int32_t* it = std::lower_bound(synapses, end, -1);
 		size_t avliable_space = end - it;
 		size_t used_space = it - synapses;
-		if(avliable_space == 0)
-			return;
 
 		size_t write_idx = it - synapses;
 		size_t read_idx = 0;
 
-		for(size_t j=0;avliable_space!=0 && j < input_cell_count;j++) {
-			if(in[j] == 0)
-				continue;
-
+		for(size_t j=0;avliable_space!=0 && j < on_bits.size();j++) {
 			bool connected = false;
 			for(;read_idx<used_space;read_idx++) {
-				if(synapses[read_idx] == (int)j) {
+				if(synapses[read_idx] == on_bits[j]) {
 					connected = true;
 					break;
 				}
-				if(synapses[read_idx] > (int)j)
+				if(synapses[read_idx] > on_bits[j])
 					break;
 			}
 
 			if(connected == false) {
-				synapses[write_idx] = j;
+				synapses[write_idx] = on_bits[j];
 				strengths[write_idx] = initial_perm;
 				avliable_space--;
 				write_idx++;
 			}
 		}
-	});
 
-	sortSynapse(connections, permeances);
+		std::vector<size_t> sort_indices(write_idx);
+		std::iota(sort_indices.begin(), sort_indices.begin()+write_idx, 0);
+		std::sort(sort_indices.begin(), sort_indices.begin()+write_idx,
+			[&](size_t i, size_t j)->bool {
+				return ((uint32_t*)synapses)[i] < ((uint32_t*)synapses)[j];
+			});
+		apply_permutation_in_place(synapses, synapses+write_idx, sort_indices);
+		apply_permutation_in_place(strengths, strengths+write_idx, sort_indices);
+	});
 }

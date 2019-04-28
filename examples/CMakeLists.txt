@@ -10,6 +10,10 @@ project(tmexample CXX)
 add_executable(tmexample tmexample.cpp)
 target_link_libraries(tmexample Etaler)
 
+project(tmbench CXX)
+add_executable(tmbench tmbench.cpp)
+target_link_libraries(tmbench Etaler)
+
 if(ETALER_ENABLE_OPENCL)
 	project(backend2backend CXX)
 	add_executable(backend2backend backend2backend.cpp)

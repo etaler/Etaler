@@ -29,7 +29,7 @@ struct TemporalMemory
 			active_cells = backend_->applyBurst(x, last_state);
 		else
 			active_cells = backend_->applyBurst(x, zeros(x.shape()+cells_per_column_, DType::Bool, backend_));
-		Tensor overlap = backend_->overlapScore(active_cells, connections_, permances_, 0.1, 1);
+		Tensor overlap = backend_->overlapScore(active_cells, connections_, permances_, 0.1, 3);
 		Tensor predictive_cells = backend_->cast(overlap, DType::Bool);
 		return {predictive_cells, active_cells};
 

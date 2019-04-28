@@ -24,10 +24,10 @@ Tensor sum(Tensor t)
 int main()
 {
 	size_t num_category = 3;
-	size_t bits_per_category = 1;
+	size_t bits_per_category = 5;
 
 	size_t sdr_size = bits_per_category*num_category;
-	TemporalMemory tm({(intmax_t)sdr_size}, 2, 2);
+	TemporalMemory tm({(intmax_t)sdr_size}, 2);
 
 	Tensor last_state;
 	for(size_t i=0;i<40;i++) {
