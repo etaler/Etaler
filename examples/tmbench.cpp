@@ -9,7 +9,7 @@ using namespace et;
 #include <chrono>
 #include <random>
 
-float benchmarkTemporalMemory(const Shape& out_shape, const std::vector<Tensor>& x, size_t num_epoch)
+float benchmarkTemporalMemory(const std::vector<Tensor>& x, size_t num_epoch)
 {
 	float time_used = 0;
 	for(size_t i=0;i<num_epoch;i++) {
@@ -23,6 +23,7 @@ float benchmarkTemporalMemory(const Shape& out_shape, const std::vector<Tensor>&
 			tm.learn(active, last_state);
 			last_state = active;
 		}
+		defaultBackend()->sync();
 
 		auto t1 = std::chrono::high_resolution_clock::now();
 
@@ -57,7 +58,7 @@ int main()
 	for(auto input_len : input_size) {
 		auto input_data = generateRandomData(input_len, num_data);
 
-		float t = benchmarkTemporalMemory({(int)input_len}, input_data, 1);
+		float t = benchmarkTemporalMemory(input_data, 1);
 		std::cout << input_len << " bits per SDR, " << t/num_data*1000 << "ms per forward" << std::endl;
 		//std::cout << input_len << "," << t/num_data*1000 << std::endl;
 	}
