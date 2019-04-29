@@ -10,12 +10,19 @@ using namespace et;
 int main()
 {
 	//Create a SP that takes in 128 input bits and generates 32 bit representation
-	SpatialPooler sp({128}, {32});
+	/*SpatialPooler sp({128}, {32});
 
 	//Encode the value 0.1 into a 32 bit SDR
 	Tensor x = encoder::scalar(0.1, 0, 1, 128, 12);
 
 	std::cout << sp.compute(x) << std::endl;
 
-	auto state = sp.states();
+	auto state = sp.states();*/
+
+	Tensor t = zeros({4,4});
+	Tensor q = t.reshape({16});
+	q = ones({4});
+	Tensor r = defaultBackend()->realize(q);
+
+	std::cout << r << std::endl;
 }

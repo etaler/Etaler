@@ -6,6 +6,7 @@
 #include "TensorImpl.hpp"
 #include "Error.hpp"
 #include "DefaultBackend.hpp"
+#include "Views.hpp"
 
 namespace et
 {
@@ -25,6 +26,8 @@ struct Tensor
 {
 	Tensor() = default;
 	Tensor(std::shared_ptr<TensorImpl> pimpl)
+		: pimpl_(std::move(pimpl)) {}
+	Tensor(std::shared_ptr<ViewTensor> pimpl)
 		: pimpl_(std::move(pimpl)) {}
 
 	void* data() {return call_const(data);}
@@ -66,6 +69,14 @@ struct Tensor
 	operator const TensorImpl* () const {return pimpl();}
 
 	bool has_value() const {return (bool)pimpl_;}
+
+	Tensor reshape(Shape shape) const
+	{
+		if(size() != (size_t)shape.volume())
+			EtError("Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
+		return std::make_shared<ViewTensor>(pimpl_, shape, ReshapeView{shape});
+	}
+
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };

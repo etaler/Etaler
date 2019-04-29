@@ -1,4 +1,5 @@
 #include "CPUBackend.hpp"
+#include "Etaler/Core/Views.hpp"
 #include "Etaler/Core/Random.hpp"
 
 #include <numeric>
@@ -404,4 +405,106 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 		apply_permutation_in_place(synapses, synapses+write_idx, sort_indices);
 		apply_permutation_in_place(strengths, strengths+write_idx, sort_indices);
 	});
+}
+
+template <typename Op>
+void ndIter(const Shape& s, Op op, Shape current=Shape())
+{
+	if(current.size() == s.size())
+		op(current);
+	else {
+		size_t idx = current.size();
+		for(intmax_t i=0;i<s[idx];i++) {
+			Shape next = current + i;
+			ndIter(s, op, next);
+		}
+	}
+}
+
+template <typename IdxType, typename ShapeType>
+inline size_t unfoldIndex(const IdxType& index, const ShapeType& shape)
+{
+	size_t s = 0;
+	size_t v = 1;
+	assert(index.size() == shape.size());
+	for(int i=(int)index.size()-1;i>=0;i--) {
+		v *= (i==(int)index.size()-1?1:shape[i+1]);
+		s += index[i] * v;
+	}
+
+	return s;
+}
+
+template <typename ShapeType>
+Shape foldIndex(size_t index, const ShapeType& shape)
+{
+	assert(shape.size() != 0);
+	Shape v;
+	v.resize(shape.size());
+	size_t acc = 1;
+	for(int i=(int)shape.size()-1;i>=0;i--) {
+		acc *= shape[i];
+		v[i] = acc;
+	}
+	Shape res;
+	res.resize(v.size());
+	for(size_t i=1;i<v.size();i++) {
+		res[i-1] = index/v[i];
+		index = index%v[i];
+	}
+	res.back() = index;
+	return res;
+}
+
+template <typename T>
+T getValue(const Shape& s, const TensorImpl* t)
+{
+	if(points_to<const CPUTensor>(t) == true) {
+		const T* ptr = (const T*) t->data();
+		return ptr[unfoldIndex(s, t->shape())];
+	}
+
+	et_assert(points_to<const ViewTensor>(t) == true);
+	T value;
+	std::visit([&](const auto& view) {
+		Shape parent_loc;
+		const TensorImpl* parent = reinterpret_cast<const ViewTensor*>(t)->parent_.get();
+		using ViewType = std::decay_t<decltype(view)>;
+		if constexpr(std::is_same_v<ViewType, ReshapeView>)
+			parent_loc = foldIndex(unfoldIndex(s, t->shape()), parent->shape());
+		else
+			throw EtError("Not supported");
+
+		value = getValue<T>(parent_loc, parent);
+
+	}, reinterpret_cast<const ViewTensor*>(t)->view_);
+
+	return value;
+
+}
+
+std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
+{
+	if(points_to<const CPUTensor>(x) == true)
+		return copy(x);
+	if(points_to<const ViewTensor>(x) == false)
+		throw EtError("Cannot realize tensor, not a CPUTensor or ViewTensor");
+	auto res = createTensor(x->shape(), x->dtype());
+	ndIter(x->shape(), [&](const Shape& idx) {
+		if(x->dtype() == DType::Int32) {
+			auto ptr = (int32_t*)res->data();
+			ptr[unfoldIndex(idx, res->shape())] = getValue<int32_t>(idx, x);
+		}
+		else if(x->dtype() == DType::Float) {
+			auto ptr = (float*)res->data();
+			ptr[unfoldIndex(idx, res->shape())] = getValue<float>(idx, x);
+		}
+		else if(x->dtype() == DType::Bool) {
+			auto ptr = (uint8_t*)res->data();
+			ptr[unfoldIndex(idx, res->shape())] = getValue<uint8_t>(idx, x);
+		}
+		else
+			throw EtError("Cannot realize such dtype");
+	});
+	return res;
 }
