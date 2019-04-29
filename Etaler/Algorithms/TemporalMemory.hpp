@@ -29,7 +29,7 @@ struct TemporalMemory
 	size_t activeThreshold() const { return active_threshold_; }
 
 	size_t cells_per_column_;
-	float connected_permance_ = 0.21;
+	float connected_permance_ = 0.1;
 	size_t active_threshold_ = 2;
 	float permance_inc_ = 0.1;
 	float permance_dec_ = 0.1;
