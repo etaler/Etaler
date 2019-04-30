@@ -80,28 +80,32 @@ std::shared_ptr<TensorImpl> CPUBackend::overlapScore(const TensorImpl* x, const 
 	size_t max_connections_per_cell = connections->shape().back();
 	size_t num_cells = connections->size()/max_connections_per_cell;
 
-	tbb::parallel_for(size_t(0), num_cells, [&](size_t i) {
-		size_t sum = 0;
-		for(size_t j=0;j<max_connections_per_cell;j++) {
-			size_t index = i*max_connections_per_cell+j;
-			int32_t target = synapses[index];
 
-			if(target == -1)
-				break;
+	size_t block_size = std::min(size_t(16), (size_t)num_cells);
+	tbb::parallel_for(tbb::blocked_range<size_t>(size_t(0), num_cells, block_size), [&](const auto& r) {
+		for(size_t i=r.begin();i!=r.end();i++) {
+			size_t sum = 0;
+			for(size_t j=0;j<max_connections_per_cell;j++) {
+				size_t index = i*max_connections_per_cell+j;
+				int32_t target = synapses[index];
 
-			assert(target < (int32_t)x->size());
+				if(target == -1)
+					break;
 
-			if(input[target] == false)
-				continue;
+				assert(target < (int32_t)x->size());
 
-			float strength = synapse_strengths[index];
-			if(strength > connected_permeance)
-				sum += 1;
+				if(input[target] == false)
+					continue;
+
+				float strength = synapse_strengths[index];
+				if(strength > connected_permeance)
+					sum += 1;
+			}
+			if(sum >= active_threshold)
+				result[i] = sum;
+			else
+				result[i] = 0;
 		}
-		if(sum >= active_threshold)
-			result[i] = sum;
-		else
-			result[i] = 0;
 	});
 
 	return y;
