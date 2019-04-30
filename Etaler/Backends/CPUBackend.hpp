@@ -21,11 +21,11 @@ struct CPUTensor : public TensorImpl
 		dtype_ = dtype;
 
 		if(dtype == DType::Bool)
-			storage_ = std::vector<uint8_t>(shape.volume());
+			storage_ = new bool[shape.volume()];
 		else if(dtype == DType::Int32)
-			storage_ = std::vector<int32_t>(shape.volume());
+			storage_ = new int32_t[shape.volume()];
 		else if(dtype == DType::Float)
-			storage_ = std::vector<float>(shape.volume());
+			storage_ = new float[shape.volume()];
 		else
 			std::cerr << "Critical Warning: CPUTensor Initialize failed. Unknown DType" << std::endl;
 	}
@@ -40,11 +40,13 @@ struct CPUTensor : public TensorImpl
 			memcpy(ptr, src_ptr, shape.volume()*dtypeToSize(dtype));
 	}
 
+	virtual ~CPUTensor() {std::visit([](auto& ptr){delete [] ptr;}, storage_);}
+
 	virtual const void* data() const override;
 	virtual void* data() override {return call_const(data);}
 
 protected:
-	std::variant<std::vector<uint8_t>, std::vector<int32_t>, std::vector<float>> storage_;
+	std::variant<bool*, int32_t*, float*> storage_;
 };
 
 struct CPUBackend : public Backend

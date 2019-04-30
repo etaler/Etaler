@@ -50,7 +50,7 @@ void apply_permutation(
 const void* CPUTensor::data() const
 {
 	assert(dtype() != DType::Unknown);
-	return std::visit([](const auto& v){return (const void*)v.data();}, storage_);
+	return std::visit([](const auto& v){return (const void*)v;}, storage_);
 }
 
 std::shared_ptr<TensorImpl> CPUBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances
@@ -85,14 +85,17 @@ std::shared_ptr<TensorImpl> CPUBackend::overlapScore(const TensorImpl* x, const 
 		for(size_t j=0;j<max_connections_per_cell;j++) {
 			size_t index = i*max_connections_per_cell+j;
 			int32_t target = synapses[index];
-			float strength = synapse_strengths[index];
 
 			if(target == -1)
 				break;
 
 			assert(target < (int32_t)x->size());
 
-			if(input[target] == 1 && strength > connected_permeance)
+			if(input[target] == false)
+				continue;
+
+			float strength = synapse_strengths[index];
+			if(strength > connected_permeance)
 				sum += 1;
 		}
 		if(sum >= active_threshold)
@@ -359,51 +362,54 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 			on_bits.push_back(i);
 	}
 
-	tbb::parallel_for(size_t(0), y->size(), [&](size_t i) {
-		if(out[i] == 0)
-			return;
+	size_t block_size = std::min(size_t(16), (size_t)y->shape().back());
+	tbb::parallel_for(tbb::blocked_range<size_t>(size_t(0), y->size(), block_size), [&](const auto& r) {
+		for(size_t i=r.begin();i!=r.end();i++) {
+			if(out[i] == 0)
+				return;
 
-		int32_t* synapses = conns+i*max_synapses_per_cell;
-		float* strengths = perms+i*max_synapses_per_cell;
-		int32_t* end = synapses+max_synapses_per_cell;
+			int32_t* synapses = conns+i*max_synapses_per_cell;
+			float* strengths = perms+i*max_synapses_per_cell;
+			int32_t* end = synapses+max_synapses_per_cell;
 
-		if(*(end-1) != -1) //If there is no space for new synapse. Ignore
-			return;
+			if(synapses[max_synapses_per_cell-1] != -1) //If there is no space for new synapse. Ignore
+				return;
 
-		int32_t* it = std::lower_bound(synapses, end, -1);
-		size_t avliable_space = end - it;
-		size_t used_space = it - synapses;
+			int32_t* it = std::lower_bound(synapses, end, -1);
+			size_t avliable_space = end - it;
+			size_t used_space = it - synapses;
 
-		size_t write_idx = it - synapses;
-		size_t read_idx = 0;
+			size_t write_idx = it - synapses;
+			size_t read_idx = 0;
 
-		for(size_t j=0;avliable_space!=0 && j < on_bits.size();j++) {
-			bool connected = false;
-			for(;read_idx<used_space;read_idx++) {
-				if(synapses[read_idx] == on_bits[j]) {
-					connected = true;
-					break;
+			for(size_t j=0;avliable_space!=0 && j < on_bits.size();j++) {
+				bool connected = false;
+				for(;read_idx<used_space;read_idx++) {
+					if(synapses[read_idx] == on_bits[j]) {
+						connected = true;
+						break;
+					}
+					if(synapses[read_idx] > on_bits[j])
+						break;
 				}
-				if(synapses[read_idx] > on_bits[j])
-					break;
+
+				if(connected == false) {
+					synapses[write_idx] = on_bits[j];
+					strengths[write_idx] = initial_perm;
+					avliable_space--;
+					write_idx++;
+				}
 			}
 
-			if(connected == false) {
-				synapses[write_idx] = on_bits[j];
-				strengths[write_idx] = initial_perm;
-				avliable_space--;
-				write_idx++;
-			}
+			std::vector<size_t> sort_indices(write_idx);
+			std::iota(sort_indices.begin(), sort_indices.begin()+write_idx, 0);
+			std::sort(sort_indices.begin(), sort_indices.begin()+write_idx,
+				[&](size_t i, size_t j)->bool {
+					return ((uint32_t*)synapses)[i] < ((uint32_t*)synapses)[j];
+				});
+			apply_permutation_in_place(synapses, synapses+write_idx, sort_indices);
+			apply_permutation_in_place(strengths, strengths+write_idx, sort_indices);
 		}
-
-		std::vector<size_t> sort_indices(write_idx);
-		std::iota(sort_indices.begin(), sort_indices.begin()+write_idx, 0);
-		std::sort(sort_indices.begin(), sort_indices.begin()+write_idx,
-			[&](size_t i, size_t j)->bool {
-				return ((uint32_t*)synapses)[i] < ((uint32_t*)synapses)[j];
-			});
-		apply_permutation_in_place(synapses, synapses+write_idx, sort_indices);
-		apply_permutation_in_place(strengths, strengths+write_idx, sort_indices);
 	});
 }
 
