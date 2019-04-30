@@ -17,7 +17,8 @@ int main()
 
 	std::cout << sp.compute(x) << std::endl;
 
-	auto state = sp.states();*/
+	auto state = sp.states();
+	sp.loadState(state);*/
 
 	Tensor t = zeros({4,4});
 	Tensor q = t.reshape({16});
