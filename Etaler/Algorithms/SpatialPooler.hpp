@@ -51,6 +51,7 @@ struct SpatialPooler
 			, {"global_density", global_density_}};
 	}
 
+	void loadState(const StateDict& states);
 protected:
 	float permance_inc_ = 0.1;
 	float permance_dec_ = 0.1;

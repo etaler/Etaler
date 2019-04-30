@@ -57,3 +57,18 @@ Tensor SpatialPooler::compute(const Tensor& x) const
 
 	return res;
 }
+
+void SpatialPooler::loadState(const StateDict& states)
+{
+	permance_inc_ = std::any_cast<float>(states.at("permance_inc"));
+	permance_dec_ = std::any_cast<float>(states.at("permance_dec"));
+	connected_permance_ = std::any_cast<float>(states.at("connected_permance"));
+	active_threshold_ = std::any_cast<int>(states.at("active_threshold"));
+	global_density_ = std::any_cast<float>(states.at("global_density"));
+	input_shape_ = std::any_cast<Shape>(states.at("input_shape"));
+	output_shape_ = std::any_cast<Shape>(states.at("output_shape"));
+	connections_ = std::any_cast<Tensor>(states.at("connections"));
+	permances_ = std::any_cast<Tensor>(states.at("permances"));
+
+	backend_ = connections_.backend();
+}

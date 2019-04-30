@@ -18,4 +18,5 @@ int main()
 	std::cout << sp.compute(x) << std::endl;
 
 	auto state = sp.states();
+	sp.loadState(state);
 }
