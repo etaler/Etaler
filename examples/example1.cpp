@@ -21,9 +21,7 @@ int main()
 	sp.loadState(state);*/
 
 	Tensor t = zeros({4,4});
-	Tensor q = t.reshape({16});
-	q = ones({4});
-	Tensor r = defaultBackend()->realize(q);
+	Tensor q = t.view({2,2});
 
-	std::cout << r << std::endl;
+	std::cout << q << std::endl;
 }

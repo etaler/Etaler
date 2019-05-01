@@ -428,47 +428,13 @@ void ndIter(const Shape& s, Op op, Shape current=Shape())
 	}
 }
 
-template <typename IdxType, typename ShapeType>
-inline size_t unfoldIndex(const IdxType& index, const ShapeType& shape)
-{
-	size_t s = 0;
-	size_t v = 1;
-	assert(index.size() == shape.size());
-	for(int i=(int)index.size()-1;i>=0;i--) {
-		v *= (i==(int)index.size()-1?1:shape[i+1]);
-		s += index[i] * v;
-	}
-
-	return s;
-}
-
-template <typename ShapeType>
-Shape foldIndex(size_t index, const ShapeType& shape)
-{
-	assert(shape.size() != 0);
-	Shape v;
-	v.resize(shape.size());
-	size_t acc = 1;
-	for(int i=(int)shape.size()-1;i>=0;i--) {
-		acc *= shape[i];
-		v[i] = acc;
-	}
-	Shape res;
-	res.resize(v.size());
-	for(size_t i=1;i<v.size();i++) {
-		res[i-1] = index/v[i];
-		index = index%v[i];
-	}
-	res.back() = index;
-	return res;
-}
-
 template <typename T>
-T getValue(const Shape& s, const TensorImpl* t)
+T getValue(const Shape& location, const TensorImpl* t)
 {
+	assert(t->dimentions() == location.size());
 	if(points_to<const CPUTensor>(t) == true) {
 		const T* ptr = (const T*) t->data();
-		return ptr[unfoldIndex(s, t->shape())];
+		return ptr[unfoldIndex(location, t->shape())];
 	}
 
 	et_assert(points_to<const ViewTensor>(t) == true);
@@ -477,10 +443,13 @@ T getValue(const Shape& s, const TensorImpl* t)
 		Shape parent_loc;
 		const TensorImpl* parent = reinterpret_cast<const ViewTensor*>(t)->parent_.get();
 		using ViewType = std::decay_t<decltype(view)>;
-		if constexpr(std::is_same_v<ViewType, ReshapeView>)
-			parent_loc = foldIndex(unfoldIndex(s, t->shape()), parent->shape());
+		if constexpr(std::is_same_v<ViewType, RectangularView>) {
+			parent_loc = foldIndex(unfoldIndex(location, t->shape()), parent->shape());
+			for(size_t i=0;i<parent_loc.size();i++)
+				parent_loc[i] += view.start()[i];
+		}
 		else if constexpr(std::is_same_v<ViewType, RawView>)
-			parent_loc = s;
+			parent_loc = location;
 		else
 			throw EtError("Not supported");
 

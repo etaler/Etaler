@@ -74,7 +74,46 @@ struct Tensor
 	{
 		if(size() != (size_t)shape.volume())
 			EtError("Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
-		return std::make_shared<ViewTensor>(pimpl_, shape, ReshapeView{shape});
+		return std::make_shared<ViewTensor>(pimpl_, shape, RectangularView(shape));
+	}
+
+	Tensor view(svector<RangeIndex> ranges) const
+	{
+		if(ranges.size() > dimentions())
+			throw EtError("Cannot view a tensor of " + std::to_string(dimentions()) + " with " + std::to_string(ranges.size()) + " dimentions");
+
+		while(ranges.size() != dimentions())
+			ranges.push_back(all());
+		Shape view_shape;
+		Shape result_shape;
+		svector<intmax_t> offset;
+
+		for(size_t i=0;i<dimentions();i++)  {
+			RangeIndex r = ranges[i];
+			offset.push_back(r.start());
+			intmax_t size;
+			if(r.countFromBack() == false)
+				size = r.end() - r.start();
+			else
+				size = (shape()[i] - r.end()) - r.start();
+
+			et_assert(size > 0);
+
+			if(size != 1 || result_shape.size() != 0)
+				result_shape.push_back(size);
+		}
+		if(result_shape.size() == 0)
+			result_shape.push_back(1);
+
+		view_shape = result_shape;
+		if(view_shape.size() < dimentions()) {
+			Shape s;
+			s.resize(dimentions() - view_shape.size());
+			for(auto v : view_shape)
+				s.push_back(v);
+			view_shape = s;
+		}
+		return std::make_shared<ViewTensor>(pimpl_, result_shape, RectangularView(offset, view_shape));
 	}
 
 protected:
@@ -115,7 +154,7 @@ Tensor constant(const Shape& shape, T value, Backend* backend=defaultBackend())
 Tensor zeros(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
 Tensor ones(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
 
-Tensor attempt_realize(const Tensor& t)
+inline Tensor attempt_realize(const Tensor& t)
 {
 	if(points_to<const ViewTensor>(t.pimpl()) == false)
 		return t;

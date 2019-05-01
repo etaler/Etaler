@@ -73,15 +73,17 @@ std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 		return os;
 	}
 
-	const void* ptr = t.data();
+	Tensor q = attempt_realize(t);
+
+	const void* ptr = q.data();
 	if(ptr == nullptr) {
-		void* buffer = malloc(t.size()*dtypeToSize(t.dtype()));
-		t.backend()->copyToHost(t.pimpl(), buffer);
-		printNDArray(os, buffer, t.shape(), t.dtype());
+		void* buffer = malloc(q.size()*dtypeToSize(q.dtype()));
+		q.backend()->copyToHost(q.pimpl(), buffer);
+		printNDArray(os, buffer, q.shape(), q.dtype());
 		free(buffer);
 	}
 	else
-		printNDArray(os, ptr, t.shape(), t.dtype());
+		printNDArray(os, ptr, q.shape(), q.dtype());
 
 	return os;
 }
