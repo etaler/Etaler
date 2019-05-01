@@ -115,4 +115,11 @@ Tensor constant(const Shape& shape, T value, Backend* backend=defaultBackend())
 Tensor zeros(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
 Tensor ones(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
 
+Tensor attempt_realize(const Tensor& t)
+{
+	if(points_to<const ViewTensor>(t.pimpl()) == false)
+		return t;
+	return t.backend()->realize(t);
+}
+
 }

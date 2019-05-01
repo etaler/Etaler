@@ -81,7 +81,7 @@ std::shared_ptr<TensorImpl> CPUBackend::overlapScore(const TensorImpl* x, const 
 	size_t num_cells = connections->size()/max_connections_per_cell;
 
 
-	size_t block_size = std::min(size_t(16), (size_t)num_cells);
+	size_t block_size = std::min(size_t(128), (size_t)num_cells);
 	tbb::parallel_for(tbb::blocked_range<size_t>(size_t(0), num_cells, block_size), [&](const auto& r) {
 		for(size_t i=r.begin();i!=r.end();i++) {
 			size_t sum = 0;
@@ -345,7 +345,6 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 
-	et_assert(x->shape() == y->shape());
 	et_assert(connections->shape() == permeances->shape());
 	Shape s = connections->shape();
 	s.pop_back();
@@ -380,13 +379,12 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 				return;
 
 			int32_t* it = std::lower_bound(synapses, end, -1);
-			size_t avliable_space = end - it;
 			size_t used_space = it - synapses;
 
 			size_t write_idx = it - synapses;
 			size_t read_idx = 0;
 
-			for(size_t j=0;avliable_space!=0 && j < on_bits.size();j++) {
+			for(size_t j=0;write_idx!=max_synapses_per_cell && j < on_bits.size();j++) {
 				bool connected = false;
 				for(;read_idx<used_space;read_idx++) {
 					if(synapses[read_idx] == on_bits[j]) {
@@ -400,7 +398,6 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 				if(connected == false) {
 					synapses[write_idx] = on_bits[j];
 					strengths[write_idx] = initial_perm;
-					avliable_space--;
 					write_idx++;
 				}
 			}
@@ -482,6 +479,8 @@ T getValue(const Shape& s, const TensorImpl* t)
 		using ViewType = std::decay_t<decltype(view)>;
 		if constexpr(std::is_same_v<ViewType, ReshapeView>)
 			parent_loc = foldIndex(unfoldIndex(s, t->shape()), parent->shape());
+		else if constexpr(std::is_same_v<ViewType, RawView>)
+			parent_loc = s;
 		else
 			throw EtError("Not supported");
 

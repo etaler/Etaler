@@ -17,7 +17,13 @@ struct ReshapeView
 	Shape new_shape;
 };
 
-using TensorView = std::variant<RawView, ReshapeView>;
+struct RectangularView
+{
+	Shape start;
+	Shape size;
+};
+
+using TensorView = std::variant<RawView, ReshapeView, RectangularView>;
 
 struct ViewTensor : public TensorImpl
 {
