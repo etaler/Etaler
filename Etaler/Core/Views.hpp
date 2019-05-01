@@ -111,7 +111,7 @@ struct Range
 	Range(intmax_t start, intmax_t end, bool start_from_back, bool end_from_back)
 	{
 		start_ = start;
-		et_assert(end > 0);
+		et_assert(end >= 0);
 		end_ = end;
 		start_from_back_ = start_from_back;
 		end_from_back_ = end_from_back;

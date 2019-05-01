@@ -73,7 +73,7 @@ struct Tensor
 	Tensor reshape(Shape shape) const
 	{
 		if(size() != (size_t)shape.volume())
-			EtError("Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
+			throw EtError("Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
 		return std::make_shared<ViewTensor>(pimpl_, shape, RectangularView(shape));
 	}
 
@@ -103,11 +103,15 @@ struct Tensor
 		for(size_t i=0;i<dimentions();i++)  {
 			Range r = ranges[i];
 
-			offset.push_back(resolve_index(r.start(), r.startFromBack(), shape()[i]));
+			intmax_t start = resolve_index(r.start(), r.startFromBack(), shape()[i]);
 			intmax_t size = resolve_range_size(r, shape()[i]);
 
-			et_assert(size > 0, "Negative steps not supported now");
+			if(size < 0)
+				throw EtError("Negative steps not supported now");
+			if(start < 0 || (start+size) > shape()[i])
+				throw EtError("Indexing from " + std::to_string(start+size) + " is out of the range of " + std::to_string(shape()[i]));
 
+			offset.push_back(start);
 			if(size != 1 || result_shape.size() != 0)
 				result_shape.push_back(size);
 		}

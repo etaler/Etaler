@@ -2,16 +2,16 @@
 #include "catch2/catch.hpp"
 
 
-#include <Etaler/Backends/OpenCLBackend.hpp>
+//#include <Etaler/Backends/OpenCLBackend.hpp>
 #include <Etaler/Backends/CPUBackend.hpp>
 #include <Etaler/Core/DefaultBackend.hpp>
 
 int main( int argc, char* argv[] )
 {
-	auto backend = std::make_shared<et::OpenCLBackend>();
-	et::setDefaultBackend(backend.get());
+	//auto backend = std::make_shared<et::OpenCLBackend>();
+	//et::setDefaultBackend(backend.get());
 
-	std::cout << "Running with backend: " << backend->name() << std::endl;
+	std::cout << "Running with backend: " << et::defaultBackend()->name() << std::endl;
 
 	int result = Catch::Session().run( argc, argv );
 

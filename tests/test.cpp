@@ -66,6 +66,32 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(t.isSame(r));
 		CHECK(q.isSame(r));
 	}
+
+	SECTION("Views") {
+		std::vector<int> data(16);
+		for(size_t i=0;i<data.size();i++)
+			data[i] = i;
+		Tensor t = createTensor({4,4}, DType::Int32, data.data());
+
+		SECTION("Reshape") {
+			CHECK_THROWS(t.reshape({4}));
+
+			CHECK_NOTHROW(t.reshape({16}));
+			Tensor q;
+			CHECK_NOTHROW(q = t.reshape({4, 4}));
+
+			CHECK(attempt_realize(q).isSame(t));
+		}
+
+		SECTION("Basic indexing/view") {
+			CHECK_THROWS(t.view({0,0,0,0,0}));
+			CHECK_THROWS(t.view({300}));
+			CHECK_THROWS(t.view({0, 300}));
+
+			Tensor q = t.view({2,2});
+			CHECK(attempt_realize(q).toHost<int32_t>()[0] == 10);
+		}
+	}
 }
 
 TEST_CASE("Testing Encoders", "[Encoder]")
@@ -224,6 +250,7 @@ TEST_CASE("Backend functions", "[Backend]")
 		Tensor y = createTensor({2}, DType::Bool, in); //the same for test
 
 		defaultBackend()->growSynapses(x, y, s, p, 0.21);
+		defaultBackend()->sortSynapse(s, p);
 
 		int32_t pred[] = {0,1 ,0,1};
 		Tensor pred_conn = createTensor({2,2}, DType::Int32, pred);
