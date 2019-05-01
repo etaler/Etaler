@@ -77,27 +77,36 @@ struct Tensor
 		return std::make_shared<ViewTensor>(pimpl_, shape, RectangularView(shape));
 	}
 
-	Tensor view(svector<RangeIndex> ranges) const
+	Tensor view(svector<Range> ranges) const
 	{
 		if(ranges.size() > dimentions())
 			throw EtError("Cannot view a tensor of " + std::to_string(dimentions()) + " with " + std::to_string(ranges.size()) + " dimentions");
 
 		while(ranges.size() != dimentions())
 			ranges.push_back(all());
+
+		auto resolve_index = [](intmax_t idx, bool from_back, intmax_t size) {
+			if(from_back == true)
+				return size-idx;
+			else
+				return idx;
+		};
+
+		auto resolve_range_size = [&](Range r, intmax_t size) {
+			return resolve_index(r.end(), r.endFromBack(), size) - resolve_index(r.start(), r.startFromBack(), size);
+		};
+
 		Shape view_shape;
 		Shape result_shape;
 		svector<intmax_t> offset;
 
 		for(size_t i=0;i<dimentions();i++)  {
-			RangeIndex r = ranges[i];
-			offset.push_back(r.start());
-			intmax_t size;
-			if(r.countFromBack() == false)
-				size = r.end() - r.start();
-			else
-				size = (shape()[i] - r.end()) - r.start();
+			Range r = ranges[i];
 
-			et_assert(size > 0);
+			offset.push_back(resolve_index(r.start(), r.startFromBack(), shape()[i]));
+			intmax_t size = resolve_range_size(r, shape()[i]);
+
+			et_assert(size > 0, "Negative steps not supported now");
 
 			if(size != 1 || result_shape.size() != 0)
 				result_shape.push_back(size);

@@ -83,57 +83,66 @@ struct ViewTensor : public TensorImpl
 	TensorView view_;
 };
 
-struct RangeIndex
+struct Range
 {
-	RangeIndex() = default;
-	RangeIndex(intmax_t start)
+	Range() = default;
+	Range(intmax_t start)
 	{
 		start_ = start;
 		end_ = start+1;
-		count_from_back_ = false;
 	}
 
-	RangeIndex(intmax_t start, intmax_t end)
+	Range(intmax_t start, intmax_t end)
 	{
 		start_ = start;
 		end_ = end;
-		if (end < 0) {
-			count_from_back_ = true;
+
+		if (start < 0) {
+			start_from_back_ = true;
 			end = -end;
 		}
-		else
-			count_from_back_ = false;
+
+		if (end < 0) {
+			end_from_back_ = true;
+			end = -end;
+		}
 	}
 
-	RangeIndex(intmax_t start, intmax_t end, bool count_from_back)
+	Range(intmax_t start, intmax_t end, bool start_from_back, bool end_from_back)
 	{
 		start_ = start;
+		et_assert(end > 0);
 		end_ = end;
-		count_from_back_ = count_from_back;
+		start_from_back_ = start_from_back;
+		end_from_back_ = end_from_back;
 	}
 
 	intmax_t start() const {return start_;}
 	intmax_t end() const {return end_;}
-	bool countFromBack() const {return count_from_back_;}
+	bool startFromBack() const {return start_from_back_;}
+	bool endFromBack() const {return end_from_back_;}
 
+protected:
 	intmax_t start_ = 0;
+	bool start_from_back_ = false;
 	intmax_t end_ = 0;
-	bool count_from_back_ = true;
+	bool end_from_back_ = false;
+	//intmax_t step_size_ = 1;
 };
 
-inline RangeIndex all()
+inline Range all()
 {
-	return RangeIndex(0, 0, true);
+	return Range(0, 0, false, true);
 }
 
-inline RangeIndex range(intmax_t start, intmax_t end)
+inline Range range(intmax_t start, intmax_t end)
 {
-	return RangeIndex(start, end);
+	return Range(start, end);
 }
 
-inline RangeIndex range(intmax_t end)
+inline Range range(intmax_t end)
 {
-	return RangeIndex(0, end);
+	return Range(0, end);
 }
 
 
