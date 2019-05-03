@@ -135,6 +135,11 @@ struct Tensor
 		return std::make_shared<ViewTensor>(pimpl_, view_shape, RectangularView(view_shape));
 	}
 
+	void assign(const Tensor& source)
+	{
+		backend()->assign(pimpl(), source.pimpl());
+	}
+
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };

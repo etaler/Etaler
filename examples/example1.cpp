@@ -20,8 +20,8 @@ int main()
 	auto state = sp.states();
 	sp.loadState(state);*/
 
-	auto backend = std::make_shared<OpenCLBackend>();
-	setDefaultBackend(backend);
+	//auto backend = std::make_shared<OpenCLBackend>();
+	//setDefaultBackend(backend);
 
 	std::vector<int> data(16);
 	for(size_t i=0;i<data.size();i++)
@@ -29,6 +29,8 @@ int main()
 	Tensor t = createTensor({4,4}, DType::Int32, data.data());
 
 	Tensor q = t.view({range(2),range(2)});
-	std::cout << q.size() << std::endl;
-	std::cout << attempt_realize(q) << std::endl;
+	Tensor r = ones({2,2});
+	q.assign(r);
+	//std::cout << q.size() << std::endl;
+	std::cout << attempt_realize(t) << std::endl;
 }

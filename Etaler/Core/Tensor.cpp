@@ -41,6 +41,7 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 	intmax_t vol = shape.volume();
 
 	size_t val = 0;
+	//TODO: Print spaces to align the text
 	os << "{";
 	for(intmax_t i=0;i<size;i++) {
 		//Print the data recursivelly

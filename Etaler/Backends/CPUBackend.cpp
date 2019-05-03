@@ -429,17 +429,16 @@ void ndIter(const Shape& s, Op op, Shape current=Shape())
 }
 
 template <typename T>
-T getValue(size_t parent_idx, const TensorImpl* t)
+const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 {
 	assert(t->dimentions() == location.size());
 	if(points_to<const CPUTensor>(t) == true) {
 		const T* ptr = (const T*) t->data();
-		return ptr[parent_idx];
+		return &ptr[parent_idx];
 	}
 
 	et_assert(points_to<const ViewTensor>(t) == true);
-	T value;
-	std::visit([&](const auto& view) {
+	return std::visit([&](const auto& view) {
 		const TensorImpl* parent = reinterpret_cast<const ViewTensor*>(t)->parent_.get();
 		using ViewType = std::decay_t<decltype(view)>;
 		if constexpr(std::is_same_v<ViewType, RectangularView>) {
@@ -456,12 +455,9 @@ T getValue(size_t parent_idx, const TensorImpl* t)
 		else
 			throw EtError("Not supported");
 
-		value = getValue<T>(parent_idx, parent);
+		return getPtrToValue<T>(parent_idx, parent);
 
 	}, reinterpret_cast<const ViewTensor*>(t)->view_);
-
-	return value;
-
 }
 
 std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
@@ -475,18 +471,50 @@ std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 	for(size_t i=0;i<x->size();i++) {
 		if(x->dtype() == DType::Int32) {
 			auto ptr = (int32_t*)res->data();
-			ptr[i] = getValue<int32_t>(i, x);
+			ptr[i] = *getPtrToValue<int32_t>(i, x);
 		}
 		else if(x->dtype() == DType::Float) {
 			auto ptr = (float*)res->data();
-			ptr[i] = getValue<float>(i, x);
+			ptr[i] = *getPtrToValue<float>(i, x);
 		}
 		else if(x->dtype() == DType::Bool) {
 			auto ptr = (uint8_t*)res->data();
-			ptr[i] = getValue<uint8_t>(i, x);
+			ptr[i] = *getPtrToValue<uint8_t>(i, x);
 		}
 		else
 			throw EtError("Cannot realize such dtype");
 	}
 	return res;
+}
+
+void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
+{
+	et_assert(points_to<CPUTensor>(dest) || points_to<ViewTensor>(dest));
+	et_assert(points_to<CPUTensor>(src) || points_to<ViewTensor>(src));
+	et_assert(dest->shape() == src->shape());
+
+	auto source = realize(src);
+
+	if(dest->dtype() != src->dtype())
+		source = cast(realize(source.get()).get(), dest->dtype());
+
+	for(size_t i=0;i<dest->size();i++) {
+		if(dest->dtype() == DType::Int32) {
+			auto ptr = (int32_t*)getPtrToValue<int32_t>(i, dest);
+			auto s = (int32_t*)source->data();
+			*ptr = s[i];
+		}
+		else if(dest->dtype() == DType::Float) {
+			auto ptr = (float*)getPtrToValue<float>(i, dest);
+			auto s = (float*)source->data();
+			*ptr = s[i];
+		}
+		else if(dest->dtype() == DType::Bool) {
+			auto ptr = (uint8_t*)getPtrToValue<uint8_t>(i, dest);
+			auto s = (uint8_t*)source->data();
+			*ptr = s[i];
+		}
+		else
+			throw EtError("Cannot realize such dtype");
+	}
 }

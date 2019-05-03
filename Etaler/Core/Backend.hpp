@@ -38,6 +38,7 @@ struct Backend : public std::enable_shared_from_this<Backend>
 		, TensorImpl* permeances, float initial_perm) {throw notImplemented("growSynapses");}
 
 	virtual std::shared_ptr<TensorImpl> realize(const TensorImpl* x) {throw notImplemented("realize");}
+	virtual void assign(TensorImpl* dest, const TensorImpl* src) {throw notImplemented("assign");}
 
 	inline EtError notImplemented(std::string func) const { return EtError(func + " not implemented on backend: " + name()); }
 };

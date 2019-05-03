@@ -576,15 +576,19 @@ static std::string jitCopyKernel(const TensorImpl* t)
 	std::string func = R"(
 #define Type $TYPE
 
+int calc_location(int i)
+{
+	int location0 = i;
+	$CONV
+	return position;
+}
+
 kernel void copy(global Type* restrict x, global Type* restrict y)
 {
 	int global_id = get_global_id(0);
 	int global_size = get_global_size(0);
 	for(int i=global_id;i<$SIZE;i+=global_size) {
-		int location0 = i;
-
-$CONV
-
+		int position = calc_location(i);
 		y[i] = x[position];
 	}
 }
@@ -639,7 +643,7 @@ static std::vector<std::string> jitPositionConvertion(const TensorImpl* x)
 			else if constexpr(std::is_same_v<ViewType, RawView>)
 				functions.push_back(jitRawView(reinterpret_cast<const OpenCLTensor*>(x), functions.size()));
 			else
-				throw EtError("Not supported");
+				throw EtError("View "+ std::string(typeid(ViewType).name()) +"  supported");
 
 		}, reinterpret_cast<const ViewTensor*>(t)->view_);
 
@@ -667,8 +671,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 
 	std::vector<std::string> conversion = jitPositionConvertion(x);
 
-	kernel_manager_.compileKernel(conversion, "copy", {"copy"});
-	cl::Kernel k = kernel_manager_.kernel("copy", "copy");
+	kernel_manager_.compileKernel(conversion, "__copy", {"copy"});
+	cl::Kernel k = kernel_manager_.kernel("__copy", "copy");
 
 	cl::Buffer buf = allocBuffer(x->size()*dtypeToSize(x->dtype()));
 	auto source = findSourceTensor(x);
@@ -682,6 +686,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 
 	//for(auto s : conversion)
 	//	std::cout << s << std::endl;
+
+	kernel_manager_.remove("__copy");//We are unlikely to use this kernel again?
 
 	return std::make_shared<OpenCLTensor>(x->shape(), x->dtype(), buf, shared_from_this());
 }
