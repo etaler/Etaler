@@ -69,64 +69,13 @@ struct Tensor
 	operator const TensorImpl* () const {return pimpl();}
 
 	bool has_value() const {return (bool)pimpl_;}
+	Tensor view(svector<Range> ranges) const;
 
 	Tensor reshape(Shape shape) const
 	{
 		if(size() != (size_t)shape.volume())
 			throw EtError("Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
 		return std::make_shared<ViewTensor>(pimpl_, shape, RectangularView(shape));
-	}
-
-	Tensor view(svector<Range> ranges) const
-	{
-		if(ranges.size() > dimentions())
-			throw EtError("Cannot view a tensor of " + std::to_string(dimentions()) + " with " + std::to_string(ranges.size()) + " dimentions");
-
-		while(ranges.size() != dimentions())
-			ranges.push_back(all());
-
-		auto resolve_index = [](intmax_t idx, bool from_back, intmax_t size) {
-			if(from_back == true)
-				return size-idx;
-			else
-				return idx;
-		};
-
-		auto resolve_range_size = [&](Range r, intmax_t size) {
-			return resolve_index(r.end(), r.endFromBack(), size) - resolve_index(r.start(), r.startFromBack(), size);
-		};
-
-		Shape view_shape;
-		Shape result_shape;
-		svector<intmax_t> offset;
-
-		for(size_t i=0;i<dimentions();i++)  {
-			Range r = ranges[i];
-
-			intmax_t start = resolve_index(r.start(), r.startFromBack(), shape()[i]);
-			intmax_t size = resolve_range_size(r, shape()[i]);
-
-			if(size < 0)
-				throw EtError("Negative steps not supported now");
-			if(start < 0 || (start+size) > shape()[i])
-				throw EtError("Indexing from " + std::to_string(start+size) + " is out of the range of " + std::to_string(shape()[i]));
-
-			offset.push_back(start);
-			if(size != 1 || result_shape.size() != 0)
-				result_shape.push_back(size);
-		}
-		if(result_shape.size() == 0)
-			result_shape.push_back(1);
-
-		view_shape = result_shape;
-		if(view_shape.size() < dimentions()) {
-			Shape s;
-			s.resize(dimentions() - view_shape.size());
-			for(auto v : view_shape)
-				s.push_back(v);
-			view_shape = s;
-		}
-		return std::make_shared<ViewTensor>(pimpl_, result_shape, RectangularView(offset, view_shape));
 	}
 
 	Tensor flatten() const
@@ -137,7 +86,7 @@ struct Tensor
 
 	void assign(const Tensor& source)
 	{
-		backend()->assign(pimpl(), source.pimpl());
+		backend()->assign(*this, source);
 	}
 
 protected:
@@ -157,7 +106,7 @@ inline Tensor createTensor(const Shape& shape, const T* data, Backend* backend)
 {
 	constexpr DType dtype = typeToDType<T>();
 	static_assert(std::is_same_v<T, void> == false);
-	static_assert(dtype ==  DType::Unknown && "Cannot process this kind on data type");
+	static_assert(dtype !=  DType::Unknown && "Cannot process this kind on data type");
 	return backend->createTensor(shape, dtype, data);
 }
 
@@ -178,7 +127,7 @@ Tensor constant(const Shape& shape, T value, Backend* backend=defaultBackend())
 Tensor zeros(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
 Tensor ones(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
 
-inline Tensor attempt_realize(const Tensor& t)
+inline Tensor realize(const Tensor& t)
 {
 	if(points_to<const ViewTensor>(t.pimpl()) == false)
 		return t;

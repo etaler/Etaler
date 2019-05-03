@@ -74,7 +74,7 @@ std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 		return os;
 	}
 
-	Tensor q = attempt_realize(t);
+	Tensor q = realize(t);
 
 	const void* ptr = q.data();
 	if(ptr == nullptr) {
@@ -126,6 +126,61 @@ bool Tensor::isSame(const Tensor& other) const
 		return compareTensor<uint8_t>(*this, other);
 	et_assert(dtype() != DType::Unknown);
 	return false;
+}
+
+Tensor Tensor::view(svector<Range> ranges) const
+{
+	if(ranges.size() > dimentions())
+		throw EtError("Cannot view a tensor of " + std::to_string(dimentions()) + " with " + std::to_string(ranges.size()) + " dimentions");
+
+	while(ranges.size() != dimentions())
+		ranges.push_back(all());
+
+	auto resolve_index = [](intmax_t idx, bool from_back, intmax_t size) {
+		if(from_back == true)
+			return size-idx;
+		else
+			return idx;
+	};
+
+	auto resolve_range_size = [resolve_index](Range r, intmax_t size) {
+		return resolve_index(r.end(), r.endFromBack(), size) - resolve_index(r.start(), r.startFromBack(), size);
+	};
+
+	Shape view_shape;
+	Shape result_shape;
+	svector<intmax_t> offset;
+
+	for(size_t i=0;i<dimentions();i++) {
+		Range r = ranges[i];
+
+		intmax_t start = resolve_index(r.start(), r.startFromBack(), shape()[i]);
+		intmax_t size = resolve_range_size(r, shape()[i]);
+
+		if(size < 0)
+			throw EtError("Negative steps not supported now");
+		if(start < 0 || (start+size) > shape()[i])
+			throw EtError("Indexing from " + std::to_string(start+size) + " is out of the range of " + std::to_string(shape()[i]));
+
+		offset.push_back(start);
+		if(size != 1 || result_shape.size() != 0) //Ignore heading 1 dimentions
+			result_shape.push_back(size);
+	}
+
+	//If all dims are 1m thus no shape. Give it a shape
+	if(result_shape.size() == 0)
+		result_shape.push_back(1);
+
+	//Expand the shape for View to the same dimetions of the source
+	view_shape = result_shape;
+	if(view_shape.size() < dimentions()) {
+		Shape s;
+		s.resize(dimentions() - view_shape.size());
+		for(auto v : view_shape)
+			s.push_back(v);
+		view_shape = s;
+	}
+	return std::make_shared<ViewTensor>(pimpl_, result_shape, RectangularView(offset, view_shape));
 }
 
 Tensor et::zeros(const Shape& shape, DType dtype, Backend* backend)

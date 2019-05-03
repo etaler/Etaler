@@ -26,11 +26,11 @@ int main()
 	std::vector<int> data(16);
 	for(size_t i=0;i<data.size();i++)
 		data[i] = i;
-	Tensor t = createTensor({4,4}, DType::Int32, data.data());
+	Tensor t = createTensor({4,4}, data.data());
 
 	Tensor q = t.view({range(2),range(2)});
 	Tensor r = ones({2,2});
 	q.assign(r);
 	//std::cout << q.size() << std::endl;
-	std::cout << attempt_realize(t) << std::endl;
+	std::cout << realize(t) << std::endl;
 }

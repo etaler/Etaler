@@ -165,6 +165,7 @@ Etaler tho provides basically the same feature, is very different from NuPIC. So
   * [x] JSON (via cereal)
 * [ ] SP Boosting support
 * [ ] Make the algorithms compliant to BAMI
+* [x] Basic Tensor indexing
 
 ## Deisgn decitions
 
@@ -185,5 +186,3 @@ Etaler tho provides basically the same feature, is very different from NuPIC. So
 * Configure files are evil (Looking at you NuPIC)
 
 ## Release notes
-
-
