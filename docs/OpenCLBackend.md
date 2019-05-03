@@ -11,7 +11,7 @@ The OpenCL backend caches programs automatoically. If a program `cast` already e
 ## Local Memory usage
 Due to how HTM work - being very memory bangwidth hungry and the input SDR is relativelly small. The OpenCL backend tries to stores data in the GPU's local memory so more bandwidth can be used for fetching synapse.
 
-However this also poses limitations. Since the input Tensor is copied into the local memory. The size of the input Tensor cannot exceed the size of local memory (48KB on NVIDIA cards and 64KB on AMD cards). This is limitation will be removed in future versions. But not using local memory will come with a huge performance panality.
+However this also poses limitations. Since the input Tensor is copied into the local memory. The size of the input Tensor cannot exceed the size of local memory (48KB on NVIDIA cards and 64KB on AMD cards). This limitation will be removed in future versions. But not using local memory will come with a huge performance panality.
 
 ## OpenCL kenrel distribution
 Currently all `.cl` file are stored in the `kernels` folder. But this is not a good idea for software distribution. We'll have to make CMake pack the kernel into .hpp files.

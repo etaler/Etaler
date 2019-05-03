@@ -27,6 +27,9 @@ public:
 	Shape() : svector<intmax_t, shapeSmallVecSize>()
 	{}
 
+	Shape(size_t n, intmax_t init=0) : svector<intmax_t, shapeSmallVecSize>(n, init)
+	{}
+
 	intmax_t volume() const
 	{
 		intmax_t val = 1;
@@ -70,10 +73,25 @@ public:
 		return s;
 	}
 
+	inline Shape operator+ (const Shape& rhs) const
+	{
+		Shape res = *this;
+		for(auto v : rhs)
+			res += v;
+		return res;
+	}
+
 	inline void operator+= (value_type v)
 	{
 		push_back(v);
 	}
+
+	inline void operator+= (const Shape& rhs)
+	{
+		for(auto v : rhs)
+			push_back(v);
+	}
+
 };
 
 inline std::string to_string(const Shape& s)

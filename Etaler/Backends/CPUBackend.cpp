@@ -429,31 +429,34 @@ void ndIter(const Shape& s, Op op, Shape current=Shape())
 }
 
 template <typename T>
-T getValue(const Shape& location, const TensorImpl* t)
+T getValue(size_t parent_idx, const TensorImpl* t)
 {
 	assert(t->dimentions() == location.size());
 	if(points_to<const CPUTensor>(t) == true) {
 		const T* ptr = (const T*) t->data();
-		return ptr[unfoldIndex(location, t->shape())];
+		return ptr[parent_idx];
 	}
 
 	et_assert(points_to<const ViewTensor>(t) == true);
 	T value;
 	std::visit([&](const auto& view) {
-		Shape parent_loc;
 		const TensorImpl* parent = reinterpret_cast<const ViewTensor*>(t)->parent_.get();
 		using ViewType = std::decay_t<decltype(view)>;
 		if constexpr(std::is_same_v<ViewType, RectangularView>) {
-			parent_loc = foldIndex(unfoldIndex(location, t->shape()), parent->shape());
-			for(size_t i=0;i<parent_loc.size();i++)
-				parent_loc[i] += view.start()[i];
+			Shape local_loc = foldIndex(parent_idx, t->shape());
+			size_t size = view.start().size();
+			et_assert(size >= local_loc.size());
+			local_loc = Shape(size - local_loc.size()) + local_loc;
+			for(size_t i=0;i<view.start().size();i++)
+				local_loc[i] += view.start()[i];
+			parent_idx = unfoldIndex(local_loc, reinterpret_cast<const ViewTensor*>(t)->parent_->shape());
 		}
 		else if constexpr(std::is_same_v<ViewType, RawView>)
-			parent_loc = location;
+			{} //No-op
 		else
 			throw EtError("Not supported");
 
-		value = getValue<T>(parent_loc, parent);
+		value = getValue<T>(parent_idx, parent);
 
 	}, reinterpret_cast<const ViewTensor*>(t)->view_);
 
@@ -468,21 +471,22 @@ std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 	if(points_to<const ViewTensor>(x) == false)
 		throw EtError("Cannot realize tensor, not a CPUTensor or ViewTensor");
 	auto res = createTensor(x->shape(), x->dtype());
-	ndIter(x->shape(), [&](const Shape& idx) {
+
+	for(size_t i=0;i<x->size();i++) {
 		if(x->dtype() == DType::Int32) {
 			auto ptr = (int32_t*)res->data();
-			ptr[unfoldIndex(idx, res->shape())] = getValue<int32_t>(idx, x);
+			ptr[i] = getValue<int32_t>(i, x);
 		}
 		else if(x->dtype() == DType::Float) {
 			auto ptr = (float*)res->data();
-			ptr[unfoldIndex(idx, res->shape())] = getValue<float>(idx, x);
+			ptr[i] = getValue<float>(i, x);
 		}
 		else if(x->dtype() == DType::Bool) {
 			auto ptr = (uint8_t*)res->data();
-			ptr[unfoldIndex(idx, res->shape())] = getValue<uint8_t>(idx, x);
+			ptr[i] = getValue<uint8_t>(i, x);
 		}
 		else
 			throw EtError("Cannot realize such dtype");
-	});
+	}
 	return res;
 }

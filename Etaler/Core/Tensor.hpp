@@ -129,6 +129,12 @@ struct Tensor
 		return std::make_shared<ViewTensor>(pimpl_, result_shape, RectangularView(offset, view_shape));
 	}
 
+	Tensor flatten() const
+	{
+		Shape view_shape = {(intmax_t)size()};
+		return std::make_shared<ViewTensor>(pimpl_, view_shape, RectangularView(view_shape));
+	}
+
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };

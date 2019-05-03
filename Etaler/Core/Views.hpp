@@ -41,6 +41,17 @@ inline size_t unfoldIndex(const IdxType& index, const ShapeType& shape)
 	return s;
 }
 
+template <typename IdxType, typename StrideType>
+inline size_t unfold(const IdxType& index, const StrideType& stride)
+{
+	size_t s = 0;
+	assert(index.size() == stride.size());
+	for(int i=(int)index.size()-1;i>=0;i--)
+		s += stride[i] * index[i];
+
+	return s;
+}
+
 inline svector<intmax_t> shapeToStride(const Shape& shape)
 {
 	svector<intmax_t> v;
