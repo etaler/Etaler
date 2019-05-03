@@ -20,8 +20,8 @@ int main()
 	auto state = sp.states();
 	sp.loadState(state);*/
 
-	//auto backend = std::make_shared<OpenCLBackend>();
-	//setDefaultBackend(backend);
+	auto backend = std::make_shared<OpenCLBackend>();
+	setDefaultBackend(backend);
 
 	std::vector<int> data(16);
 	for(size_t i=0;i<data.size();i++)

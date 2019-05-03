@@ -571,30 +571,16 @@ int location_func$ID(int location)
 	return func;
 }
 
-static std::string jitCopyKernel(const TensorImpl* t)
+static std::string jitConversionFunc(const TensorImpl* t)
 {
 	std::string func = R"(
-#define Type $TYPE
-
 int calc_location(int i)
 {
 	int location0 = i;
 	$CONV
 	return position;
 }
-
-kernel void copy(global Type* restrict x, global Type* restrict y)
-{
-	int global_id = get_global_id(0);
-	int global_size = get_global_size(0);
-	for(int i=global_id;i<$SIZE;i+=global_size) {
-		int position = calc_location(i);
-		y[i] = x[position];
-	}
-}
 )";
-
-	auto s = shapeToStride(t->shape());
 
 	std::string conv;
 	TensorImpl const* x = t;
@@ -615,6 +601,26 @@ kernel void copy(global Type* restrict x, global Type* restrict y)
 	}
 
 	replaceAll(func, "$CONV", conv);
+	return func;
+}
+
+static std::string jitCopyFromViewKernel(const TensorImpl* t)
+{
+	std::string func = R"(
+#define Type $TYPE
+
+kernel void copy(global Type* restrict x, global Type* restrict y)
+{
+	int global_id = get_global_id(0);
+	int global_size = get_global_size(0);
+	for(int i=global_id;i<$SIZE;i+=global_size) {
+		int position = calc_location(i);
+		y[i] = x[position];
+	}
+}
+)";
+
+	auto s = shapeToStride(t->shape());
 
 	std::string type = to_ctype_string(t->dtype());
 	replaceAll(func, "$TYPE", type);
@@ -623,7 +629,32 @@ kernel void copy(global Type* restrict x, global Type* restrict y)
 	return func;
 }
 
-static std::vector<std::string> jitPositionConvertion(const TensorImpl* x)
+static std::string jitCopyToViewKernel(const TensorImpl* t)
+{
+	std::string func = R"(
+#define Type $TYPE
+
+kernel void copy(global Type* restrict x, global Type* restrict y)
+{
+	int global_id = get_global_id(0);
+	int global_size = get_global_size(0);
+	for(int i=global_id;i<$SIZE;i+=global_size) {
+		int position = calc_location(i);
+		y[position] = x[i];
+	}
+}
+)";
+
+	auto s = shapeToStride(t->shape());
+
+	std::string type = to_ctype_string(t->dtype());
+	replaceAll(func, "$TYPE", type);
+	replaceAll(func, "$SIZE", std::to_string(t->size()));
+
+	return func;
+}
+
+static std::vector<std::string> jitPositionConvertionFuncs(const TensorImpl* x)
 {
 	std::vector<std::string> functions;
 	const TensorImpl* t = x;
@@ -649,9 +680,24 @@ static std::vector<std::string> jitPositionConvertion(const TensorImpl* x)
 
 		t = reinterpret_cast<const ViewTensor*>(t)->parent_.get();
 	}
+	return functions;
+}
 
+static std::vector<std::string> jitCopyFromView(const TensorImpl* x)
+{
+	std::vector<std::string> functions = jitPositionConvertionFuncs(x);
+	functions.push_back(jitConversionFunc(x));
 	//Generate the kernel function
-	functions.push_back(jitCopyKernel(x));
+	functions.push_back(jitCopyFromViewKernel(x));
+	return functions;
+}
+
+static std::vector<std::string> jitCopyToView(const TensorImpl* x)
+{
+	std::vector<std::string> functions = jitPositionConvertionFuncs(x);
+	functions.push_back(jitConversionFunc(x));
+	//Generate the kernel function
+	functions.push_back(jitCopyToViewKernel(x));
 	return functions;
 }
 
@@ -669,7 +715,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 	if(points_to<const ViewTensor>(x) == false)
 		throw EtError("Cannot realize tensor, not a OpenCLTensor or ViewTensor");
 
-	std::vector<std::string> conversion = jitPositionConvertion(x);
+	std::vector<std::string> conversion = jitCopyFromView(x);
 
 	kernel_manager_.compileKernel(conversion, "__copy", {"copy"});
 	cl::Kernel k = kernel_manager_.kernel("__copy", "copy");
@@ -690,4 +736,32 @@ std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 	kernel_manager_.remove("__copy");//We are unlikely to use this kernel again?
 
 	return std::make_shared<OpenCLTensor>(x->shape(), x->dtype(), buf, shared_from_this());
+}
+
+void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
+{
+	et_assert(points_to<OpenCLTensor>(dest) || points_to<ViewTensor>(dest));
+	et_assert(points_to<OpenCLTensor>(src) || points_to<ViewTensor>(src));
+	et_assert(dest->shape() == src->shape());
+
+	auto source = realize(src);
+
+	if(dest->dtype() != src->dtype())
+		source = cast(realize(source.get()).get(), dest->dtype());
+
+	std::vector<std::string> conversion = jitCopyToView(dest);
+
+	kernel_manager_.compileKernel(conversion, "__copy", {"copy"});
+	cl::Kernel k = kernel_manager_.kernel("__copy", "copy");
+
+	auto desitnation = findSourceTensor(dest);
+	k.setArg(0, reinterpret_cast<OpenCLTensor*>(source.get())->buffer());
+	k.setArg(1, desitnation->buffer());
+
+	size_t local_size = 128;
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, source->size())), cl::NDRange(local_size));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+
+	kernel_manager_.remove("__copy");//We are unlikely to use this kernel again?
 }
