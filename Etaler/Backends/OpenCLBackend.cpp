@@ -1,6 +1,7 @@
 #include "OpenCLBackend.hpp"
 
 #include "Etaler/Core/Random.hpp"
+#include "Etaler/Core/Views.hpp"
 
 #include <map>
 #include <sstream>
@@ -31,6 +32,16 @@ inline std::string hash_string(const std::string& str)
 	std::stringstream ss;
 	ss << std::hex << hash;
 	return ss.str();
+}
+
+void replaceAll(std::string& str, const std::string& from, const std::string& to) {
+	if(from.empty())
+		return;
+	size_t start_pos = 0;
+	while((start_pos = str.find(from, start_pos)) != std::string::npos) {
+		str.replace(start_pos, from.length(), to);
+		start_pos += to.length(); // In case 'to' contains 'from', like replacing 'x' with 'yx'
+	}
 }
 
 
@@ -495,4 +506,182 @@ cl::Buffer OpenCLBackend::toSparse(const TensorImpl* x)
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
 	return buf;
+}
+
+static std::string jitRawView(const TensorImpl* x, size_t id)
+{
+	std::string func = R"(
+int location_func$ID(int location)
+{
+	return location;
+}
+)";
+	replaceAll(func, "$ID", std::to_string(id));
+	return func;
+}
+
+static std::string jitDataAccess(const OpenCLTensor* x, size_t id)
+{
+	return jitRawView(x, id);
+}
+
+static std::string jitRectangularView(const OpenCLTensor* x, const RectangularView& view, size_t id)
+{
+	std::string func = R"(
+int location_func$ID(int location)
+{
+	int in_stride[] = $IN_STRIDE;
+	int bias[] = $BIAS;
+	int stride[] = $STRIDE;
+
+	int ndpos[$DIMS];
+	int loc = location;
+	#pragma unroll
+	for(int i=0;i<$DIMS;i++)
+		ndpos[i] = 0;
+	#pragma unroll
+	for(int i=0;i<$IN_DIMS;i++) {
+		int stride = (i==$IN_DIMS-1 ? 1 : in_stride[i+1]);
+		ndpos[$DIMS-$IN_DIMS+i] = loc/stride;
+		loc %= stride;
+	}
+
+	#pragma unroll
+	for(int i=0;i<$IN_DIMS;i++)
+		ndpos[$DIMS-$IN_DIMS+i] += bias[i];
+
+	int sum = 0;
+	#pragma unroll
+	for(int i=0;i<$DIMS;i++)
+		sum += ndpos[i]*(i==$DIMS-1 ? 1 : stride[i+1]);
+	return sum;
+}
+)";
+	const TensorImpl* parent = reinterpret_cast<const ViewTensor*>(x)->parent_.get();
+	replaceAll(func, "$ID", std::to_string(id));
+	auto in_strides = shapeToStride(x->shape());
+	Shape s = Shape(in_strides.begin(), in_strides.end());
+	replaceAll(func, "$IN_STRIDE", to_string(s));
+	replaceAll(func, "$IN_DIMS", std::to_string(x->dimentions()));
+	replaceAll(func, "$DIMS", std::to_string(parent->dimentions()));
+
+	auto strides = shapeToStride(parent->shape());
+	replaceAll(func, "$STRIDE", to_string(Shape(strides.begin(), strides.end())));
+	replaceAll(func, "$BIAS", to_string(Shape(view.start().begin(), view.start().end())));
+	return func;
+}
+
+static std::string jitCopyKernel(const TensorImpl* t)
+{
+	std::string func = R"(
+#define Type $TYPE
+
+kernel void copy(global Type* restrict x, global Type* restrict y)
+{
+	int global_id = get_global_id(0);
+	int global_size = get_global_size(0);
+	for(int i=global_id;i<$SIZE;i+=global_size) {
+		int location0 = i;
+
+$CONV
+
+		y[i] = x[position];
+	}
+}
+)";
+
+	auto s = shapeToStride(t->shape());
+
+	std::string conv;
+	TensorImpl const* x = t;
+	for(size_t i=0;;i++) {
+		if(points_to<ViewTensor>(x) == false) {
+			std::string call = "int position = location_func$ID(location$ID);\n";
+			replaceAll(call, "$ID", std::to_string(i));
+			conv += call;
+			break;
+		}
+		else {
+			std::string call = "int location$NEXT = location_func$ID(location$ID);\n";
+			replaceAll(call, "$ID", std::to_string(i));
+			replaceAll(call, "$NEXT", std::to_string(i+1));
+			conv += call;
+		}
+		x = reinterpret_cast<const ViewTensor*>(x)->parent_.get();
+	}
+
+	replaceAll(func, "$CONV", conv);
+
+	std::string type = to_ctype_string(t->dtype());
+	replaceAll(func, "$TYPE", type);
+	replaceAll(func, "$SIZE", std::to_string(t->size()));
+
+	return func;
+}
+
+static std::vector<std::string> jitPositionConvertion(const TensorImpl* x)
+{
+	std::vector<std::string> functions;
+	const TensorImpl* t = x;
+
+	//Generate all the functions need to convert the coordinates
+	while(true) {
+		if(points_to<const OpenCLTensor>(t) == true) {
+			functions.push_back(jitDataAccess(reinterpret_cast<const OpenCLTensor*>(x), functions.size()));
+			break;
+		}
+
+		et_assert(points_to<const ViewTensor>(t));
+		std::visit([&](const auto& view) {
+			using ViewType = std::decay_t<decltype(view)>;
+			if constexpr(std::is_same_v<ViewType, RectangularView>)
+				functions.push_back(jitRectangularView(reinterpret_cast<const OpenCLTensor*>(x), view, functions.size()));
+			else if constexpr(std::is_same_v<ViewType, RawView>)
+				functions.push_back(jitRawView(reinterpret_cast<const OpenCLTensor*>(x), functions.size()));
+			else
+				throw EtError("Not supported");
+
+		}, reinterpret_cast<const ViewTensor*>(t)->view_);
+
+		t = reinterpret_cast<const ViewTensor*>(t)->parent_.get();
+	}
+
+	//Generate the kernel function
+	functions.push_back(jitCopyKernel(x));
+	return functions;
+}
+
+static const OpenCLTensor* findSourceTensor(const TensorImpl* t)
+{
+	if(points_to<const OpenCLTensor>(t) == false)
+		return findSourceTensor(reinterpret_cast<const ViewTensor*>(t)->parent_.get());
+	return reinterpret_cast<const OpenCLTensor*>(t);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
+{
+	if(points_to<const OpenCLTensor>(x) == true)
+		return copy(x);
+	if(points_to<const ViewTensor>(x) == false)
+		throw EtError("Cannot realize tensor, not a OpenCLTensor or ViewTensor");
+
+	std::vector<std::string> conversion = jitPositionConvertion(x);
+
+	kernel_manager_.compileKernel(conversion, "copy", {"copy"});
+	cl::Kernel k = kernel_manager_.kernel("copy", "copy");
+
+	cl::Buffer buf = allocBuffer(x->size()*dtypeToSize(x->dtype()));
+	auto source = findSourceTensor(x);
+	k.setArg(0, source->buffer());
+	k.setArg(1, buf);
+
+	size_t local_size = 128;
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, source->size())), cl::NDRange(local_size));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+
+	//for(auto s : conversion)
+	//	std::cout << s << std::endl;
+
+	return std::make_shared<OpenCLTensor>(x->shape(), x->dtype(), buf, shared_from_this());
 }

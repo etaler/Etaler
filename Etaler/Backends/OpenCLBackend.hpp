@@ -69,6 +69,8 @@ struct KernelManager
 	const cl::Kernel& kernel(const std::string& program_name, const std::string& kernel_name) const {return apps_.at(program_name).kernels.at(kernel_name);}
 	const cl::Kernel& kernel(const std::string& name) const {return kernel(name, name);}
 
+	void remove(std::string program_name) {auto it = apps_.find(program_name); if(it != apps_.end()) apps_.erase(it);}
+
 	std::map<std::string, Application> apps_;
 	cl::Device device_;
 	cl::Context context_;
@@ -100,6 +102,8 @@ struct OpenCLBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> reverseBurst(const TensorImpl* x) override;
 	virtual void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm) override;
+	virtual std::shared_ptr<TensorImpl> realize(const TensorImpl* x) override;
+
 	cl::Buffer toSparse(const TensorImpl* x);
 
 protected:

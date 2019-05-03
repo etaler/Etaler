@@ -1,6 +1,6 @@
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Backends/CPUBackend.hpp>
-//#include <Etaler/Backends/OpenCLBackend.hpp>
+#include <Etaler/Backends/OpenCLBackend.hpp>
 #include <Etaler/Algorithms/SpatialPooler.hpp>
 #include <Etaler/Encoders/Scalar.hpp>
 using namespace et;
@@ -20,14 +20,15 @@ int main()
 	auto state = sp.states();
 	sp.loadState(state);*/
 
-
+	auto backend = std::make_shared<OpenCLBackend>();
+	setDefaultBackend(backend);
 
 	std::vector<int> data(16);
 	for(size_t i=0;i<data.size();i++)
 		data[i] = i;
 	Tensor t = createTensor({4,4}, DType::Int32, data.data());
 
-	Tensor q = t.view({2,2});
+	Tensor q = t.view({range(2),range(2)});
 	std::cout << q.size() << std::endl;
-	std::cout << attempt_realize(q).toHost<int32_t>()[0] << std::endl;
+	std::cout << attempt_realize(q) << std::endl;
 }
