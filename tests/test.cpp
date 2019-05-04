@@ -130,7 +130,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 		SECTION("View write back") {
 			Tensor q = t.view({range(2),range(2)});
-			//CHECK_THROWS(q.assign(ones({5,5})));
+			CHECK_THROWS(q.assign(ones({5,5})));
 			Tensor r = ones({2,2});
 			CHECK_NOTHROW(q.assign(r));
 

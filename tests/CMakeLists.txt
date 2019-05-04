@@ -1,3 +1,3 @@
-project(test)
-add_executable(test test.cpp main.cpp)
-target_link_libraries(test Etaler)
+project(etaler_tests)
+add_executable(etaler_tests test.cpp main.cpp)
+target_link_libraries(etaler_tests Etaler)
