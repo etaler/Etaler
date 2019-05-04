@@ -30,7 +30,7 @@ int main()
 
 	Tensor q = t.view({range(2),range(2)});
 	Tensor r = ones({2,2});
-	q.assign(r);
+	//q.assign(r);
 	//std::cout << q.size() << std::endl;
-	std::cout << realize(t) << std::endl;
+	std::cout << realize(q) << std::endl;
 }

@@ -29,6 +29,24 @@ TEST_CASE("Testing Shape", "[Shape]")
 TEST_CASE("Testing Tensor", "[Tensor]")
 {
 	using namespace et;
+
+	SECTION("Tensor creation") {
+		int a[] = {1,2,3,4};
+		Tensor t = createTensor({4}, a);
+		CHECK(t.dtype() == DType::Int32);
+		CHECK(t.shape() == Shape({4}));
+
+		float b[] = {1,2,3,4};
+		Tensor q = createTensor({4}, b);
+		CHECK(q.dtype() == DType::Float);
+		CHECK(q.shape() == Shape({4}));
+
+		bool c[] = {1,1,0,1};
+		Tensor r = createTensor({4}, c);
+		CHECK(r.dtype() == DType::Bool);
+		CHECK(r.shape() == Shape({4}));
+	}
+
 	SECTION("Tesnor basic") {
 		Tensor t = createTensor({1,2,5,6,7}, DType::Float);
 
@@ -83,13 +101,45 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(realize(q).isSame(t));
 		}
 
+		SECTION("flatten") {
+			Tensor q = t.flatten();
+			CHECK(q.size() == t.size());
+			CHECK(q.dtype() == t.dtype());
+			Tensor r = q.reshape({4,4});
+			CHECK(realize(r).isSame(t));
+		}
+
 		SECTION("Basic indexing/view") {
 			CHECK_THROWS(t.view({0,0,0,0,0}));
 			CHECK_THROWS(t.view({300}));
 			CHECK_THROWS(t.view({0, 300}));
+			CHECK_THROWS(t.view({range(100)}));
 
 			Tensor q = t.view({2,2});
+			CHECK(q.size() == 1);
+			CHECK(q.dimentions() == 1);
 			CHECK(realize(q).toHost<int32_t>()[0] == 10);
+
+			Tensor r = t.view({range(2), range(2)});
+			CHECK(r.size() == 4);
+			CHECK(r.dimentions() == 2);
+			int a[] = {0,1,4,5};
+			Tensor pred = createTensor({2,2}, a);
+			CHECK(realize(r).isSame(pred));
+		}
+
+		SECTION("View write back") {
+			Tensor q = t.view({range(2),range(2)});
+			//CHECK_THROWS(q.assign(ones({5,5})));
+			Tensor r = ones({2,2});
+			CHECK_NOTHROW(q.assign(r));
+
+			int a[] = {1,1,2,3
+				,1,1,6,7
+				,8,9,10,11
+				,12,13,14,15};
+			Tensor pred = createTensor({4,4}, a);
+			CHECK(t.isSame(pred));
 		}
 	}
 }

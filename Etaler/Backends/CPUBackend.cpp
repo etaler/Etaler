@@ -491,7 +491,10 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 {
 	et_assert(points_to<CPUTensor>(dest) || points_to<ViewTensor>(dest));
 	et_assert(points_to<CPUTensor>(src) || points_to<ViewTensor>(src));
-	et_assert(dest->shape() == src->shape());
+
+	if(dest->shape() != src->shape())
+		throw EtError("Shape mismatch in tensor assignment. Shape "
+			+ to_string(dest->shape()) + "and " + to_string(src->shape()));
 
 	auto source = realize(src);
 
