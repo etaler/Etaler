@@ -80,6 +80,7 @@ struct OpenCLBackend : public Backend
 {
 	virtual ~OpenCLBackend() = default;
 	OpenCLBackend();
+	OpenCLBackend(cl::Context context, cl::Platform platform, cl::Device device);
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data=nullptr) override;
 	virtual void releaseTensor(TensorImpl* pimpl) override;
 	virtual void copyToHost(const TensorImpl* pimpl, void* dest) override;

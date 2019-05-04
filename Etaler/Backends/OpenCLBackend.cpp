@@ -82,6 +82,18 @@ OpenCLBackend::OpenCLBackend()
 	kernel_manager_.compileKernel("kernel void __etaler_dummy__(global int* p){p[get_global_id(0)] = 0;}", "__etaler_dummy__", "__etaler_dummy__");
 }
 
+OpenCLBackend::OpenCLBackend(cl::Context context, cl::Platform platform, cl::Device device)
+{
+	context_ = std::move(context);
+	platform_ = std::move(platform);
+	device_ = std::move(device);
+
+	//I trust these won't fail
+	queue_ = cl::CommandQueue(context_);
+	kernel_manager_ = KernelManager(device, context_);
+	kernel_manager_.compileKernel("kernel void __etaler_dummy__(global int* p){p[get_global_id(0)] = 0;}", "__etaler_dummy__", "__etaler_dummy__");
+}
+
 std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DType dtype, const void* data)
 {
 	et_assert(dtype != DType::Unknown);
