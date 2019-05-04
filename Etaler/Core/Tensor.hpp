@@ -29,6 +29,16 @@ struct Tensor
 		: pimpl_(std::move(pimpl)) {}
 	Tensor(std::shared_ptr<ViewTensor> pimpl)
 		: pimpl_(std::move(pimpl)) {}
+	Tensor(Shape s, DType dtype, Backend* backend=defaultBackend())
+		: pimpl_(backend->createTensor(s, dtype, nullptr)) {}
+	template <typename T>
+	Tensor(Shape s, const T* data, Backend* backend=defaultBackend())
+	{
+		constexpr DType dtype = typeToDType<T>();
+		static_assert(std::is_same_v<T, void> == false);
+		static_assert(dtype !=  DType::Unknown && "Cannot process this kind on data type");
+		pimpl_ = backend->createTensor(s, dtype, data);
+	}
 
 	void* data() {return call_const(data);}
 	const void* data() const {return pimpl_->data();}
@@ -96,32 +106,12 @@ protected:
 std::ostream& operator<< (std::ostream& os, const Tensor& t);
 
 //Healpers
-inline Tensor createTensor(const Shape& shape, DType dtype=DType::Int32, void* data=nullptr)
-{
-	return defaultBackend()->createTensor(shape, dtype, data);
-}
-
-template <typename T>
-inline Tensor createTensor(const Shape& shape, const T* data, Backend* backend)
-{
-	constexpr DType dtype = typeToDType<T>();
-	static_assert(std::is_same_v<T, void> == false);
-	static_assert(dtype !=  DType::Unknown && "Cannot process this kind on data type");
-	return backend->createTensor(shape, dtype, data);
-}
-
-template <typename T>
-inline Tensor createTensor(const Shape& shape, const T* data)
-{
-	return createTensor(shape, data, defaultBackend());
-}
-
 template <typename T>
 Tensor constant(const Shape& shape, T value, Backend* backend=defaultBackend())
 {
 	static_assert(typeToDType<T>() != DType::Unknown);
 	std::vector<T> v(shape.volume(), value);
-	return backend->createTensor(shape, typeToDType<T>(), v.data());
+	return Tensor(shape, v.data());
 }
 
 Tensor zeros(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());

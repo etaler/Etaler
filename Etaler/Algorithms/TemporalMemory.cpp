@@ -8,8 +8,8 @@ TemporalMemory::TemporalMemory(const Shape& input_shape, size_t cells_per_column
 	Shape connection_shape = input_shape + cells_per_column + max_synapses_per_cell;
 	std::vector<int32_t> conns(connection_shape.volume(), -1);
 
-	connections_ = backend->createTensor(connection_shape, DType::Int32, conns.data());
-	permances_ = backend->createTensor(connection_shape, DType::Float);
+	connections_ = Tensor(connection_shape, conns.data(), backend);
+	permances_ = Tensor(connection_shape, DType::Float, backend);
 }
 
 std::pair<Tensor, Tensor> TemporalMemory::compute(const Tensor& x, const Tensor& last_state)

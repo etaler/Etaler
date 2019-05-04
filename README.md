@@ -30,8 +30,8 @@ See the `examples` folder for more information. For a quick feel on how Etaler w
 Creating and printing a tensor
 ```C++
 float arr[] = {1, 2, 3, 4};
-Tensor t = createTensor(/*shape=*/{4}
-                        ,/*data=*/arr);
+Tensor t = Tensor(/*shape=*/{4}
+                ,/*data=*/arr);
 
 std::cout << t << std::endl;
 ```

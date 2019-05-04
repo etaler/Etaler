@@ -73,17 +73,17 @@ void load(Archive & archive, Tensor & t)
 	if(dtype == "uint8") {
 		std::vector<uint8_t> d(s.volume());
 		archive(make_nvp("data", d));
-		t = createTensor(s, DType::Bool, d.data());
+		t = Tensor(s, d.data());
 	}
 	else if(dtype == "float") {
 		std::vector<float> d(s.volume());
 		archive(make_nvp("data", d));
-		t = createTensor(s, DType::Float, d.data());
+		t = Tensor(s, d.data());
 	}
 	else if(dtype == "int32") {
 		std::vector<int32_t> d(s.volume());
 		archive(make_nvp("data", d));
-		t = createTensor(s, DType::Int32, d.data());
+		t = Tensor(s, d.data());
 	}
 }
 

@@ -18,7 +18,7 @@ Tensor sum(Tensor t)
 		size_t sum = std::accumulate(vec.begin()+i*length, vec.begin()+(i+1)*length, 0);
 		res[i] = (sum != 0);
 	}
-	return createTensor({(intmax_t)res.size()}, DType::Bool, res.data());
+	return Tensor({(intmax_t)res.size()}, res.data());
 }
 
 int main()

@@ -21,7 +21,7 @@ static Tensor category(size_t category, size_t num_categories, size_t bits_per_c
 	std::vector<uint8_t> res(num_categories*bits_per_category);
 	for(size_t i=0;i<bits_per_category;i++)
 		res[i+category*bits_per_category] = 1;
-	return backend->createTensor({(intmax_t)(num_categories*bits_per_category)}, DType::Bool, res.data());
+	return Tensor({(intmax_t)(num_categories*bits_per_category)}, res.data(), backend);
 }
 
 }

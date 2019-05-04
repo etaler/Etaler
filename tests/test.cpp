@@ -32,23 +32,23 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 	SECTION("Tensor creation") {
 		int a[] = {1,2,3,4};
-		Tensor t = createTensor({4}, a);
+		Tensor t = Tensor({4}, a);
 		CHECK(t.dtype() == DType::Int32);
 		CHECK(t.shape() == Shape({4}));
 
 		float b[] = {1,2,3,4};
-		Tensor q = createTensor({4}, b);
+		Tensor q = Tensor({4}, b);
 		CHECK(q.dtype() == DType::Float);
 		CHECK(q.shape() == Shape({4}));
 
 		bool c[] = {1,1,0,1};
-		Tensor r = createTensor({4}, c);
+		Tensor r = Tensor({4}, c);
 		CHECK(r.dtype() == DType::Bool);
 		CHECK(r.shape() == Shape({4}));
 	}
 
 	SECTION("Tesnor basic") {
-		Tensor t = createTensor({1,2,5,6,7}, DType::Float);
+		Tensor t = Tensor({1,2,5,6,7}, DType::Float);
 
 		CHECK(t.size() == 1*2*5*6*7);
 		CHECK(t.dtype() == DType::Float);
@@ -64,20 +64,20 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 	SECTION("Comparsion") {
 		int data[] = {1,2,3,4,5};
-		Tensor t = createTensor({5}, DType::Int32, data);
-		Tensor q = createTensor({5}, DType::Int32, data);
+		Tensor t = Tensor({5}, data);
+		Tensor q = Tensor({5}, data);
 
 		CHECK(t.isSame(q));
 
-		Tensor r = createTensor({1, 5}, DType::Int32, data);
+		Tensor r = Tensor({1, 5}, data);
 		CHECK_FALSE(t.isSame(r));
 	}
 
 	SECTION("Data Transfer") {
 		int data[] = {1,2,3,2,1};
-		Tensor t = createTensor({5}, DType::Int32, data);
+		Tensor t = Tensor({5}, data);
 		auto data2 = t.toHost<int32_t>();
-		Tensor q = createTensor({5}, DType::Int32, data2.data());
+		Tensor q = Tensor({5}, data2.data());
 		CHECK(t.isSame(q));
 
 		Tensor r = t.copy();
@@ -89,7 +89,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		std::vector<int> data(16);
 		for(size_t i=0;i<data.size();i++)
 			data[i] = i;
-		Tensor t = createTensor({4,4}, DType::Int32, data.data());
+		Tensor t = Tensor({4,4}, data.data());
 
 		SECTION("Reshape") {
 			CHECK_THROWS(t.reshape({4}));
@@ -124,7 +124,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(r.size() == 4);
 			CHECK(r.dimentions() == 2);
 			int a[] = {0,1,4,5};
-			Tensor pred = createTensor({2,2}, a);
+			Tensor pred = Tensor({2,2}, a);
 			CHECK(realize(r).isSame(pred));
 		}
 
@@ -138,7 +138,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 				,1,1,6,7
 				,8,9,10,11
 				,12,13,14,15};
-			Tensor pred = createTensor({4,4}, a);
+			Tensor pred = Tensor({4,4}, a);
 			CHECK(t.isSame(pred));
 		}
 	}
@@ -198,13 +198,13 @@ TEST_CASE("Backend functions", "[Backend]")
 
 	SECTION("Overlap Score") {
 		int32_t synapses[4] = {0, 1, 1, -1};
-		Tensor s = createTensor({2,2}, DType::Int32, synapses);
+		Tensor s = Tensor({2,2}, synapses);
 
 		float perm[4] = {0.5, 0.4, 0.7, 0.0};
-		Tensor p = createTensor({2,2}, DType::Float, perm);
+		Tensor p = Tensor({2,2}, perm);
 
 		uint8_t in[2] = {1,1};
-		Tensor x = createTensor({2}, DType::Bool, in);
+		Tensor x = Tensor({2}, in);
 
 		Tensor y = b->overlapScore(x, s, p, 0.1, 1);
 		CHECK(y.size() == 2);
@@ -217,29 +217,29 @@ TEST_CASE("Backend functions", "[Backend]")
 
 	SECTION("Global Inhibition") {
 		int32_t in[8] = {0,0,1,2,7,6,5,3};
-		Tensor t = createTensor({8}, DType::Int32, in);
+		Tensor t = Tensor({8}, in);
 
 		Tensor y = b->globalInhibition(t, 0.5);
 		CHECK(y.size() == 8);
 		uint8_t pred[8] = {0,0,0,0,1,1,1,1};
-		Tensor should_be = createTensor({8}, DType::Bool, pred);
+		Tensor should_be = Tensor({8}, pred);
 		CHECK(y.dtype() == DType::Bool);
 		CHECK(y.isSame(should_be));
 	}
 
 	SECTION("Sort synapse") {
 		int a[] = {0,1,2,3, 1,3,2,0, -1,1,2,3, 2,3,1,-1};
-		Tensor t = createTensor({4,4}, DType::Int32, a);
+		Tensor t = Tensor({4,4}, a);
 
 		float b[] = {0,1,2,3, 1,3,2,0, -1,1,2,3, 2,3,1,-1};
-		Tensor q = createTensor({4,4}, DType::Float, b);
+		Tensor q = Tensor({4,4}, b);
 
 		defaultBackend()->sortSynapse(t, q);
 
 		int pred[] = {0,1,2,3, 0,1,2,3, 1,2,3,-1, 1,2,3,-1};
 		float pred2[] = {0,1,2,3, 0,1,2,3, 1,2,3,-1, 1,2,3,-1};
-		Tensor should_be = createTensor({4,4}, DType::Int32, pred);
-		Tensor perm_should_be = createTensor({4,4}, DType::Float, pred2);
+		Tensor should_be = Tensor({4,4}, pred);
+		Tensor perm_should_be = Tensor({4,4}, pred2);
 
 		CHECK(t.isSame(should_be));
 		CHECK(q.isSame(perm_should_be));
@@ -254,17 +254,17 @@ TEST_CASE("Backend functions", "[Backend]")
 				1, 0, 0, 0,
 				0, 1, 0, 0,
 				0, 1, 1, 0};
-		Tensor state = createTensor({4,4}, DType::Bool, s);
+		Tensor state = Tensor({4,4}, s);
 
 		uint8_t in[] = {1,0,1,1};
-		Tensor x = createTensor({4}, DType::Bool, in);
+		Tensor x = Tensor({4}, in);
 		Tensor y = defaultBackend()->applyBurst(x, state);
 
 		uint8_t p[] = {1, 1, 1, 1,
 				0, 0, 0, 0,
 				0, 1, 0, 0,
 				0, 1, 1, 0};
-		Tensor pred = createTensor({4,4}, DType::Bool, p);
+		Tensor pred = Tensor({4,4}, p);
 		CHECK(pred.isSame(y));
 	}
 
@@ -274,7 +274,7 @@ TEST_CASE("Backend functions", "[Backend]")
 				0, 1, 0, 0,
 				0, 1, 1, 0,
 				0, 0, 0, 0};
-		Tensor x = createTensor({4,4}, DType::Bool, in);
+		Tensor x = Tensor({4,4}, in);
 		Tensor y = defaultBackend()->reverseBurst(x);
 
 		auto vec = y.toHost<uint8_t>();
@@ -290,23 +290,23 @@ TEST_CASE("Backend functions", "[Backend]")
 
 	SECTION("Grow Synapses") {
 		int32_t synapses[4] = {0, 1, 1, -1};
-		Tensor s = createTensor({2,2}, DType::Int32, synapses);
+		Tensor s = Tensor({2,2}, synapses);
 
 		float perm[4] = {0.5, 0.4, 0.7, 0.0};
-		Tensor p = createTensor({2,2}, DType::Float, perm);
+		Tensor p = Tensor({2,2}, perm);
 
 		uint8_t in[2] = {1,1};
-		Tensor x = createTensor({2}, DType::Bool, in);
-		Tensor y = createTensor({2}, DType::Bool, in); //the same for test
+		Tensor x = Tensor({2}, in);
+		Tensor y = Tensor({2}, in); //the same for test
 
 		defaultBackend()->growSynapses(x, y, s, p, 0.21);
 		defaultBackend()->sortSynapse(s, p);
 
 		int32_t pred[] = {0,1 ,0,1};
-		Tensor pred_conn = createTensor({2,2}, DType::Int32, pred);
+		Tensor pred_conn = Tensor({2,2}, pred);
 
 		float perms[] = {0.5, 0.4, 0.21, 0.7};
-		Tensor pred_perm = createTensor({2,2}, DType::Float, perms);
+		Tensor pred_perm = Tensor({2,2}, perms);
 
 		CHECK(s.isSame(pred_conn));
 		CHECK(p.isSame(pred_perm));

@@ -76,7 +76,7 @@ static Tensor gridCell2d(std::array<float, 2> p, size_t num_gcm=16, size_t activ
 		std::copy(gcm_res.begin(), gcm_res.end(), encoding.begin()+i*gcm_size);
 	}
 
-	return backend->createTensor({(intmax_t)encoding.size()}, DType::Bool, encoding.data());
+	return Tensor({(intmax_t)encoding.size()}, encoding.data(), backend);
 }
 
 }

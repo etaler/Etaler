@@ -10,7 +10,7 @@ using namespace et;
 int main()
 {
 	//Create a SP that takes in 128 input bits and generates 32 bit representation
-	/*SpatialPooler sp({128}, {32});
+	SpatialPooler sp({128}, {32});
 
 	//Encode the value 0.1 into a 32 bit SDR
 	Tensor x = encoder::scalar(0.1, 0, 1, 128, 12);
@@ -18,19 +18,5 @@ int main()
 	std::cout << sp.compute(x) << std::endl;
 
 	auto state = sp.states();
-	sp.loadState(state);*/
-
-	auto backend = std::make_shared<OpenCLBackend>();
-	setDefaultBackend(backend);
-
-	std::vector<int> data(16);
-	for(size_t i=0;i<data.size();i++)
-		data[i] = i;
-	Tensor t = createTensor({4,4}, data.data());
-
-	Tensor q = t.view({range(2),range(2)});
-	Tensor r = ones({2,2});
-	//q.assign(r);
-	//std::cout << q.size() << std::endl;
-	std::cout << realize(q) << std::endl;
+	sp.loadState(state);
 }

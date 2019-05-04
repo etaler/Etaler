@@ -42,8 +42,8 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 	}
 
 	Shape s = output_shape + potential_pool_size;
-	connections_ = backend_->createTensor(s, DType::Int32, connections.data());
-	permances_ = backend_->createTensor(s, DType::Float, permances.data());
+	connections_ = Tensor(s, connections.data(), backend_);
+	permances_ = Tensor(s, permances.data(), backend_);
 }
 
 Tensor SpatialPooler::compute(const Tensor& x) const

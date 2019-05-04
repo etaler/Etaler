@@ -21,7 +21,7 @@ static Tensor scalar(float v, float left=0, float right=1, size_t cells=32, size
 	std::vector<uint8_t> vec(cells);
 	for(size_t i=start;i<end;i++)
 		vec[i] = 1;
-	return backend->createTensor({(intmax_t)cells}, DType::Bool, vec.data());
+	return Tensor({(intmax_t)cells}, vec.data(), backend);
 }
 
 }
