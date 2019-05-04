@@ -80,7 +80,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			Tensor q;
 			CHECK_NOTHROW(q = t.reshape({4, 4}));
 
-			CHECK(attempt_realize(q).isSame(t));
+			CHECK(realize(q).isSame(t));
 		}
 
 		SECTION("Basic indexing/view") {
@@ -89,7 +89,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK_THROWS(t.view({0, 300}));
 
 			Tensor q = t.view({2,2});
-			CHECK(attempt_realize(q).toHost<int32_t>()[0] == 10);
+			CHECK(realize(q).toHost<int32_t>()[0] == 10);
 		}
 	}
 }

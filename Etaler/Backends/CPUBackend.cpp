@@ -358,7 +358,7 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 	int32_t* conns = (int32_t*)connections->data();
 	float* perms = (float*)permeances->data();
 
-	std::vector<int> on_bits;
+	std::vector<uint32_t> on_bits;
 	on_bits.reserve(input_cell_count*0.1);
 	for(size_t i=0;i<input_cell_count;i++) {
 		if(in[i] == true)
@@ -369,16 +369,16 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 	tbb::parallel_for(tbb::blocked_range<size_t>(size_t(0), y->size(), block_size), [&](const auto& r) {
 		for(size_t i=r.begin();i!=r.end();i++) {
 			if(out[i] == 0)
-				return;
+				continue;
 
-			int32_t* synapses = conns+i*max_synapses_per_cell;
+			uint32_t* synapses = (uint32_t*)conns+i*max_synapses_per_cell;
 			float* strengths = perms+i*max_synapses_per_cell;
-			int32_t* end = synapses+max_synapses_per_cell;
+			uint32_t* end = synapses+max_synapses_per_cell;
 
-			if(synapses[max_synapses_per_cell-1] != -1) //If there is no space for new synapse. Ignore
-				return;
+			if(synapses[max_synapses_per_cell-1] != uint32_t(-1)) //If there is no space for new synapse. Ignore
+				continue;
 
-			int32_t* it = std::lower_bound(synapses, end, -1);
+			uint32_t* it = std::lower_bound(synapses, end, uint32_t(-1));
 			size_t used_space = it - synapses;
 
 			size_t write_idx = it - synapses;
