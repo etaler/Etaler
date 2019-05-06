@@ -52,7 +52,7 @@ int main()
 	std::cout << "Benchmarking TemporalMemory algorithm on backend: " << defaultBackend()->name() <<" \n\n";
 
 	std::vector<Tensor> input_data;
-	std::vector<size_t> input_size = {8192};
+	std::vector<size_t> input_size = {64, 128, 512, 1024, 8192};
 	size_t num_data = 1000;
 
 	for(auto input_len : input_size) {

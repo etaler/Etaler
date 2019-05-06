@@ -22,9 +22,6 @@ kernel void learnCorrilation(global bool* restrict x, global bool* restrict y
 	, global int* restrict synapses, global float* restrict permeances
 	, float permeance_inc, float permeance_dec)
 {
-	size_t id = get_local_id(0);
-	size_t size = get_local_size(0);
-
 	int global_size = get_global_size(0);
 	int global_id = get_global_id(0);
 	for(int i=global_id;i<OUTPUT_SIZE;i+=global_size) {
