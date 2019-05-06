@@ -414,20 +414,6 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 	});
 }
 
-template <typename Op>
-void ndIter(const Shape& s, Op op, Shape current=Shape())
-{
-	if(current.size() == s.size())
-		op(current);
-	else {
-		size_t idx = current.size();
-		for(intmax_t i=0;i<s[idx];i++) {
-			Shape next = current + i;
-			ndIter(s, op, next);
-		}
-	}
-}
-
 template <typename T>
 const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 {

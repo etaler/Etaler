@@ -1,6 +1,3 @@
-[submodule "pcg-cpp"]
-	path = pcg-cpp
-	url = https://github.com/imneme/pcg-cpp
 [submodule "Etaler/3rdparty/pcg-cpp"]
 	path = Etaler/3rdparty/pcg-cpp
 	url = https://github.com/imneme/pcg-cpp

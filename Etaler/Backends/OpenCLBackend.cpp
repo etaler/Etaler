@@ -469,12 +469,13 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 	kernel_manager_.compileFromFile(kernel_root_+"growSynapses.cl", program_name, {"growSynapses"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "growSynapses");
 
-	size_t local_size = 256;
+	size_t local_size = 32;
 	size_t work_size = selectWorkSize(4096, local_size, y->size());
+	size_t num_groups = work_size/local_size;
 
-	static cl::Buffer aux = allocBuffer(input_cell_count*work_size);
-	if(input_cell_count*work_size > aux.getInfo<CL_MEM_SIZE>())
-		aux = allocBuffer(input_cell_count*work_size);
+	static cl::Buffer aux = allocBuffer(input_cell_count*num_groups);
+	if(input_cell_count*num_groups > aux.getInfo<CL_MEM_SIZE>())
+		aux = allocBuffer(input_cell_count*num_groups);
 	cl::Buffer sparse_x = toSparse(x);
 
 	k.setArg(0, sparse_x);
@@ -482,7 +483,8 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 	k.setArg(2, reinterpret_cast<OpenCLTensor*>(connections)->buffer());
 	k.setArg(3, reinterpret_cast<OpenCLTensor*>(permeances)->buffer());
 	k.setArg(4, initial_perm);
-	k.setArg(5, aux);
+	k.setArg(5, (int)(sparse_x.getInfo<CL_MEM_SIZE>()/sizeof(int)));
+	k.setArg(6, aux);
 
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(work_size), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
