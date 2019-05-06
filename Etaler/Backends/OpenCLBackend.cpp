@@ -223,7 +223,10 @@ std::shared_ptr<TensorImpl> OpenCLBackend::overlapScore(const TensorImpl* x, con
 	auto hash = hash_string(args);
 	auto program_name = "overlapScore"+hash;
 
-	kernel_manager_.compileFromFile(kernel_root_+"overlapScore.cl", program_name, {"overlapScore"}, false, args);
+	if(x->size() < localMemorySize())
+		kernel_manager_.compileFromFile(kernel_root_+"overlapScore.cl", program_name, {"overlapScore"}, false, args);
+	else
+		kernel_manager_.compileFromFile(kernel_root_+"overlapScore_global.cl", program_name, {"overlapScore"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "overlapScore");
 
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
@@ -238,7 +241,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::overlapScore(const TensorImpl* x, con
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size())), cl::NDRange(local_size));
 
 	if(err != CL_SUCCESS)
-		throw EtError("overlapScore kernel execution failed. Code " + str(err));
+		throw EtError("overlapScore kernel overlapScore execution failed. Code " + str(err));
 
 	return y;
 }
@@ -336,7 +339,10 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 	auto hash = hash_string(args);
 	auto program_name = "learnCorrilation"+hash;
 
-	kernel_manager_.compileFromFile(kernel_root_+"learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args);
+	if(x->size() < localMemorySize())
+		kernel_manager_.compileFromFile(kernel_root_+"learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args);
+	else
+		kernel_manager_.compileFromFile(kernel_root_+"learnCorrilation_global.cl", program_name, {"learnCorrilation"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "learnCorrilation");
 
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
@@ -351,7 +357,7 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size())), cl::NDRange(local_size));
 
 	if(err != CL_SUCCESS)
-		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+		throw EtError("OpenCL kernel learnCorrilation execution failed. Code " + str(err));
 }
 
 void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
@@ -410,7 +416,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyBurst(const TensorImpl* x, const
 	size_t local_size = 128;
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, num_columns)), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
-		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+		throw EtError("OpenCL kernel applyBurst execution failed. Code " + str(err));
 	return res;
 }
 
@@ -438,7 +444,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 	size_t local_size = 128;
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, num_columns)), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
-		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+		throw EtError("OpenCL kernel reverseBurst execution failed. Code " + str(err));
 	return res;
 }
 
@@ -488,7 +494,7 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(work_size), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
-		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+		throw EtError("OpenCL kernel growSynapses execution failed. Code " + str(err));
 }
 
 cl::Buffer OpenCLBackend::toSparse(const TensorImpl* x)
@@ -518,7 +524,7 @@ cl::Buffer OpenCLBackend::toSparse(const TensorImpl* x)
 	k.setArg(1, buf);
 	err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(256), cl::NDRange(256));
 	if(err != CL_SUCCESS)
-		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+		throw EtError("OpenCL kernel toSparse execution failed. Code " + str(err));
 	return buf;
 }
 

@@ -19,7 +19,7 @@
 //MAX_SYNAPSE_PER_CELL: The max amount of connections a cell can have
 //x: The input SDR **IN SPARSE FORMAT**
 //aux: temporary buffer for storage, must be size of NUM_INPUT_BITS*global_size[0]
-kernel void growSynapses(constant int* restrict x, global bool* restrict y, global int* restrict connections
+kernel void growSynapses(global int* restrict x, global bool* restrict y, global int* restrict connections
 	, global float* restrict permeances, float initial_perm, int num_input_on_bits, global bool* restrict aux)
 {
 	int global_size = get_global_size(0);
@@ -29,6 +29,7 @@ kernel void growSynapses(constant int* restrict x, global bool* restrict y, glob
 	int group_id = get_group_id(0);
 	int group_size = get_num_groups(0);
 
+	local int write_idx;
 
 	for(int i=group_id;i<NUM_CELLS;i+=group_size) {
 		if(y[i] == 0)
@@ -55,16 +56,15 @@ kernel void growSynapses(constant int* restrict x, global bool* restrict y, glob
 			connection_list[idx] = true;
 		}
 
-		local int write_idx;
-
+		barrier(CLK_LOCAL_MEM_FENCE);
+		if(local_id == 0)
+			write_idx = MAX_SYNAPSE_PER_CELL;
 		barrier(CLK_LOCAL_MEM_FENCE);
 		atomic_min(&write_idx, local_min);
 		barrier(CLK_LOCAL_MEM_FENCE);
 
 		for(int j=local_id;j<num_input_on_bits&&write_idx<MAX_SYNAPSE_PER_CELL;j+=local_size) {
 			int idx = x[j];
-			if(idx == -1)
-				break;
 			bool connected = connection_list[idx];
 
 			if(connected == false) {

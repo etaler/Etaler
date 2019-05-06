@@ -38,7 +38,4 @@ kernel void toSparse(global bool* restrict x, global int* restrict y)
 		if(x[i] == true)
 			y[atomic_inc(&count)] = i;
 	}
-
-	barrier(CLK_LOCAL_MEM_FENCE);
-	y[count] = -1;
 }
