@@ -85,13 +85,13 @@ struct Tensor
 	{
 		if(size() != (size_t)shape.volume())
 			throw EtError("Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
-		return std::make_shared<ViewTensor>(pimpl_, shape, RectangularView(shape));
+		return std::make_shared<ViewTensor>(pimpl_, shape, RawView());
 	}
 
 	Tensor flatten() const
 	{
 		Shape view_shape = {(intmax_t)size()};
-		return std::make_shared<ViewTensor>(pimpl_, view_shape, RectangularView(view_shape));
+		return reshape(view_shape);
 	}
 
 	void assign(const Tensor& source)

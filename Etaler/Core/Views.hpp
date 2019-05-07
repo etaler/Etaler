@@ -32,7 +32,7 @@ inline size_t unfoldIndex(const IdxType& index, const ShapeType& shape)
 {
 	size_t s = 0;
 	size_t v = 1;
-	assert(index.size() == shape.size());
+	et_assert(index.size() == shape.size());
 	for(int i=(int)index.size()-1;i>=0;i--) {
 		v *= (i==(int)index.size()-1?1:shape[i+1]);
 		s += index[i] * v;
@@ -45,7 +45,7 @@ template <typename IdxType, typename StrideType>
 inline size_t unfold(const IdxType& index, const StrideType& stride)
 {
 	size_t s = 0;
-	assert(index.size() == stride.size());
+	et_assert(index.size() == stride.size());
 	for(int i=(int)index.size()-1;i>=0;i--)
 		s += stride[i] * index[i];
 

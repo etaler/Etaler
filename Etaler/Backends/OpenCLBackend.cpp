@@ -567,8 +567,8 @@ int location_func$ID(int location)
 	}
 
 	#pragma unroll
-	for(int i=0;i<$IN_DIMS;i++)
-		ndpos[$DIMS-$IN_DIMS+i] += bias[i];
+	for(int i=0;i<$DIMS;i++)
+		ndpos[i] += bias[i];
 
 	int sum = 0;
 	#pragma unroll
@@ -578,6 +578,8 @@ int location_func$ID(int location)
 }
 )";
 	const TensorImpl* parent = reinterpret_cast<const ViewTensor*>(x)->parent_.get();
+	et_assert(view.start().size() == parent->dimentions());
+
 	replaceAll(func, "$ID", std::to_string(id));
 	auto in_strides = shapeToStride(x->shape());
 	Shape s = Shape(in_strides.begin(), in_strides.end());
