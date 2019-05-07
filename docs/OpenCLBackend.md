@@ -11,7 +11,7 @@ The OpenCL backend caches programs automatoically. If a program `cast` already e
 ## Local Memory usage
 Due to how HTM work - being very memory bangwidth hungry and the input SDR is relativelly small. The OpenCL backend tries to stores data in the GPU's local memory so more bandwidth can be used for fetching synapse.
 
-However this also poses limitations. Since the input Tensor is copied into the local memory. The size of the input Tensor cannot exceed the size of local memory (48KB on NVIDIA cards and 64KB on AMD cards). This limitation will be removed in future versions. But not using local memory will come with a huge performance panality.
+However this also poses limitations. Since the input Tensor is copied into the local memory. The size of the input Tensor cannot exceed the size of local memory (48KB on NVIDIA cards and 64KB on AMD cards). If larger inputs are encountered, Etaler simply switches to a version not using local memory.
 
 ## OpenCL kenrel distribution
 Currently all `.cl` file are stored in the `kernels` folder. But this is not a good idea for software distribution. We'll have to make CMake pack the kernel into .hpp files.
@@ -22,7 +22,7 @@ NVIDIA's OpenCL implementation can crash without notifing the user. (kerenl can 
 ## POCL's CPU backend
 POCL 1.3's LLVM-CPU backend seems always crashing.
 
-## program name macnling
+## program name mangling
 Since the OpenCL backend tracks programes using a key. Name mangling (in Etaler's case, appending the hash of the compiler argumnents to the end of the key) is required to support multiple versions of the same program (with different `-D` defines, etc...).
 
 ## RPi VC4CL Support
