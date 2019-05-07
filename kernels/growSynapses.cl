@@ -42,6 +42,10 @@ kernel void growSynapses(global int* restrict x, global bool* restrict y, global
 		if(*(end-1) != -1) //If the last slot is not empty, we are full and we don't need to dod anything
 			continue;
 
+		if(local_id == 0)
+			write_idx = MAX_SYNAPSE_PER_CELL;
+		barrier(CLK_LOCAL_MEM_FENCE);
+
 		#pragma unroll 4
 		for(int j=local_id;j<NUM_INPUT_BITS;j+=local_size)
 			connection_list[j] = false;
@@ -50,17 +54,12 @@ kernel void growSynapses(global int* restrict x, global bool* restrict y, global
 		for(int j=local_id;j<MAX_SYNAPSE_PER_CELL;j+=local_size) {
 			int idx = synapses[j];
 			if(idx == -1) {
-				local_min = j;
+				atomic_min(&write_idx, j);
 				break;
 			}
 			connection_list[idx] = true;
 		}
 
-		barrier(CLK_LOCAL_MEM_FENCE);
-		if(local_id == 0)
-			write_idx = MAX_SYNAPSE_PER_CELL;
-		barrier(CLK_LOCAL_MEM_FENCE);
-		atomic_min(&write_idx, local_min);
 		barrier(CLK_LOCAL_MEM_FENCE);
 
 		for(int j=local_id;j<num_input_on_bits&&write_idx<MAX_SYNAPSE_PER_CELL;j+=local_size) {
