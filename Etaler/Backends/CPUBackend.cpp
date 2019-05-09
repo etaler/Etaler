@@ -294,8 +294,7 @@ std::shared_ptr<TensorImpl> CPUBackend::applyBurst(const TensorImpl* x, const Te
 	tbb::parallel_for(size_t(0), x->size(), [&](size_t i) {
 		if(in[i] == false)
 			std::generate(out+i*column_size, out+(i+1)*column_size, [](){return 0;});
-		else
-		{
+		else {
 			if(std::accumulate(state+i*column_size, state+(i+1)*column_size, 0) == 0)
 				std::generate(out+i*column_size, out+(i+1)*column_size, [](){return 1;});
 			else

@@ -5,8 +5,18 @@ list(APPEND ETALER_LINK_LIBRARIES tbb)
 
 if(ETALER_ENABLE_OPENCL)
 	list(APPEND ETLAR_SOURCE Backends/OpenCLBackend.cpp)
-	list(APPEND ETALER_LINK_LIBRARIES OpenCL)
+
+
+	if(NOT APPLE)
+		list(APPEND ETALER_LINK_LIBRARIES OpenCL)
+	else()
+		list(APPEND ETALER_LINK_LIBRARIES "-framework OpenCL")
+	endif()
 	message("Etaler: OpenCL backend enabled.")
+endif()
+
+if(APPLE)
+	list(APPEND ETALER_LINK_LIBRARIES stdc++)
 endif()
 
 

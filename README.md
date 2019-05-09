@@ -62,6 +62,9 @@ save(sp.states(), "sp.cereal");
 | OS/Backend      |  CPU |  OpenCL                   |
 |-----------------|------|---------------------------|
 | Linux           |  Yes |  Yes                      |
+| OS X            |  Yes |  Yes                      |
+
+* Built with GCC and libstdc++ on OS X
 
 ### Dependencies
 * Required
@@ -151,7 +154,7 @@ Etaler tho provides basically the same feature, is very different from NuPIC. So
 * [ ] Python binding
   * [ ] Numpy inter-op via xtensor
 * [ ] Windows support
-* [ ] OS X support
+* [x] OS X support
 * [x] Backend to backend data transfer
 * [x] Parallel processing on CPU
 * [ ] Test on ARM64

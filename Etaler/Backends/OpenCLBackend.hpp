@@ -5,7 +5,11 @@
 #include <Etaler/Core/TensorImpl.hpp>
 
 //#define __CL_ENABLE_EXCEPTIONS
-#include <CL/cl.hpp>
+#ifdef __APPLE__
+	#include <OpenCL/cl.hpp>
+#else
+	#include <CL/cl.hpp>
+#endif
 
 #include <vector>
 #include <map>
