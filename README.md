@@ -64,7 +64,7 @@ save(sp.states(), "sp.cereal");
 | Linux           |  Yes |  Yes                      |
 | OS X            |  Yes |  Yes                      |
 
-* Built with GCC and libstdc++ on OS X
+* Build with GCC and libstdc++ on OS X 10.11. Clang should work after OS X 10.14. See [BuildOnOSX.md](docs/BuildOnOSX.md)
 
 ### Dependencies
 * Required
@@ -103,7 +103,7 @@ Some cmake options are available:
 ## LICENSE
 Etaler is licensed under BSD 3-Clause License. So use it freely!
 
-Be aware tha [Numenta](https://numenta.com/) holds the rights to HTM related patents. And only allows free use of their patents for non-commercial purpose. If you are using Etaler commercially; please contact Numenta for licensing. <br>
+Be aware tha [Numenta](https://numenta.com/) holds the rights to HTM related patents. And only allows free (as "free beers" free) use of their patents for non-commercial purpose. If you are using Etaler commercially; please contact Numenta for licensing. <br>
 (tl;dr Etaler is free for any purpose. But HTM is not for commercial use.)
 
 ## Contribution
@@ -111,19 +111,15 @@ HTM Theory is in it's young age and as we are growing. We'd like to get contribu
 
 ## Notes
 
-* NVIDIA's OpenCL implementation might not report error correctly. It can execute kernels with a invalid memory object without telling you and crash a random thing the next time. If you are encountering weird behaviours. Please try [POCL](http://portablecl.org/) with the CUDA backend or use a AMD card. But the OpenCL kernels hasn't been optimized against vector processors like AMD's. You might experience performance drops doing so.
+* NVIDIA's OpenCL implementation might not report error correctly. It can execute kernels with a invalid memory object without telling you and crash a random thing the next time. If you are encountering weird behaviours. Please try [POCL](http://portablecl.org/) with the CUDA backend or use a AMD card. However the OpenCL kernels haven't been optimized against vector processors like AMD's. They should work but you might experience performance drops doing so.
 
 * Due to the nature of HTM. The OpenCL backend uses local memory extensively. And thus you will experience **lower than expected** performance **on processors that uses global memory to emulate local memory**. This includes but not limited to (and non of them are tested): ARM Mali GPUs, VideoCore IV GPU, any CPU.
 
-* By default Etaler saves to a portable binary file. Etaler automatically saves as JSON when you specified a `.json` file extention. But note that JSON is fat compared to the binary format and grows fast. Make sure you know what you are doing. It is mainly for debugging.
+* By default Etaler saves to a portable binary file. If yout want to save your data as JSON, Etaler automatically saves as JSON when you specified a `.json` file extention. But note that JSON is fat compared to the binary format and grows fast. Make sure you know what you are doing.
 
 * FPGA based OpenCL are not supported for now. FPGA platforms don't provide online (API callable) compilers that Etaler uses for code generation.
 
-* The maxium size of SP/TM that the OpenCL backend can handle depends on how much local memory your device has. Version of OpenCL kernels that don't use local memory are planned.
-
 * DSP/CPU/Xeon Phi based OpenCL should work out of the box. But we didn't test that.
-
-* Etaler's Tensor implementation is more like a buffer for the time being. They are reference counted and copies when indexed(not yet implemented). (Works like xtensor's xarray)
 
 ## For NuPIC users
 Etaler tho provides basically the same feature, is very different from NuPIC. Some noticeable ones are:
