@@ -107,7 +107,7 @@ Be aware tha [Numenta](https://numenta.com/) holds the rights to HTM related pat
 (tl;dr Etaler is free for any purpose. But HTM is not for commercial use.)
 
 ## Contribution
-HTM Theory is in it's young age and as we are growing. We'd like to get contributions from you to accelerate the development of tiny-dnn! Just fork, make changes and launch a PR!
+HTM Theory is in it's young age and as we are growing. We'd like to get contributions from you to accelerate the development of Etaler! Just fork, make changes and launch a PR!
 
 ## Notes
 
@@ -128,6 +128,10 @@ Etaler tho provides basically the same feature, is very different from NuPIC. So
 * SDR is handled as a Tensor instead of a sparse matrix
 * Swarming is not supported nor planned
 
+## Testing
+If you have the tests builded. Run `tests/etaler_test -s`.
+
+We are still thinking about weather a CI is worth the problem. C++ projects takes too long to build on most CIs and is a problem for fast development.
 
 ## Things to be done before release
 
