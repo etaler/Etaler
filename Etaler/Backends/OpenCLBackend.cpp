@@ -80,6 +80,9 @@ OpenCLBackend::OpenCLBackend()
 	queue_ = cl::CommandQueue(context_);
 	kernel_manager_ = KernelManager(device, context_);
 	kernel_manager_.compileKernel("kernel void __etaler_dummy__(global int* p){p[get_global_id(0)] = 0;}", "__etaler_dummy__", "__etaler_dummy__");
+
+	local_mem_size_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
+	local_mem_type_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>();
 }
 
 OpenCLBackend::OpenCLBackend(cl::Context context, cl::Platform platform, cl::Device device)
@@ -92,6 +95,9 @@ OpenCLBackend::OpenCLBackend(cl::Context context, cl::Platform platform, cl::Dev
 	queue_ = cl::CommandQueue(context_);
 	kernel_manager_ = KernelManager(device, context_);
 	kernel_manager_.compileKernel("kernel void __etaler_dummy__(global int* p){p[get_global_id(0)] = 0;}", "__etaler_dummy__", "__etaler_dummy__");
+
+	local_mem_size_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
+	local_mem_type_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>();
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DType dtype, const void* data)
@@ -133,10 +139,10 @@ void OpenCLBackend::copyToHost(const TensorImpl* pimpl, void* dest)
 
 std::string OpenCLBackend::deviceInfo() const
 {
-	std::map<int, std::string> cache_type;
-	cache_type[CL_LOCAL] = "Local";
-	cache_type[CL_GLOBAL] = "Global";
-	cache_type[CL_NONE] = "None";
+	/*std::map<int, std::string> local_type;
+	local_type[CL_LOCAL] = "Local";
+	local_type[CL_GLOBAL] = "Global";
+	loca_type[CL_NONE] = "None";*/
 	std::string res;
 	res += "Platform: " + platform_.getInfo<CL_PLATFORM_NAME>() + "\n";
 	res += "Device name: " + device_.getInfo<CL_DEVICE_NAME>() + "\n";
@@ -223,7 +229,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::overlapScore(const TensorImpl* x, con
 	auto hash = hash_string(args);
 	auto program_name = "overlapScore"+hash;
 
-	if(x->size() < localMemorySize())
+	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
 		kernel_manager_.compileFromFile(kernel_root_+"overlapScore.cl", program_name, {"overlapScore"}, false, args);
 	else
 		kernel_manager_.compileFromFile(kernel_root_+"overlapScore_global.cl", program_name, {"overlapScore"}, false, args);
@@ -339,7 +345,7 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 	auto hash = hash_string(args);
 	auto program_name = "learnCorrilation"+hash;
 
-	if(x->size() < localMemorySize())
+	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
 		kernel_manager_.compileFromFile(kernel_root_+"learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args);
 	else
 		kernel_manager_.compileFromFile(kernel_root_+"learnCorrilation_global.cl", program_name, {"learnCorrilation"}, false, args);

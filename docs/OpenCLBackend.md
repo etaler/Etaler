@@ -6,7 +6,7 @@ The is a brief document/note about the OpenCL backend.
 Currently the backend only requires and uses the features provided by OpenCL 1.2. But OpenCL 2.0 support is planned.
 
 ## Program caching
-The OpenCL backend caches programs automatoically. If a program `cast` already exists in the kernel manager. Asking it to compile another version of `cast` does nothing. Set the `force_override` flag to force a compilation override.
+The OpenCL backend caches programs automatoically. If a program `cast` already exists in the kernel manager. Asking it to compile another version of `cast` does nothing. Set the `force_override` flag to force a compilation and override.
 
 ## Using Local Memory
 Due to how HTM work - being very memory bangwidth hungry and the input SDR is relativelly small. The OpenCL backend tries to stores data in the GPU's local(on-chip) memory so more bandwidth can be used for fetching synapse.
@@ -30,4 +30,4 @@ Since the OpenCL backend tracks programes using a key. Name mangling (in Etaler'
 VC4CL is **not suported** for now. Due to VC4CL only supporting up to 12 PE per work group. This limitation is not taken into account in the OpenCL backend. (And VC4 uses global memory to emulate local memory, it is going to be slow),
 
 ## Altera AOCL / Xiinx SDAccel support
-FPGA based OpenCL although interaseting. They are not supported now due to the lack of a API callable compiler.
+FPGA based OpenCL although interaseting, are not supported now due to the lack of a API callable compiler.

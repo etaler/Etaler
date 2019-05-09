@@ -114,8 +114,14 @@ struct OpenCLBackend : public Backend
 
 protected:
 
-	cl_ulong localMemorySize() {return device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();}
-	cl_device_local_mem_type localMemoryType() {return device_.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>();}
+	cl_ulong localMemorySize()
+	{
+		return local_mem_size_;
+	}
+	cl_device_local_mem_type localMemoryType()
+	{
+		return local_mem_type_;
+	}
 
 	inline cl::Buffer allocBuffer(size_t size)
 	{
@@ -134,6 +140,9 @@ protected:
 	cl::CommandQueue queue_;
 
 	std::string kernel_root_ = "../kernels/";
+
+	cl_device_local_mem_type local_mem_type_;
+	cl_ulong local_mem_size_;
 };
 
 }

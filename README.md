@@ -109,6 +109,8 @@ Be aware tha [Numenta](https://numenta.com/) holds the rights to HTM related pat
 ## Contribution
 HTM Theory is in it's young age and as we are growing. We'd like to get contributions from you to accelerate the development of Etaler! Just fork, make changes and launch a PR!
 
+See [CONTRIBUTION.md](docs/Contribution.md)
+
 ## Notes
 
 * NVIDIA's OpenCL implementation might not report error correctly. It can execute kernels with a invalid memory object without telling you and crash a random thing the next time. If you are encountering weird behaviours. Please try [POCL](http://portablecl.org/) with the CUDA backend or use a AMD card. However the OpenCL kernels haven't been optimized against vector processors like AMD's. They should work but you might experience performance drops doing so.
@@ -169,23 +171,5 @@ We are still thinking about weather a CI is worth the problem. C++ projects take
 * [ ] SP Boosting support
 * [ ] Make the algorithms compliant to BAMI
 * [x] Basic Tensor indexing
-
-## Deisgn decitions
-
-* Don't care about x86-32 (Any 32bit architecture in fact). But no intentional breaks
-* Use DOD. OOP is slow and evil
-* Parallel/async-able
-* Seprate the compute backend from the API frontend
-* make the design scalable
-* see no reason to run a layer across multiple GPUs. Just keep layers running on a single device
-* Keep the API high level
-* Braking the archicture is OK
-* Serealizable objects should reture a `StateDict` (`std::map<std::string, std::any>`) object for serialization
-  * non intrusive serialization
-  * Reseves a StateDict object to deserealize
-* Language binding should be in another repo
-* Don't care about swarmming
-* follow the KISS principle
-* Configure files are evil (Looking at you NuPIC)
 
 ## Release notes
