@@ -557,45 +557,35 @@ static std::string jitRectangularView(const OpenCLTensor* x, const RectangularVi
 int location_func$ID(int location)
 {
 	int in_stride[] = $IN_STRIDE;
-	int bias[] = $BIAS;
 	int stride[] = $STRIDE;
+	int bias = $BIAS;
 
-	int ndpos[$DIMS];
+	int ndpos[$DIMS] = {0};
 	int loc = location;
-	#pragma unroll
-	for(int i=0;i<$DIMS;i++)
-		ndpos[i] = 0;
-	#pragma unroll
 	for(int i=0;i<$IN_DIMS;i++) {
-		int stride = (i==$IN_DIMS-1 ? 1 : in_stride[i+1]);
-		ndpos[$DIMS-$IN_DIMS+i] = loc/stride;
-		loc %= stride;
+		int s = (i != $IN_DIMS-1 ? in_stride[i+1] : 1);
+		ndpos[$DIMS - $IN_DIMS + i] = loc / s;
+		loc %= s;
 	}
 
-	#pragma unroll
-	for(int i=0;i<$DIMS;i++)
-		ndpos[i] += bias[i];
-
 	int sum = 0;
-	#pragma unroll
 	for(int i=0;i<$DIMS;i++)
-		sum += ndpos[i]*(i==$DIMS-1 ? 1 : stride[i+1]);
+		sum += ndpos[i]*(i != $DIMS-1 ? stride[i+1] : 1);;
+	sum += bias;
+
 	return sum;
 }
 )";
 	const TensorImpl* parent = reinterpret_cast<const ViewTensor*>(x)->parent_.get();
-	et_assert(view.start().size() == parent->dimentions());
 
 	replaceAll(func, "$ID", std::to_string(id));
 	auto in_strides = shapeToStride(x->shape());
-	Shape s = Shape(in_strides.begin(), in_strides.end());
-	replaceAll(func, "$IN_STRIDE", to_string(s));
+	replaceAll(func, "$IN_STRIDE", to_string(in_strides));
 	replaceAll(func, "$IN_DIMS", std::to_string(x->dimentions()));
-	replaceAll(func, "$DIMS", std::to_string(parent->dimentions()));
+	replaceAll(func, "$DIMS", std::to_string(std::max(x->dimentions(), parent->dimentions())));
 
-	auto strides = shapeToStride(parent->shape());
-	replaceAll(func, "$STRIDE", to_string(Shape(strides.begin(), strides.end())));
-	replaceAll(func, "$BIAS", to_string(Shape(view.start().begin(), view.start().end())));
+	replaceAll(func, "$STRIDE", to_string(view.strides()));
+	replaceAll(func, "$BIAS", std::to_string(view.offset()));
 	return func;
 }
 
