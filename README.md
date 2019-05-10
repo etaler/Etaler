@@ -57,6 +57,9 @@ Saving layers
 ```C++
 save(sp.states(), "sp.cereal");
 ```
+
+For more infmation see [the documents](docs/)
+
 ## Building and platform support
 
 | OS/Backend      |  CPU |  OpenCL                   |
@@ -141,7 +144,7 @@ We are still thinking about weather a CI is worth the problem. C++ projects take
 * [x] Implement Encoders
 * [x] Implement TM
 * [x] Anomaly detector
-* [ ] Classifier
+* [x] Classifier
 * [ ] Serialization
 * [x] Tests
 
@@ -163,7 +166,7 @@ We are still thinking about weather a CI is worth the problem. C++ projects take
 * [ ] Test on PPC64
 * [x] Load/run-able on ROOT and cling
 * [ ] As VC4CL is very experimental. - Running on the RPi GPU
-* [ ] Make FindEraler.cmake
+* [x] Make FindEraler.cmake
 * [ ] Altera AOCL support
 * [x] Serialize to...
   * [x] Cereal
@@ -172,4 +175,4 @@ We are still thinking about weather a CI is worth the problem. C++ projects take
 * [ ] Make the algorithms compliant to BAMI
 * [x] Basic Tensor indexing
 
-## Release notes
+

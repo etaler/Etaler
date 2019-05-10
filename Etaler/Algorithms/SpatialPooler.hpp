@@ -51,6 +51,10 @@ struct SpatialPooler
 			, {"global_density", global_density_}};
 	}
 
+	
+
+	SpatialPooler to(Backend* b) const;
+
 	void loadState(const StateDict& states);
 protected:
 	float permance_inc_ = 0.1;
@@ -68,3 +72,4 @@ protected:
 
 
 }
+
