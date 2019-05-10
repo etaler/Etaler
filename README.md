@@ -140,10 +140,10 @@ We are still thinking about weather a CI is worth the problem. C++ projects take
 * [x] Implement SP
 * [x] Implement Encoders
 * [x] Implement TM
-* [ ] Anomaly detectors
+* [x] Anomaly detector
 * [ ] Classifier
 * [ ] Serialization
-* [ ] Tests
+* [x] Tests
 
 ## TODO
 

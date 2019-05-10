@@ -24,6 +24,9 @@ include_directories(3rdparty/pcg-cpp/include)
 add_library(Etaler SHARED ${ETLAR_SOURCE})
 target_link_libraries(Etaler ${ETALER_LINK_LIBRARIES})
 
+install(FILES ${CMAKE_SOURCE_DIR}/cmake/FindEtaler.cmake
+	DESTINATION share/Etaler COMPONENT cmake)
+
 INSTALL(DIRECTORY ${CMAKE_SOURCE_DIR}/Etaler
     DESTINATION include
     FILES_MATCHING PATTERN "*.hpp*|*.h*")
