@@ -427,13 +427,10 @@ const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 		const TensorImpl* parent = reinterpret_cast<const ViewTensor*>(t)->parent_.get();
 		using ViewType = std::decay_t<decltype(view)>;
 		if constexpr(std::is_same_v<ViewType, RectangularView>) {
-			Shape local_loc = foldIndex(parent_idx, t->shape());
-			size_t size = view.start().size();
-			et_assert(size >= local_loc.size());
-			local_loc = Shape(size - local_loc.size()) + local_loc;
-			for(size_t i=0;i<view.start().size();i++)
-				local_loc[i] += view.start()[i];
-			parent_idx = unfoldIndex(local_loc, reinterpret_cast<const ViewTensor*>(t)->parent_->shape());
+			Shape s = foldIndex(parent_idx, t->shape());
+			s = Shape(view.strides().size()-s.size(), 0) + s;
+			size_t offset = view.offset() + unfold(s, view.strides());
+			parent_idx = offset;
 		}
 		else if constexpr(std::is_same_v<ViewType, RawView>)
 			{} //No-op

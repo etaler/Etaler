@@ -171,16 +171,9 @@ Tensor Tensor::view(svector<Range> ranges) const
 	if(result_shape.size() == 0)
 		result_shape.push_back(1);
 
-	//Expand the shape for View to the same dimetions of the source
-	view_shape = result_shape;
-	if(view_shape.size() < dimentions()) {
-		Shape s;
-		s.resize(dimentions() - view_shape.size());
-		for(auto v : view_shape)
-			s.push_back(v);
-		view_shape = s;
-	}
-	return std::make_shared<ViewTensor>(pimpl_, result_shape, RectangularView(offset, view_shape));
+	Shape view_meta_strides = shapeToStride(shape());
+	size_t initial_offset = unfoldIndex(offset, shape());
+	return std::make_shared<ViewTensor>(pimpl_, result_shape, RectangularView(initial_offset, view_meta_strides));
 }
 
 Tensor et::zeros(const Shape& shape, DType dtype, Backend* backend)

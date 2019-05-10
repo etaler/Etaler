@@ -27,7 +27,8 @@ POCL 1.3's LLVM-CPU backend seems always crashing.
 Since the OpenCL backend tracks programes using a key. Name mangling (in Etaler's case, appending the hash of the compiler argumnents to the end of the key) is required to support multiple versions of the same program (with different `-D` defines, etc...).
 
 ## RPi VC4CL Support
-VC4CL is **not suported** for now. Due to VC4CL only supporting up to 12 PE per work group. This limitation is not taken into account in the OpenCL backend. (And VC4 uses global memory to emulate local memory, it is going to be slow),
+VC4CL is **not suported** for now. The limitation of VC4CL only supporting up to 12 PE per work group is not taken into account in the OpenCL backend. (And VC4 uses global memory to emulate local memory, it is going to be slow),
 
 ## Altera AOCL / Xiinx SDAccel support
 FPGA based OpenCL although interaseting, are not supported now due to the lack of a API callable compiler.
+

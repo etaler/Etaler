@@ -14,17 +14,17 @@ struct RawView {};
 
 struct RectangularView
 {
-	RectangularView(svector<intmax_t> start, Shape shape)
-		: start_(start), shape_(shape) {}
+	RectangularView(size_t offset, Shape strides)
+		: offset_(offset), strides_(strides) {}
 
-	RectangularView(Shape shape)
-		: start_(svector<intmax_t>(shape.size(), 0)), shape_(shape) {}
+	RectangularView(Shape strides)
+		: offset_(0), strides_(strides) {}
 
-	const svector<intmax_t>& start() const {return start_;}
-	const Shape& shape() const {return shape_;}
+	size_t offset() const {return offset_;}
+	const Shape& strides() const {return strides_;}
 
-	svector<intmax_t> start_;
-	Shape shape_;
+	size_t offset_;
+	Shape strides_;
 };
 
 template <typename IdxType, typename ShapeType>
@@ -47,14 +47,14 @@ inline size_t unfold(const IdxType& index, const StrideType& stride)
 	size_t s = 0;
 	et_assert(index.size() == stride.size());
 	for(int i=(int)index.size()-1;i>=0;i--)
-		s += stride[i] * index[i];
+		s += (i==(int)index.size()-1?1:stride[i+1]) * index[i];
 
 	return s;
 }
 
-inline svector<intmax_t> shapeToStride(const Shape& shape)
+inline Shape shapeToStride(const Shape& shape)
 {
-	svector<intmax_t> v;
+	Shape v;
 	v.resize(shape.size());
 	size_t acc = 1;
 	for(int i=(int)shape.size()-1;i>=0;i--) {
