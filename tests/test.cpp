@@ -123,6 +123,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			Tensor r = t.view({range(2), range(2)});
 			CHECK(r.size() == 4);
 			CHECK(r.dimentions() == 2);
+			CHECK(r.shape() == Shape({2,2}));
 			int a[] = {0,1,4,5};
 			Tensor pred = Tensor({2,2}, a);
 			CHECK(realize(r).isSame(pred));

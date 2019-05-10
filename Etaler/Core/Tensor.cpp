@@ -147,7 +147,6 @@ Tensor Tensor::view(svector<Range> ranges) const
 		return resolve_index(r.end(), r.endFromBack(), size) - resolve_index(r.start(), r.startFromBack(), size);
 	};
 
-	Shape view_shape;
 	Shape result_shape;
 	svector<intmax_t> offset;
 
