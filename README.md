@@ -161,7 +161,7 @@ We are still thinking about weather a CI is worth the problem. C++ projects take
 * [x] Parallel processing on CPU
 * [ ] Test on ARM64
 * [ ] Test on PPC64
-* [ ] Load/run-able on ROOT and cling
+* [x] Load/run-able on ROOT and cling
 * [ ] As VC4CL is very experimental. - Running on the RPi GPU
 * [ ] Make FindEraler.cmake
 * [ ] Altera AOCL support
