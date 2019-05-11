@@ -14,12 +14,16 @@ float benchmarkSpatialPooler(const Shape& out_shape, const std::vector<Tensor>& 
 	SpatialPooler sp(x[0].shape(), out_shape);
 
 	//To make the OpenCL backen ptr-compile the kernels
-	sp.compute(x[0]);
+	Tensor t = zeros(x[0].shape(), DType::Bool);
+	sp.compute(t);
+	sp.learn(t, t);
 
 	auto t0 = std::chrono::high_resolution_clock::now();
 	for(size_t i=0;i<num_epoch;i++) {
-		for(const auto& d : x)
-			sp.compute(d);
+		for(const auto& d : x) {
+			Tensor y = sp.compute(d);
+			sp.learn(d, y);
+		}
 	}
 	defaultBackend()->sync();
 	auto t1 = std::chrono::high_resolution_clock::now();
