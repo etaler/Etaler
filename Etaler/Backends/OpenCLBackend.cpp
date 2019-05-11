@@ -204,8 +204,26 @@ void KernelManager::compileFromFile(const std::vector<std::string>& paths, const
 {
 	std::vector<std::string> sources;
 	for(const auto& path : paths)
-		sources.emplace_back(readAll(path));
+		sources.emplace_back(readKernel(path));
 	compileKernel(sources, program_name, kernel_names, force_override, flags);
+}
+
+std::string KernelManager::readKernel(const std::string& name)
+{
+	auto it = kernelCache.find(name);
+	if(it != kernelCache.end())
+		return it->second;
+
+	for(const auto& search_paths : search_paths_) {
+		std::string path = search_paths + name;
+		if(std::ifstream(path).is_open() == true) {
+			std::string src = readAll(path);
+			kernelCache[name] = src;
+			return src;
+		}
+	}
+
+	throw EtError("Cannot find any open-able " + name + " in search paths");
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections,
@@ -230,9 +248,9 @@ std::shared_ptr<TensorImpl> OpenCLBackend::overlapScore(const TensorImpl* x, con
 	auto program_name = "overlapScore"+hash;
 
 	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile(kernel_root_+"overlapScore.cl", program_name, {"overlapScore"}, false, args);
+		kernel_manager_.compileFromFile("overlapScore.cl", program_name, {"overlapScore"}, false, args);
 	else
-		kernel_manager_.compileFromFile(kernel_root_+"overlapScore_global.cl", program_name, {"overlapScore"}, false, args);
+		kernel_manager_.compileFromFile("overlapScore_global.cl", program_name, {"overlapScore"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "overlapScore");
 
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
@@ -265,7 +283,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x,
 	auto program_name = "overlapScore"+hash;
 
 	cl::Kernel topKKernel, thresholdKernel;
-	kernel_manager_.compileFromFile(kernel_root_+"globalInhibition.cl", program_name, {"fastTopK", "threshold"}, false, args);
+	kernel_manager_.compileFromFile("globalInhibition.cl", program_name, {"fastTopK", "threshold"}, false, args);
 
 	topKKernel = kernel_manager_.kernel(program_name, "fastTopK");
 	thresholdKernel = kernel_manager_.kernel(program_name, "threshold");
@@ -292,7 +310,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toTyp
 	auto args = "-DInType="+to_ctype_string(x->dtype())+" -DOutType="+to_ctype_string(toType);
 	auto hash = hash_string(args);
 	auto program_name = "cast"+hash;
-	kernel_manager_.compileFromFile(kernel_root_+"cast.cl", program_name, {"cast"}, false, args);
+	kernel_manager_.compileFromFile("cast.cl", program_name, {"cast"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "cast");
 
 	auto res = createTensor(x->shape(), toType);
@@ -346,9 +364,9 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 	auto program_name = "learnCorrilation"+hash;
 
 	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile(kernel_root_+"learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args);
+		kernel_manager_.compileFromFile("learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args);
 	else
-		kernel_manager_.compileFromFile(kernel_root_+"learnCorrilation_global.cl", program_name, {"learnCorrilation"}, false, args);
+		kernel_manager_.compileFromFile("learnCorrilation_global.cl", program_name, {"learnCorrilation"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "learnCorrilation");
 
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
@@ -376,7 +394,7 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 	auto args = "-DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back());
 	auto program_name = "sortSynapse"+hash_string(args);
-	kernel_manager_.compileFromFile(kernel_root_+"sort.cl", program_name, {"sortSynapse"}, false, args);
+	kernel_manager_.compileFromFile("sort.cl", program_name, {"sortSynapse"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "sortSynapse");
 
 	int num_cells = connections->size()/connections->shape().back();
@@ -413,7 +431,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyBurst(const TensorImpl* x, const
 
 	auto args = "-DCELLS_PER_COLUMN="+str(s->shape().back())+" -DNUM_COLUMNS="+str(num_columns);
 	auto program_name = "applyBurst"+hash_string(args);
-	kernel_manager_.compileFromFile(kernel_root_+"applyBurst.cl", program_name, {"applyBurst"}, false, args);
+	kernel_manager_.compileFromFile("applyBurst.cl", program_name, {"applyBurst"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "applyBurst");
 
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
@@ -440,7 +458,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 
 	auto args = "-DCELLS_PER_COLUMN="+str(cells_per_column)+" -DNUM_COLUMNS="+str(num_columns);
 	auto program_name = "reverseBurst"+hash_string(args);
-	kernel_manager_.compileFromFile(kernel_root_+"reverseBurst.cl", program_name, {"reverseBurst"}, false, args);
+	kernel_manager_.compileFromFile("reverseBurst.cl", program_name, {"reverseBurst"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "reverseBurst");
 
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(res.get())->buffer());
@@ -478,7 +496,7 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 
 	auto args = "-DNUM_CELLS="+str(y->size())+" -DNUM_INPUT_BITS="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell);
 	auto program_name = "growSynapses"+hash_string(args);
-	kernel_manager_.compileFromFile(kernel_root_+"growSynapses.cl", program_name, {"growSynapses"}, false, args);
+	kernel_manager_.compileFromFile("growSynapses.cl", program_name, {"growSynapses"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "growSynapses");
 
 	size_t local_size = 32;
@@ -510,7 +528,7 @@ cl::Buffer OpenCLBackend::toSparse(const TensorImpl* x)
 
 	auto args = "-DINPUT_SIZE="+str(x->size());
 	auto program_name = "toSparse"+hash_string(args);
-	kernel_manager_.compileFromFile(kernel_root_+"toSparse.cl", program_name, {"toSparse", "onBits"}, false, args);
+	kernel_manager_.compileFromFile("toSparse.cl", program_name, {"toSparse", "onBits"}, false, args);
 
 	cl::Kernel on_bits = kernel_manager_.kernel(program_name, "onBits");
 	cl::Kernel k = kernel_manager_.kernel(program_name, "toSparse");

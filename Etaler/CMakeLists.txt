@@ -12,6 +12,12 @@ if(ETALER_ENABLE_OPENCL)
 	else()
 		list(APPEND ETALER_LINK_LIBRARIES "-framework OpenCL")
 	endif()
+
+
+	install(DIRECTORY ${CMAKE_SOURCE_DIR}/kernels
+		DESTINATION share/Etaler
+		FILES_MATCHING PATTERN "*.cl")
+
 	message("Etaler: OpenCL backend enabled.")
 endif()
 

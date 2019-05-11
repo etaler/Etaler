@@ -78,6 +78,12 @@ struct KernelManager
 	std::map<std::string, Application> apps_;
 	cl::Device device_;
 	cl::Context context_;
+	std::map<std::string, std::string> kernelCache;
+
+	std::vector<std::string> search_paths_ = {"./kernels/", "../kernels/", "/use/local/share/Etaler/kernels/", "/use/share/Etaler/kernels/"};
+
+protected:
+	std::string readKernel(const std::string& name);
 };
 
 struct OpenCLBackend : public Backend
@@ -138,8 +144,6 @@ protected:
 	cl::Device device_;
 	cl::Context context_;
 	cl::CommandQueue queue_;
-
-	std::string kernel_root_ = "../kernels/";
 
 	cl_device_local_mem_type local_mem_type_;
 	cl_ulong local_mem_size_;
