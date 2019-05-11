@@ -1,19 +1,20 @@
 project(Etaler CXX)
 
-list(APPEND ETLAR_SOURCE Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/Serialize.cpp Core/Tensor.cpp Algorithms/SpatialPooler.cpp Algorithms/TemporalMemory.cpp)
-list(APPEND ETALER_LINK_LIBRARIES tbb)
+add_library(Etaler SHARED Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/Serialize.cpp Core/Tensor.cpp Algorithms/SpatialPooler.cpp Algorithms/TemporalMemory.cpp)
+target_link_libraries(Etaler tbb)
+target_include_directories(Etaler PRIVATE 3rdparty/pcg-cpp/include)
 
 if(ETALER_ENABLE_OPENCL)
-	list(APPEND ETLAR_SOURCE Backends/OpenCLBackend.cpp)
+	target_sources(Etaler PRIVATE Backends/OpenCLBackend.cpp)
 
 
 	if(NOT APPLE)
-		list(APPEND ETALER_LINK_LIBRARIES OpenCL)
+		target_link_libraries(Etaler OpenCL)
 	else()
-		list(APPEND ETALER_LINK_LIBRARIES "-framework OpenCL")
+		target_link_libraries(Etaler "-framework OpenCL")
 	endif()
 
-
+	# Install OpenCL headers
 	install(DIRECTORY ${CMAKE_SOURCE_DIR}/kernels
 		DESTINATION share/Etaler
 		FILES_MATCHING PATTERN "*.cl")
@@ -22,13 +23,8 @@ if(ETALER_ENABLE_OPENCL)
 endif()
 
 if(APPLE)
-	list(APPEND ETALER_LINK_LIBRARIES stdc++)
+	target_link_libraries(Etaler stdc++)
 endif()
-
-
-include_directories(3rdparty/pcg-cpp/include)
-add_library(Etaler SHARED ${ETLAR_SOURCE})
-target_link_libraries(Etaler ${ETALER_LINK_LIBRARIES})
 
 install(FILES ${CMAKE_SOURCE_DIR}/cmake/FindEtaler.cmake
 	DESTINATION share/Etaler COMPONENT cmake)
