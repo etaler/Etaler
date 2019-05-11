@@ -12,6 +12,7 @@
 #endif
 
 #include <vector>
+#include <deque>
 #include <map>
 #include <fstream>
 
@@ -39,12 +40,8 @@ protected:
 
 struct KernelManager
 {
-	KernelManager() = default;
-	KernelManager(cl::Device device, cl::Context context)
-		: device_(device), context_(context)
-	{
-	}
-
+	KernelManager() : KernelManager(cl::Device(), cl::Context()) {};
+	KernelManager(cl::Device device, cl::Context context);
 	struct Application
 	{
 		cl::Program program;
@@ -73,6 +70,8 @@ struct KernelManager
 	const cl::Kernel& kernel(const std::string& program_name, const std::string& kernel_name) const {return apps_.at(program_name).kernels.at(kernel_name);}
 	const cl::Kernel& kernel(const std::string& name) const {return kernel(name, name);}
 
+	void addSearchPath(const std::string& path);
+
 	void remove(std::string program_name) {auto it = apps_.find(program_name); if(it != apps_.end()) apps_.erase(it);}
 
 	std::map<std::string, Application> apps_;
@@ -80,7 +79,7 @@ struct KernelManager
 	cl::Context context_;
 	std::map<std::string, std::string> kernelCache;
 
-	std::vector<std::string> search_paths_ = {"./kernels/", "../kernels/", "/usr/local/share/Etaler/kernels/", "/usr/share/Etaler/kernels/"};
+	std::deque<std::string> search_paths_ = {"./kernels/", "../kernels/", "/usr/local/share/Etaler/kernels/", "/usr/share/Etaler/kernels/"};
 
 protected:
 	std::string readKernel(const std::string& name);

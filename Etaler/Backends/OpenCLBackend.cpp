@@ -6,6 +6,8 @@
 #include <map>
 #include <sstream>
 
+#include <stdlib.h>
+
 using namespace et;
 
 //Helper functions
@@ -153,6 +155,20 @@ std::string OpenCLBackend::deviceInfo() const
 	return res;
 }
 
+KernelManager::KernelManager(cl::Device device, cl::Context context)
+	: device_(device), context_(context)
+{
+	const char* ptr = getenv("ETALER_KERNEL_PATH");
+	if(ptr == nullptr)
+		return;
+	std::string env_path(ptr);
+	if(env_path != "") {
+		if(env_path.back() != '/')
+			env_path += "/";
+		addSearchPath(env_path);
+	}
+}
+
 cl::Kernel KernelManager::compileKernel(const std::string& src, const std::string& program_name, const std::string& kernel_name
 	, bool force_override, const std::string& flags)
 {
@@ -224,6 +240,11 @@ std::string KernelManager::readKernel(const std::string& name)
 	}
 
 	throw EtError("Cannot find any open-able " + name + " in search paths");
+}
+
+void KernelManager::addSearchPath(const std::string& path)
+{
+	search_paths_.push_front(path);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections,

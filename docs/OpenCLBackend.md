@@ -18,6 +18,8 @@ Also some GPUs - all of them are mobile GPUs -  don't have such local memory and
 The OpenCL backend searchs for the kernels it needs in the following paths: `./kernels/`, `../kernels/`, `/usr/local/share/Etaler/kernels` and `/usr/share/Etaler/kernels/`. If the file is found, then it is read and cached in memory. If not an exception is raised.
 The kernel files are installed when installing the library.
 
+If you have your kernels stored at a different location. You can set the `ETALER_KERNEL_PATH` enviroment variable to make your path avavliable.
+
 ## NVIDIA's OpenCL implementation
 NVIDIA's OpenCL implementation can crash without notifing the user. (kerenl can crash without abort, generating error code at the wrong places, etc...). Use POCL's CUDA backend for varification that the kernel is running correctly.
 
