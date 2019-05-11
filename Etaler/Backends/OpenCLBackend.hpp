@@ -80,7 +80,7 @@ struct KernelManager
 	cl::Context context_;
 	std::map<std::string, std::string> kernelCache;
 
-	std::vector<std::string> search_paths_ = {"./kernels/", "../kernels/", "/use/local/share/Etaler/kernels/", "/use/share/Etaler/kernels/"};
+	std::vector<std::string> search_paths_ = {"./kernels/", "../kernels/", "/usr/local/share/Etaler/kernels/", "/usr/share/Etaler/kernels/"};
 
 protected:
 	std::string readKernel(const std::string& name);

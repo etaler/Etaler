@@ -12,10 +12,11 @@ The OpenCL backend caches programs automatoically. If a program `cast` already e
 Due to how HTM work - being very memory bangwidth hungry and the input SDR is relativelly small. The OpenCL backend tries to stores data in the GPU's local(on-chip) memory so more bandwidth can be used for fetching synapse.
 
 However this also poses limitations. Since the input Tensor is copied into the local memory. The size of the input Tensor cannot exceed the size of local memory (48KB on NVIDIA cards and 64KB on AMD cards). If larger inputs are encountered, Etaler simply switches to a version not using local memory.
-Also some GPUs - all of them are mobile GPUs -  don't have such local memory and is emulated using global memroy. Etaler uses kernels without local memory optimization. 
+Also some GPUs - all of them are mobile GPUs -  don't have such local memory and is emulated using global memroy. Etaler uses kernels without local memory optimization.
 
 ## OpenCL kenrel distribution
-Currently all `.cl` file are stored in the `kernels` folder. But this is not a good idea for software distribution. We'll have to make CMake pack the kernel into .hpp files.
+The OpenCL backend searchs for the kernels it needs in the following paths: `./kernels/`, `../kernels/`, `/usr/local/share/Etaler/kernels` and `/usr/share/Etaler/kernels/`. If the file is found, then it is read and cached in memory. If not an exception is raised.
+The kernel files are installed when installing the library.
 
 ## NVIDIA's OpenCL implementation
 NVIDIA's OpenCL implementation can crash without notifing the user. (kerenl can crash without abort, generating error code at the wrong places, etc...). Use POCL's CUDA backend for varification that the kernel is running correctly.

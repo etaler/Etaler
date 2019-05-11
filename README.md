@@ -151,11 +151,11 @@ We are still thinking about weather a CI is worth the problem. C++ projects take
 ## TODO
 
 * [ ] C++20 Modules when C++20 is released
-* [ ] OpenCL support
+* [x] OpenCL support
   * [x] Printable OpenCL Tensors
   * [x] SP in OpenCL
   * [x] TM in OpenCL
-  * [ ] Pack OpenCL kernels for distribution
+  * [x] Pack OpenCL kernels for distribution
 * [ ] Python binding
   * [ ] Numpy inter-op via xtensor
 * [ ] Windows support
