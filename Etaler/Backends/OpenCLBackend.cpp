@@ -141,16 +141,17 @@ void OpenCLBackend::copyToHost(const TensorImpl* pimpl, void* dest)
 
 std::string OpenCLBackend::deviceInfo() const
 {
-	/*std::map<int, std::string> local_type;
+	std::map<int, std::string> local_type;
 	local_type[CL_LOCAL] = "Local";
 	local_type[CL_GLOBAL] = "Global";
-	loca_type[CL_NONE] = "None";*/
+	local_type[CL_NONE] = "None";
 	std::string res;
 	res += "Platform: " + platform_.getInfo<CL_PLATFORM_NAME>() + "\n";
 	res += "Device name: " + device_.getInfo<CL_DEVICE_NAME>() + "\n";
 	res += "Global memory size: " + std::to_string((float)device_.getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>()/1024/1024) + " GB\n";
 	res += "Max allocatable memory: " + std::to_string((float)device_.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>()/1024/1024) + " GB\n";
-	res += "Local memory size: " + std::to_string(device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>()/1024) + " KB\n";
+	res += "Local memory size: " + std::to_string(localMemorySize()/1024) + " KB\n";
+	res += "Local memory type: " + local_type[localMemoryType()] + "\n";
 	res += "Prefered work group size: " + std::to_string(kernel_manager_.kernel("__etaler_dummy__").getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_)) + "\n";
 	return res;
 }

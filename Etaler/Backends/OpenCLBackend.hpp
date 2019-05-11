@@ -119,11 +119,11 @@ struct OpenCLBackend : public Backend
 
 protected:
 
-	cl_ulong localMemorySize()
+	cl_ulong localMemorySize() const
 	{
 		return local_mem_size_;
 	}
-	cl_device_local_mem_type localMemoryType()
+	cl_device_local_mem_type localMemoryType() const
 	{
 		return local_mem_type_;
 	}
