@@ -20,6 +20,9 @@ The kernel files are installed when installing the library.
 
 If you have your kernels stored at a different location. You can set the `ETALER_KERNEL_PATH` enviroment variable to make your path avavliable.
 
+## JIT compiling views
+The OpenCL backend generates the OpenCL kernels to copy/write to Tensor views at runtime. Thus copying from a view might be slow. It the problem turns out to be too bug a problem. It will be cchanged.
+
 ## NVIDIA's OpenCL implementation
 NVIDIA's OpenCL implementation can crash without notifing the user. (kerenl can crash without abort, generating error code at the wrong places, etc...). Use POCL's CUDA backend for varification that the kernel is running correctly.
 
