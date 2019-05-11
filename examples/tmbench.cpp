@@ -1,6 +1,6 @@
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Backends/CPUBackend.hpp>
-//#include <Etaler/Backends/OpenCLBackend.hpp>
+#include <Etaler/Backends/OpenCLBackend.hpp>
 #include <Etaler/Algorithms/TemporalMemory.hpp>
 #include <Etaler/Encoders/Scalar.hpp>
 using namespace et;
@@ -15,6 +15,12 @@ float benchmarkTemporalMemory(const std::vector<Tensor>& x, size_t num_epoch)
 	for(size_t i=0;i<num_epoch;i++) {
 
 		TemporalMemory tm(x[0].shape(), 16, 1024);
+
+		//Force OpenCL kernel precompilcation
+		Tensor t = zeros(x[0].shape() + 16, DType::Bool);
+		tm.compute(x[0], t);
+		tm.learn(t, t);
+
 		Tensor last_state;
 
 		auto t0 = std::chrono::high_resolution_clock::now();
@@ -46,8 +52,8 @@ std::vector<Tensor> generateRandomData(size_t input_length, size_t num_data)
 
 int main()
 {
-	//std::shared_ptr<Backend> backend = std::make_shared<OpenCLBackend>();
-	//setDefaultBackend(backend);
+	std::shared_ptr<Backend> backend = std::make_shared<OpenCLBackend>();
+	setDefaultBackend(backend);
 
 	std::cout << "Benchmarking TemporalMemory algorithm on backend: " << defaultBackend()->name() <<" \n\n";
 

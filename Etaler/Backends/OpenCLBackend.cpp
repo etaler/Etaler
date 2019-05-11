@@ -530,12 +530,16 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 		aux = allocBuffer(input_cell_count*num_groups);
 	cl::Buffer sparse_x = toSparse(x);
 
+	int sparse_size = sparse_x.getInfo<CL_MEM_SIZE>()/sizeof(int);
+	if(sparse_size == 0)
+		return;
+
 	k.setArg(0, sparse_x);
 	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(y)->buffer());
 	k.setArg(2, reinterpret_cast<OpenCLTensor*>(connections)->buffer());
 	k.setArg(3, reinterpret_cast<OpenCLTensor*>(permeances)->buffer());
 	k.setArg(4, initial_perm);
-	k.setArg(5, (int)(sparse_x.getInfo<CL_MEM_SIZE>()/sizeof(int)));
+	k.setArg(5, sparse_size);
 	k.setArg(6, aux);
 
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(work_size), cl::NDRange(local_size));
@@ -562,9 +566,14 @@ cl::Buffer OpenCLBackend::toSparse(const TensorImpl* x)
 	cl_int err = queue_.enqueueNDRangeKernel(on_bits, cl::NullRange, cl::NDRange(256), cl::NDRange(256));
 
 	int* num_on = (int*) queue_.enqueueMapBuffer(num, CL_TRUE, CL_MAP_READ, 0, sizeof(int));
-	cl::Buffer buf = allocBuffer((*num_on)*sizeof(int));
-
+	int num_elements = *num_on;
 	queue_.enqueueUnmapMemObject(num, num_on);
+
+	cl::Buffer buf;
+	if(num_elements != 0) {
+		buf = allocBuffer(num_elements*sizeof(int));
+		return buf;
+	}
 
 	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
 	k.setArg(1, buf);
