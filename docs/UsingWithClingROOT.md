@@ -23,10 +23,18 @@ Or you'll have to specsify an apporate search path.
 [cling]$ #pragma cling load("Etaler")
 [cling]$ #include <Etaler/Etaler.hpp>
 ```
+
 Otherwise, loading the library can be simplifed:
 ```c++
 > cling -std=c++17
 [cling]$ #pragma cling load("Etaler")
+[cling]$ #include <Etaler/Etaler.hpp>
+```
+
+Or using the `.L` command:
+```c++
+> cling -std=c++17 -L /usr/local/lib
+[cling]$ .L Etaler
 [cling]$ #include <Etaler/Etaler.hpp>
 ```
 
@@ -49,6 +57,13 @@ The same -L flag can be applyed to ROOT.
 ```c++
 > root -L /usr/local/lib
 root [0] #pragma cling load("Etaler")
+root [1] #include <Etaler/Etaler.hpp>
+```
+
+And the `.L` command works too.
+```c++
+> root -L /usr/local/lib
+root [0] .L Etaler
 root [1] #include <Etaler/Etaler.hpp>
 ```
 
