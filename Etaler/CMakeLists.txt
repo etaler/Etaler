@@ -14,7 +14,7 @@ if(ETALER_ENABLE_OPENCL)
 		target_link_libraries(Etaler "-framework OpenCL")
 	endif()
 
-	# Install OpenCL headers
+	# Install OpenCL kernels
 	install(DIRECTORY ${CMAKE_SOURCE_DIR}/kernels
 		DESTINATION share/Etaler
 		FILES_MATCHING PATTERN "*.cl")
@@ -22,7 +22,7 @@ if(ETALER_ENABLE_OPENCL)
 	message("Etaler: OpenCL backend enabled.")
 endif()
 
-if(APPLE)
+if(APPLE AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
 	target_link_libraries(Etaler stdc++)
 endif()
 

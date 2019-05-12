@@ -13,7 +13,7 @@ By default cling only looks in `/usr/lib`. So you'll need to specisify the full 
 * Type C++ code and press enter to run it *
 *             Type .q to exit             *
 *******************************************
-[cling]$ #pragma cling load("/use/local/lib/libEtaler.so")
+[cling]$ #pragma cling load("/usr/local/lib/libEtaler.so")
 [cling]$ #include <Etaler/Etaler.hpp>
 ```
 
@@ -64,7 +64,7 @@ root [1] #include <Etaler/Etaler.hpp>
 
 ## Using Etaler under an interactive C++ shell
 
-After loading the library. You can use the library as you would normally.
+After loading the library. You can use the library as you would normally. (And ROOT imports the `std` namespace by default.)
 ```c++
 root [2] using namespace et;
 root [3] Tensor t = ones({3,3});
