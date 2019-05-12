@@ -77,7 +77,7 @@ SpatialPooler SpatialPooler::to(Backend* b) const
 {
 	SpatialPooler sp = *this;
 	sp.connections_ = connections_.to(b);
-	sp.permances_ = connections_.to(b);
+	sp.permances_ = permances_.to(b);
 	sp.backend_ = b;
 
 	return sp;
