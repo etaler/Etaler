@@ -40,6 +40,9 @@ struct Tensor
 		pimpl_ = backend->createTensor(s, dtype, data);
 	}
 
+	Tensor& operator= (const Tensor& t)& { this->pimpl_ = t.pimpl_; return *this; } //l-value assignment. i.e. normal assignment
+	Tensor& operator= (const Tensor& t)&& { assign(t); return *this; } //r-value assignment. i.e. Assigning to a returned value
+
 	void* data() {return call_const(data);}
 	const void* data() const {return pimpl_->data();}
 	DType dtype() const {return pimpl_->dtype();}
