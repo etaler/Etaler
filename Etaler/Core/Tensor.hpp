@@ -104,6 +104,7 @@ protected:
 };
 
 std::ostream& operator<< (std::ostream& os, const Tensor& t);
+std::string to_string(const Tensor& t);
 
 //Healpers
 template <typename T>

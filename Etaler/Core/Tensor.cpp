@@ -89,6 +89,13 @@ std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 	return os;
 }
 
+std::string et::to_string(const Tensor& t)
+{
+	std::stringstream ss;
+	ss << t;
+	return ss.str();
+}
+
 Tensor Tensor::to(Backend* dest_backend) const
 {
 	const void* ptr = data();
@@ -166,7 +173,7 @@ Tensor Tensor::view(svector<Range> ranges) const
 			result_shape.push_back(size);
 	}
 
-	//If all dims are 1m thus no shape. Give it a shape
+	//If all dims are 1, thus no shape. Give it a shape
 	if(result_shape.size() == 0)
 		result_shape.push_back(1);
 
