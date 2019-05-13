@@ -6,9 +6,8 @@ TemporalMemory::TemporalMemory(const Shape& input_shape, size_t cells_per_column
 		: cells_per_column_(cells_per_column), backend_(backend)
 {
 	Shape connection_shape = input_shape + cells_per_column + max_synapses_per_cell;
-	std::vector<int32_t> conns(connection_shape.volume(), -1);
 
-	connections_ = Tensor(connection_shape, conns.data(), backend);
+	connections_ = constant(connection_shape, -1, backend);
 	permances_ = Tensor(connection_shape, DType::Float, backend);
 }
 
