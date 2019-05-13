@@ -71,7 +71,7 @@ struct Tensor
 
 	Tensor to(Backend* dest_backend) const;
 	Tensor to(std::shared_ptr<Backend> dest_backend) const {return to(dest_backend.get());}
-	Tensor copy() const {return pimpl_->backend()->copy(pimpl_.get());}
+	Tensor copy() const {return backend()->copy(pimpl_.get());}
 
 	bool isSame (const Tensor& other) const;
 

@@ -2,7 +2,7 @@
 
 `cling` is a JITed C++ interpter and `ROOT` is a data analyisis framework developed by CERN using cling (since version 6). Thay can be a valuable tool when using Etaler/doing experiments by providing a interactive C++ shell. This file documents how to use Etaler within clang/ROOT
 
-## General solution
+## General solutions
 After installing Etaler to system abd launching cling or ROOT. You can load Etaler by using the `#pragma cling load` command.
 
 By default cling only looks in `/usr/lib`. So you'll need to specisify the full path if the library is not located there.
@@ -69,7 +69,7 @@ root [1] #include <Etaler/Etaler.hpp>
 
 ## For ROOT
 
-If oyu want load the library programmatically. You can load Etaler via `gSystem`. You'll have to specisify the full path using this method.
+If you want load the library programmatically. You can load Etaler via `gSystem`. You'll have to specisify the full path using this method.
 
 ```c++
 > root

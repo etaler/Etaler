@@ -191,7 +191,7 @@ Tensor et::zeros(const Shape& shape, DType dtype, Backend* backend)
 	else if(dtype == DType::Float)
 		return constant<float>(shape, 0, backend);
 	else
-		throw EtError("Cannot creatr a tensor of ones of type " + to_ctype_string(dtype));
+		throw EtError("Cannot creatr a tensor of zeros of type " + to_ctype_string(dtype));
 }
 
 Tensor et::ones(const Shape& shape, DType dtype, Backend* backend)
@@ -203,5 +203,5 @@ Tensor et::ones(const Shape& shape, DType dtype, Backend* backend)
 	else if(dtype == DType::Float)
 		return constant<float>(shape, 1, backend);
 	else
-		throw EtError("Cannot creatr a tensor of zeros of type " + to_ctype_string(dtype));
+		throw EtError("Cannot creatr a tensor of ones of type " + to_ctype_string(dtype));
 }
