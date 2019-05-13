@@ -63,20 +63,65 @@ std::vector<int32_t> res = t.toHost<int32_t>(); //Throws
 
 ### Indexing
 Etaler supports basic indexing using Torch's syntax
-```
+```C++
 Tensor t = ones({4,4});
 Tensor q = t.view({2, 2}); //A vew to the value of what is at position 2,2
 std::cout << q << std::endl; // Prints {1}
 ```
 
 Also ranged indexing
-```
+```C++
 Tensor t = ones({4,4});
-Tensor q = t.view({range(2), range(2)}); //A vew to the value of what is at position 2,2
+Tensor q = t.view({range(2), range(2)}); //A view to the value of what is at position 2,2
 std::cout << q << std::endl;
 // Prints
 // {{1, 1},
-    {1, 1}}
+//  {1, 1}}
+```
+
+The `all()` function allows you to specsify the entire axis.
+```C++
+Tensor t = ones({4,4});
+Tensor q = t.view({all(), all()});//The entire 4x4 matrix
+```
+
+## Writing data trough a view
+And you can write back to the source Tensor using `assign()`
+```C++
+Tensor t = ones({4,4});
+Tensor q = t.view({2,2});
+q.assign(zeros({2,2}));
+std::cout << t << '\n';
+//Prints
+// {{ 0, 0, 1, 1},
+//  { 0, 0, 1, 1},
+//  { 1, 1, 1, 1},
+//  { 1, 1, 1, 1}}
+```
+
+The Python style method works too tanks to C++ magic
+```C++
+Tensor t = ones({4,4});
+t.view({2,2}) = zeros({2,2});
+std::cout << t << '\n';
+//Prints
+// {{ 0, 0, 1, 1},
+//  { 0, 0, 1, 1},
+//  { 1, 1, 1, 1},
+//  { 1, 1, 1, 1}}
+```
+
+But assigning to an instance of view doesn't work. Jusk like how things are in Python.
+```C++
+Tensor t = ones({4,4});
+Tensor q = t.view({2,2});
+q = ones({2,2});
+std::cout << t << '\n';
+//Prints
+// {{ 1, 1, 1, 1},
+//  { 1, 1, 1, 1},
+//  { 1, 1, 1, 1},
+//  { 1, 1, 1, 1}}
 ```
 
 ### Add, subtract, multiply, etc...

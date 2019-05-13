@@ -144,6 +144,18 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 				,12,13,14,15};
 			Tensor pred = Tensor({4,4}, a);
 			CHECK(t.isSame(pred));
+
+			t.view({range(2),range(2)}) = constant({2,2}, 2);
+			int b[] = {2,2,2,3
+				,2,2,6,7
+				,8,9,10,11
+				,12,13,14,15};
+			Tensor pred2 = Tensor({4,4}, b);
+			CHECK(t.isSame(pred2));
+
+			Tensor s = t.view({range(2),range(2)});
+			s = constant({2,2}, 3); //Should change nothing
+			CHECK(t.isSame(pred2));
 		}
 	}
 }
