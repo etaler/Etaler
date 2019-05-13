@@ -97,6 +97,17 @@ struct Tensor
 		return reshape(view_shape);
 	}
 
+	Tensor swapaxis(size_t axis1, size_t axis2) const
+	{
+		et_assert(axis1 < dimentions());
+		et_assert(axis2 < dimentions());
+		Shape stride = shapeToStride(shape());
+		Shape s = shape();
+		std::swap(stride[axis1], stride[axis2]);
+		std::swap(s[axis1], s[axis2]);
+		return std::make_shared<ViewTensor>(pimpl_, s, stride);
+	}
+
 	void assign(const Tensor& source)
 	{
 		backend()->assign(*this, source);

@@ -18,8 +18,8 @@ std::pair<Tensor, Tensor> TemporalMemory::compute(const Tensor& x, const Tensor&
 		active_cells = burst(x, last_state);
 	else
 		active_cells = burst(x, zeros(x.shape()+cells_per_column_, DType::Bool, x.backend()));
-	Tensor overlap = cellActivity(active_cells, connections_, permances_, connected_permance_, active_threshold_);
-	Tensor predictive_cells = cast(overlap, DType::Bool);
+	Tensor activity = cellActivity(active_cells, connections_, permances_, connected_permance_, active_threshold_);
+	Tensor predictive_cells = cast(activity, DType::Bool);
 
 	return {predictive_cells, active_cells};
 

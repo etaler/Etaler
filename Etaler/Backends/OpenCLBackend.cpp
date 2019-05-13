@@ -612,14 +612,14 @@ int location_func$ID(int location)
 	int ndpos[$DIMS] = {0};
 	int loc = location;
 	for(int i=0;i<$IN_DIMS;i++) {
-		int s = (i != $IN_DIMS-1 ? in_stride[i+1] : 1);
+		int s = in_stride[i];
 		ndpos[$DIMS - $IN_DIMS + i] = loc / s;
 		loc %= s;
 	}
 
 	int sum = 0;
 	for(int i=0;i<$DIMS;i++)
-		sum += ndpos[i]*(i != $DIMS-1 ? stride[i+1] : 1);;
+		sum += ndpos[i]*stride[i];
 	sum += bias;
 
 	return sum;

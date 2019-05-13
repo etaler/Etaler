@@ -27,27 +27,13 @@ struct RectangularView
 	Shape strides_;
 };
 
-template <typename IdxType, typename ShapeType>
-inline size_t unfoldIndex(const IdxType& index, const ShapeType& shape)
-{
-	size_t s = 0;
-	size_t v = 1;
-	et_assert(index.size() == shape.size());
-	for(int i=(int)index.size()-1;i>=0;i--) {
-		v *= (i==(int)index.size()-1?1:shape[i+1]);
-		s += index[i] * v;
-	}
-
-	return s;
-}
-
 template <typename IdxType, typename StrideType>
 inline size_t unfold(const IdxType& index, const StrideType& stride)
 {
 	size_t s = 0;
 	et_assert(index.size() == stride.size());
 	for(int i=(int)index.size()-1;i>=0;i--)
-		s += (i==(int)index.size()-1?1:stride[i+1]) * index[i];
+		s += stride[i] * index[i];
 
 	return s;
 }
@@ -57,11 +43,18 @@ inline Shape shapeToStride(const Shape& shape)
 	Shape v;
 	v.resize(shape.size());
 	size_t acc = 1;
-	for(int i=(int)shape.size()-1;i>=0;i--) {
+	v.back() = 1;
+	for(int i=(int)shape.size()-1;i>0;i--) {
 		acc *= shape[i];
-		v[i] = acc;
+		v[i-1] = acc;
 	}
 	return v;
+}
+
+template <typename IdxType, typename ShapeType>
+inline size_t unfoldIndex(const IdxType& index, const ShapeType& shape)
+{
+	return unfold(index, shapeToStride(shape));
 }
 
 template <typename ShapeType>
@@ -71,11 +64,11 @@ inline Shape foldIndex(size_t index, const ShapeType& shape)
 	svector<intmax_t> v = shapeToStride(shape);
 	Shape res;
 	res.resize(v.size());
-	for(size_t i=1;i<v.size();i++) {
-		res[i-1] = index/v[i];
+	for(size_t i=0;i<v.size();i++) {
+		res[i] = index/v[i];
 		index = index%v[i];
 	}
-	res.back() = index;
+
 	return res;
 }
 
