@@ -210,9 +210,7 @@ TEST_CASE("Backend functions", "[Backend]")
 {
 	using namespace et;
 
-	Backend* b = defaultBackend();
-
-	SECTION("Overlap Score") {
+	SECTION("Cell Activity") {
 		int32_t synapses[4] = {0, 1, 1, -1};
 		Tensor s = Tensor({2,2}, synapses);
 
@@ -222,7 +220,7 @@ TEST_CASE("Backend functions", "[Backend]")
 		uint8_t in[2] = {1,1};
 		Tensor x = Tensor({2}, in);
 
-		Tensor y = b->overlapScore(x, s, p, 0.1, 1);
+		Tensor y = cellActivity(x, s, p, 0.1, 1);
 		CHECK(y.size() == 2);
 
 		auto res = y.toHost<int32_t>();
@@ -235,7 +233,7 @@ TEST_CASE("Backend functions", "[Backend]")
 		int32_t in[8] = {0,0,1,2,7,6,5,3};
 		Tensor t = Tensor({8}, in);
 
-		Tensor y = b->globalInhibition(t, 0.5);
+		Tensor y = globalInhibition(t, 0.5);
 		CHECK(y.size() == 8);
 		uint8_t pred[8] = {0,0,0,0,1,1,1,1};
 		Tensor should_be = Tensor({8}, pred);
@@ -250,7 +248,7 @@ TEST_CASE("Backend functions", "[Backend]")
 		float b[] = {0,1,2,3, 1,3,2,0, -1,1,2,3, 2,3,1,-1};
 		Tensor q = Tensor({4,4}, b);
 
-		defaultBackend()->sortSynapse(t, q);
+		sortSynapse(t, q);
 
 		int pred[] = {0,1,2,3, 0,1,2,3, 1,2,3,-1, 1,2,3,-1};
 		float pred2[] = {0,1,2,3, 0,1,2,3, 1,2,3,-1, 1,2,3,-1};
@@ -274,7 +272,7 @@ TEST_CASE("Backend functions", "[Backend]")
 
 		uint8_t in[] = {1,0,1,1};
 		Tensor x = Tensor({4}, in);
-		Tensor y = defaultBackend()->applyBurst(x, state);
+		Tensor y = burst(x, state);
 
 		uint8_t p[] = {1, 1, 1, 1,
 				0, 0, 0, 0,
@@ -291,7 +289,7 @@ TEST_CASE("Backend functions", "[Backend]")
 				0, 1, 1, 0,
 				0, 0, 0, 0};
 		Tensor x = Tensor({4,4}, in);
-		Tensor y = defaultBackend()->reverseBurst(x);
+		Tensor y = reverseBurst(x);
 
 		auto vec = y.toHost<uint8_t>();
 		std::vector<uint8_t> pred_sum = {1,1,1,2,0};
@@ -315,8 +313,8 @@ TEST_CASE("Backend functions", "[Backend]")
 		Tensor x = Tensor({2}, in);
 		Tensor y = Tensor({2}, in); //the same for test
 
-		defaultBackend()->growSynapses(x, y, s, p, 0.21);
-		defaultBackend()->sortSynapse(s, p);
+		growSynapses(x, y, s, p, 0.21);
+		sortSynapse(s, p);
 
 		int32_t pred[] = {0,1 ,0,1};
 		Tensor pred_conn = Tensor({2,2}, pred);

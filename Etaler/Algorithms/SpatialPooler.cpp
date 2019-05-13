@@ -14,7 +14,7 @@ inline std::vector<size_t> vector_range(size_t start, size_t end)
 
 SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape, float potential_pool_pct, size_t seed
 	, float global_density, Backend* b)
-	: global_density_(global_density), input_shape_(input_shape), output_shape_(output_shape), backend_(b)
+	: global_density_(global_density), input_shape_(input_shape), output_shape_(output_shape)
 {
 	if(potential_pool_pct > 1 or potential_pool_pct < 0)
 		throw EtError("potential_pool_pct must be between 0~1, but get" + std::to_string(potential_pool_pct));
@@ -42,18 +42,18 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 	}
 
 	Shape s = output_shape + potential_pool_size;
-	connections_ = Tensor(s, connections.data(), backend_);
-	permances_ = Tensor(s, permances.data(), backend_);
+	connections_ = Tensor(s, connections.data(), b);
+	permances_ = Tensor(s, permances.data(), b);
 }
 
 Tensor SpatialPooler::compute(const Tensor& x) const
 {
 	et_assert(x.shape() == input_shape_);
 
-	Tensor t = backend_->overlapScore(x, connections_, permances_
+	Tensor activity = cellActivity(x, connections_, permances_
 		, connected_permance_, active_threshold_, false);
 
-	Tensor res = backend_->globalInhibition(t, global_density_);
+	Tensor res = globalInhibition(activity, global_density_);
 
 	return res;
 }
@@ -69,8 +69,6 @@ void SpatialPooler::loadState(const StateDict& states)
 	output_shape_ = std::any_cast<Shape>(states.at("output_shape"));
 	connections_ = std::any_cast<Tensor>(states.at("connections"));
 	permances_ = std::any_cast<Tensor>(states.at("permances"));
-
-	backend_ = connections_.backend();
 }
 
 SpatialPooler SpatialPooler::to(Backend* b) const
@@ -78,7 +76,6 @@ SpatialPooler SpatialPooler::to(Backend* b) const
 	SpatialPooler sp = *this;
 	sp.connections_ = connections_.to(b);
 	sp.permances_ = permances_.to(b);
-	sp.backend_ = b;
 
 	return sp;
 }

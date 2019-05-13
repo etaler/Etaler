@@ -53,7 +53,7 @@ const void* CPUTensor::data() const
 	return std::visit([](const auto& v){return (const void*)v;}, storage_);
 }
 
-std::shared_ptr<TensorImpl> CPUBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances
+std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances
 	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
 	//Checks the input are sane
@@ -273,7 +273,7 @@ void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 	});
 }
 
-std::shared_ptr<TensorImpl> CPUBackend::applyBurst(const TensorImpl* x, const TensorImpl* s)
+std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
 	et_assert(points_to<const CPUTensor>(x));
 	et_assert(points_to<const CPUTensor>(s));

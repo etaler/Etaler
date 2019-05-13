@@ -248,7 +248,7 @@ void KernelManager::addSearchPath(const std::string& path)
 	search_paths_.push_front(path);
 }
 
-std::shared_ptr<TensorImpl> OpenCLBackend::overlapScore(const TensorImpl* x, const TensorImpl* connections,
+std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections,
 	const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
 	et_assert(points_to<const OpenCLTensor>(x));
@@ -436,7 +436,7 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
 }
 
-std::shared_ptr<TensorImpl> OpenCLBackend::applyBurst(const TensorImpl* x, const TensorImpl* s)
+std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
 	et_assert(points_to<const OpenCLTensor>(x));
 	et_assert(points_to<const OpenCLTensor>(s));

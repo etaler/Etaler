@@ -102,6 +102,16 @@ struct Tensor
 		backend()->assign(*this, source);
 	}
 
+	Tensor realize() const
+	{
+		return backend()->realize(pimpl());
+	}
+
+	Tensor cast(DType dtype) const
+	{
+		return backend()->cast(pimpl(), dtype);
+	}
+
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };
@@ -126,6 +136,59 @@ inline Tensor realize(const Tensor& t)
 	if(points_to<const ViewTensor>(t.pimpl()) == false)
 		return t;
 	return t.backend()->realize(t);
+}
+
+//Functional APIs
+static Tensor cellActivity(const Tensor& x, const Tensor& connections, const Tensor& permeances
+	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true)
+{
+	return x.backend()->cellActivity(x, connections, permeances, connected_permeance, active_threshold, has_unconnected_synapse);
+}
+
+static void learnCorrilation(const Tensor& x, const Tensor& learn, const Tensor& connection
+	, Tensor& permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse=true)
+{
+	x.backend()->learnCorrilation(x, learn, connection, permeances, perm_inc, perm_dec, has_unconnected_synapse);
+}
+
+static Tensor globalInhibition(const Tensor& x, float fraction)
+{
+	return x.backend()->globalInhibition(x, fraction);
+}
+
+Tensor static cast(const Tensor& x, DType dtype)
+{
+	return x.backend()->cast(x, dtype);
+}
+
+static Tensor copy(const Tensor& x)
+{
+	return x.copy();
+}
+
+static void sortSynapse(Tensor& connection, Tensor& permeances)
+{
+	connection.backend()->sortSynapse(connection, permeances);
+}
+
+static Tensor burst(const Tensor& x, const Tensor& s)
+{
+	return x.backend()->burst(x, s);
+}
+
+static Tensor reverseBurst(const Tensor& x)
+{
+	return x.backend()->reverseBurst(x);
+}
+
+static void growSynapses(const Tensor& x, const Tensor& y, Tensor& connections, Tensor& permeances, float init_perm)
+{
+	x.backend()->growSynapses(x, y, connections, permeances, init_perm);
+}
+
+static void assign(Tensor& x, const Tensor& y)
+{
+	x.assign(y);
 }
 
 }

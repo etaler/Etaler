@@ -25,7 +25,7 @@ struct SpatialPooler
 
 	void learn(const Tensor& x, const Tensor& y)
 	{
-		backend_->learnCorrilation(x.pimpl(), y.pimpl(), connections_.pimpl(), permances_.pimpl(), permance_inc_, permance_dec_);
+		learnCorrilation(x, y, connections_, permances_, permance_inc_, permance_dec_);
 	}
 
 	void setPermanceInc(float inc) { permance_inc_ = inc; }
@@ -51,7 +51,7 @@ struct SpatialPooler
 			, {"global_density", global_density_}};
 	}
 
-	
+
 
 	SpatialPooler to(Backend* b) const;
 
@@ -67,7 +67,6 @@ protected:
 	Shape output_shape_;
 	Tensor connections_;
 	Tensor permances_;
-	Backend* backend_;
 };
 
 

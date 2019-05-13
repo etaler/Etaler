@@ -63,7 +63,7 @@ struct CPUBackend : public Backend
 		delete pimpl;
 	}
 
-	virtual std::shared_ptr<TensorImpl> overlapScore(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances,
+	virtual std::shared_ptr<TensorImpl> cellActivity(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances,
 		float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true) override;
 	virtual void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
 		TensorImpl* permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse=true) override;
@@ -72,7 +72,7 @@ struct CPUBackend : public Backend
 	virtual void copyToHost(const TensorImpl* pimpl, void* dest) override;
 	virtual std::shared_ptr<TensorImpl> copy(const TensorImpl* x) override;
 	virtual void sortSynapse(TensorImpl* connections, TensorImpl* permeances) override;
-	virtual std::shared_ptr<TensorImpl> applyBurst(const TensorImpl* x, const TensorImpl* s) override;
+	virtual std::shared_ptr<TensorImpl> burst(const TensorImpl* x, const TensorImpl* s) override;
 	virtual std::shared_ptr<TensorImpl> reverseBurst(const TensorImpl* x) override;
 	virtual void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm) override;

@@ -35,7 +35,6 @@ struct TemporalMemory
 	float permance_dec_ = 0.1;
 	Tensor connections_;
 	Tensor permances_;
-	Backend* backend_;
 };
 
 }
