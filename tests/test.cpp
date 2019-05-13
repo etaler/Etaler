@@ -12,18 +12,34 @@ TEST_CASE("Testing Shape", "[Shape]")
 	using namespace et;
 	Shape s = {3,5};
 
-	REQUIRE(s.size() == 2);
-	REQUIRE(s.volume() == 15);
+	SECTION("Shape") {
+		REQUIRE(s.size() == 2);
+		REQUIRE(s.volume() == 15);
 
-	Shape n = s + 7;
+		Shape n = s + 7;
 
-	CHECK(n.size() == 3);
-	CHECK(n.volume() == 3*5*7);
-	CHECK(n == Shape({3,5,7}));
-	CHECK(n.contains(5) == true);
-	CHECK(n.contains(6) == false);
-	CHECK(Shape(n) == n);
-	CHECK(s != n);
+		CHECK(n.size() == 3);
+		CHECK(n.volume() == 3*5*7);
+		CHECK(n == Shape({3,5,7}));
+		CHECK(n.contains(5) == true);
+		CHECK(n.contains(6) == false);
+		CHECK(Shape(n) == n);
+		CHECK(s != n);
+	}
+
+	SECTION("Shape comutation") {
+		Shape stride = shapeToStride(s);
+		CHECK(stride.size() == s.size());
+		CHECK(stride == Shape({5,1}));
+
+		Shape loc = {1,1};
+		size_t idx = unfoldIndex(loc, s);
+		CHECK(idx == 6);
+		size_t idx2 = unfold(loc, stride);
+		CHECK(idx2 == 6);
+
+		CHECK(foldIndex(7, s) == Shape({1,2}));
+	}
 }
 
 TEST_CASE("Testing Tensor", "[Tensor]")
