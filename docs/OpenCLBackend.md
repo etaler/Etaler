@@ -14,6 +14,9 @@ Due to how HTM work - being very memory bangwidth hungry and the input SDR is re
 However this also poses limitations. Since the input Tensor is copied into the local memory. The size of the input Tensor cannot exceed the size of local memory (48KB on NVIDIA cards and 64KB on AMD cards). If larger inputs are encountered, Etaler simply switches to a version not using local memory.
 Also some GPUs - all of them are mobile GPUs -  don't have such local memory and is emulated using global memroy. Etaler uses kernels without local memory optimization.
 
+## Global inhibition
+Currently finding the top-k values are done by a quick counting based scanning methoud. Performed by a single work group nad stores the counters on Local Memory. This is fast and accurate as long as the size of the input array is small (the max value is less then the size of the counter). Thus another algorithm might be needed for big arrays.
+
 ## OpenCL kenrel distribution
 The OpenCL backend searchs for the kernels it needs in the following paths: `./kernels/`, `../kernels/`, `/usr/local/share/Etaler/kernels` and `/usr/share/Etaler/kernels/`. If the file is found, then it is read and cached in memory. If not an exception is raised.
 The kernel files are installed when installing the library.
