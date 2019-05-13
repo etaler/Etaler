@@ -1,59 +1,136 @@
-# Tensors
+# Tensor
+Tensors are how Etaler stores data. They are a minimal NDArray implementation. Thus it is currently lacking some common features. But they should be enough for HTM.
 
-Tensor is the primary way how Etaler handles bulks of data. They are N-dimentioal arrays of a single type.
+Currently content type of `int`, `bool` and `float` are supported.
 
-Currently Etaler's Tensor can store 3 different types of data. `float`, `int`, and `bool`.
-
-## Creating a Tensor
-Tensors can be either created un-initalized or initalized. The initial value of an un-initalized tensor is not defined but is faster to create.
-
-To create an un-initalized tensor:
+## Create
+It is easy to create a Tensor
 ```C++
-Tensor t = Tensor(/*shape=*/{4,4}
-	, /*dtype=*/DType::Int32)
+Tensor t = Tensor(/*shape=*/{4,4}, DType::Float);
+```
+At this point, the contents in the Tensor hasn't been initalized. To initalize, call `Tensor()` with a pointer pointing to a plan array containing the data you want the Tensor to have. The Tensor object will copy all of the provided data to it's internal memory.
+
+```C++
+float data[4] = {3,2,1,6};
+Tensor t = Tensor(/*shape=*/{4}, DType::Float, data);
 ```
 
-If you need deterministec initial values. You can supply a pointer to an array that stores them. Then Etaler infers the intended type and copy the given array as initial values.
+## Copy
+Tensors holds a `shared_ptr` object that points to a acuatl implementation provided by the backend. Thus, copying via `operator =` and the copy constructor results in a shallow copy.
 
 ```C++
-int a[] = {0,1,2,3};
-Tensor t = Tensor(/*shape=*/{4}
-	,/*data=*/a);
+Tensor t = Tensor({4,4});
+Tensor q = t; //q and t points to the same internal object
 ```
 
-If all you need is a Tensor of a constant. Use `constant`, or the common `zeros`, `ones` to initalize your Tensor to 0 and 1
-
+Use the `copy()` member function to perform a deep copy.
 ```C++
-Tensor t = constant({4,4}, 50);
-//t is a 4x4 Tensor where all of it's elements are initalized to 50
-
-Tensor q = zeros({4,4});
-//q is a 4x4 Tensor of 0s
+Tensor t = Tensor({4,4});
+Tensor q = t.copy();
 ```
 
-## Printing a Tensor
-Tensors can be printed via an `std::ostream`. Thus you can print the content of a tensor via `cout`.
+## Accessing the raw data held by the Tensor
+If the internal implementaion allows. You can get a raw pointer pointing to where the Tensor stores it's data. Otherwise a `nullptr` is returned.
+
 ```C++
-Tensor t = some_tensor();
-std::cout << t << std::endl;
+Tensor t = Tensor({4,4}, DType::Int32);
+int32_t* ptr = (int32_t*)t.data();
 ```
 
-## Indexing and views
-Etaler supports some basic indexing and unlike some C++ libraries. The indexing are lazily evaluated at runtime.
+## Copy data from Tensor to a std::vector
+Nomatter where or how a Tensor stores it's data. the `toHost()` method copies everything into a std::vector.
 
 ```C++
-Tensor t = ones({4});
-Tensor q = t.view({2});
+Tensor t = Tensor({4,4}, DType::Int32);
+std::vector<int32_t> res = t.toHost<int32_t>();
+```
+
+**Be aware** that due to std::vector<bool> is a specialization for space and the internal data cannot be accessed easily, use uint8_t instead.
+```C++
+Tensor t = Tensor({4,4}, DType::Bool);
+std::vector<uint8_t> res = t.toHost<uint8_t>();
+//std::vector<bool> res = t.toHost<bool>();//This will fail
+```
+
+Also that `toHost` checks that the type you are stroing to is the same that the Tensor holds. If they do not match, an exception is thrown.
+```C++
+Tensor t = Tensor({4,4}, DType::Float);
+std::vector<int32_t> res = t.toHost<int32_t>(); //Throws
+```
+
+## Indexing
+Etaler supports basic indexing using Torch's syntax
+```C++
+Tensor t = ones({4,4});
+Tensor q = t.view({2, 2}); //A vew to the value of what is at position 2,2
+std::cout << q << std::endl; // Prints {1}
+```
+
+Also ranged indexing
+```C++
+Tensor t = ones({4,4});
+Tensor q = t.view({range(2), range(2)}); //A view to the value of what is at position 2,2
 std::cout << q << std::endl;
-///Prints: {1}
+// Prints
+// {{1, 1},
+//  {1, 1}}
 ```
 
-And you can write data through a view and see the values pop back up in the original Tensor.
-
+The `all()` function allows you to specsify the entire axis.
 ```C++
-Tensor t = ones({4});
-Tensor q = t.view({2});
-q.assign(zeros({1}))
-std::cout << t << std::endl;
-///Prints: {1,1,0,1}
+Tensor t = ones({4,4});
+Tensor q = t.view({all(), all()});//The entire 4x4 matrix
+```
+
+## Writing data trough a view
+And you can write back to the source Tensor using `assign()`
+```C++
+Tensor t = ones({4,4});
+Tensor q = t.view({2,2});
+q.assign(zeros({2,2}));
+std::cout << t << '\n';
+//Prints
+// {{ 0, 0, 1, 1},
+//  { 0, 0, 1, 1},
+//  { 1, 1, 1, 1},
+//  { 1, 1, 1, 1}}
+```
+
+The Python style method works too tanks to C++ magic
+```C++
+Tensor t = ones({4,4});
+t.view({2,2}) = zeros({2,2});
+std::cout << t << '\n';
+//Prints
+// {{ 0, 0, 1, 1},
+//  { 0, 0, 1, 1},
+//  { 1, 1, 1, 1},
+//  { 1, 1, 1, 1}}
+```
+
+But assigning to an instance of view doesn't work. Jusk like how things are in Python.
+```C++
+Tensor t = ones({4,4});
+Tensor q = t.view({2,2});
+q = ones({2,2});
+std::cout << t << '\n';
+//Prints
+// {{ 1, 1, 1, 1},
+//  { 1, 1, 1, 1},
+//  { 1, 1, 1, 1},
+//  { 1, 1, 1, 1}}
+```
+
+## Add, subtract, multiply, etc...
+Not supported.
+
+## Brodcasting
+Not supported.
+
+## Copy Tensor from backend to backend
+If you have multiple backends (ex: one on the CPU and one for GPU), you can easily transfer data between the backends.
+```C++
+auto gpu = make_shared<OpenCLBackend>();
+Tensor t = zeros({4,4}, DType::Float);
+Tensor q = t.to(gpu);
 ```
