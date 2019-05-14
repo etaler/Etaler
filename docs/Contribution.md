@@ -6,7 +6,6 @@ There are may different ways to help!
 
 The easiest and the most direct way to help is by using the library. If you find a bug or a missing feature, please open an issue and let us know how we can improve. If you have built a cool project usign Etaler. Share it!
 
-
 ## Developing Etaler
 
 If you want to develop the library it self, you are very welcomed! We are excited to see a new PR pop up.
