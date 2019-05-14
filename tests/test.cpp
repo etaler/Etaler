@@ -304,18 +304,13 @@ TEST_CASE("Backend functions", "[Backend]")
 				0, 1, 0, 0,
 				0, 1, 1, 0,
 				0, 0, 0, 0};
-		Tensor x = Tensor({4,4}, in);
+		Tensor x = Tensor({5,4}, in);
 		Tensor y = reverseBurst(x);
 
-		auto vec = y.toHost<uint8_t>();
-		std::vector<uint8_t> pred_sum = {1,1,1,2,0};
+		std::vector<int> pred_sum = {1, 1, 1, 2, 0};
+		Tensor p = Tensor({5}, pred_sum.data());
 
-		for(size_t i=0;i<4;i++) {
-			size_t sum = 0;
-			for(size_t j=0;j<4;j++)
-				sum += vec[i*4+j];
-			CHECK(sum == pred_sum[i]);
-		}
+		CHECK(y.sum(1).isSame(p));
 	}
 
 	SECTION("Grow Synapses") {
