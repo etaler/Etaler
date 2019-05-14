@@ -93,7 +93,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		int data[] = {1,2,3,2,1};
 		Tensor t = Tensor({5}, data);
 
-		//CHECK_THROWS(t.toHost<float>());
+		CHECK_THROWS(t.toHost<float>());
 
 		auto data2 = t.toHost<int32_t>();
 		Tensor q = Tensor({5}, data2.data());
