@@ -1,6 +1,6 @@
 # About the OpenCL backend
 
-The is a brief document/note about the OpenCL backend.
+This is a brief document/note about the OpenCL backend.
 
 ## OpenCL standard version
 Currently the backend only requires and uses the features provided by OpenCL 1.2. But OpenCL 2.0 support is planned.

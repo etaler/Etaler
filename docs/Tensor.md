@@ -48,7 +48,7 @@ Tensor t = Tensor({4,4}, DType::Int32);
 std::vector<int32_t> res = t.toHost<int32_t>();
 ```
 
-**Be aware** that due to std::vector<bool> is a specialization for space and the internal data cannot be accessed by a pointer, use uint8_t instead.
+**Be aware** that due to `std::vector<bool>` is a specialization for space and the internal data cannot be accessed by a pointer, use uint8_t instead.
 ```C++
 Tensor t = Tensor({4,4}, DType::Bool);
 std::vector<uint8_t> res = t.toHost<uint8_t>();
