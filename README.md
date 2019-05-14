@@ -10,6 +10,14 @@ Etaler is a library for machine intelligence based on [HTM theory](https://numen
 
 You can now explore HTM with modern, easy to use API and enjoy the performance boost by the GPU.
 
+* [More about Etaler](#more-about-etaler)
+* [Examples](#examples)
+* [Building and platform support](#building-and-platform-support)
+  * [Dependencies](#dependencies)
+  * [Building from source](#building-from-source)
+* [Notes](#notes)
+* [For NuPIC Users](#for-nupic-users)
+
 ## More about Etaler
 
 ### A GPU ready HTM library
@@ -83,7 +91,7 @@ For more infmation see [the documents](docs/)
 * Tests
   * [catch2](https://github.com/catchorg/Catch2)
 
-### Building the library
+### Building from source
 
 Clone the repository. Then after fulfilling the dependencies. Execute `cmake` and then run whatever build system you're using.
 
