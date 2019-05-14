@@ -442,6 +442,19 @@ const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 	}, reinterpret_cast<const ViewTensor*>(t)->view_);
 }
 
+template <typename Func>
+void dispatch(DType dtype, Func f)
+{
+	if(dtype == DType::Int32)
+		f(int32_t{});
+	else if(dtype == DType::Float)
+		f(float{});
+	else if(dtype == DType::Bool)
+		f(bool{});
+	else
+		throw EtError("Cannot realize such dtype");
+}
+
 std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 {
 	if(points_to<const CPUTensor>(x) == true)
@@ -450,22 +463,13 @@ std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 		throw EtError("Cannot realize tensor, not a CPUTensor or ViewTensor");
 	auto res = createTensor(x->shape(), x->dtype());
 
-	for(size_t i=0;i<x->size();i++) {
-		if(x->dtype() == DType::Int32) {
-			auto ptr = (int32_t*)res->data();
-			ptr[i] = *getPtrToValue<int32_t>(i, x);
+	dispatch(x->dtype(), [&](auto v){
+		using T = decltype(v);
+		for(size_t i=0;i<x->size();i++) {
+			auto ptr = (T*)res->data();
+			ptr[i] = *getPtrToValue<T>(i, x);
 		}
-		else if(x->dtype() == DType::Float) {
-			auto ptr = (float*)res->data();
-			ptr[i] = *getPtrToValue<float>(i, x);
-		}
-		else if(x->dtype() == DType::Bool) {
-			auto ptr = (uint8_t*)res->data();
-			ptr[i] = *getPtrToValue<uint8_t>(i, x);
-		}
-		else
-			throw EtError("Cannot realize such dtype");
-	}
+	});
 	return res;
 }
 
@@ -482,24 +486,45 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 	if(dest->dtype() != src->dtype())
 		source = cast(realize(source.get()).get(), dest->dtype());
+	
+	dispatch(dest->dtype(), [&](auto v) {
+		using T = decltype(v);
+		auto s = (T*)source->data();
+		for(size_t i=0;i<dest->size();i++) {
+			auto ptr = (T*)getPtrToValue<T>(i, dest);
+			*ptr = s[i];
+		}
+	});
+}
 
-	for(size_t i=0;i<dest->size();i++) {
-		if(dest->dtype() == DType::Int32) {
-			auto ptr = (int32_t*)getPtrToValue<int32_t>(i, dest);
-			auto s = (int32_t*)source->data();
-			*ptr = s[i];
-		}
-		else if(dest->dtype() == DType::Float) {
-			auto ptr = (float*)getPtrToValue<float>(i, dest);
-			auto s = (float*)source->data();
-			*ptr = s[i];
-		}
-		else if(dest->dtype() == DType::Bool) {
-			auto ptr = (uint8_t*)getPtrToValue<uint8_t>(i, dest);
-			auto s = (uint8_t*)source->data();
-			*ptr = s[i];
-		}
+std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_size)
+{
+	et_assert(points_to<CPUTensor>(x));
+	et_assert(x->size() % chunk_size == 0);
+
+	DType result_dtype = [x](){
+		DType dtype = x->dtype();
+		if(dtype == DType::Bool || dtype == DType::Int32)
+			return DType::Int32;
 		else
-			throw EtError("Cannot realize such dtype");
-	}
+			return DType::Float;
+	}();
+
+	auto res = createTensor({(intmax_t)(x->size()/chunk_size)}, result_dtype);
+
+	dispatch(x->dtype(), [&](auto v){
+		using T = decltype(v);
+		auto in = (const T*)x->data();
+		dispatch(result_dtype, [&](auto v) {
+			using ResType = decltype(v);
+			auto ptr = (ResType*) res->data();
+			for(size_t i=0;i<x->size()/chunk_size;i++) {
+				size_t offset = i*chunk_size;
+				ResType s = std::accumulate(in+offset, in+offset+chunk_size, ResType(0));
+				ptr[i] = s;
+			}
+		});
+	});
+
+	return res;
 }

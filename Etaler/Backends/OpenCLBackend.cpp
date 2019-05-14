@@ -835,3 +835,37 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 	kernel_manager_.remove("__copy");//We are unlikely to use this kernel again?
 }
+
+std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk_size)
+{
+	et_assert(points_to<OpenCLTensor>(x));
+	et_assert(x->size() % chunk_size == 0);
+
+	DType result_dtype = [x](){
+		DType dtype = x->dtype();
+		if(dtype == DType::Bool || dtype == DType::Int32)
+			return DType::Int32;
+		else
+			return DType::Float;
+        }();
+
+	std::string args = "-DInType=" + to_ctype_string(x->dtype()) + " -DOutType=" + to_ctype_string(result_dtype);
+	std::string program_name = "sum" + hash_string(args);
+	kernel_manager_.compileFromFile("sum.cl", program_name, {"sum"}, false, args);
+	
+	cl::Kernel k = kernel_manager_.kernel(program_name, "sum");
+
+	auto res = createTensor({intmax_t(x->size()/chunk_size)}, result_dtype);
+
+	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
+	k.setArg(1, reinterpret_cast<OpenCLTensor*>(res.get())->buffer());
+	k.setArg(2, int(x->size()));
+	k.setArg(3, int(chunk_size));
+
+	size_t local_size = 128;
+	
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size()/chunk_size)), cl::NDRange(local_size));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+	return res;
+}

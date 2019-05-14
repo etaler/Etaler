@@ -39,6 +39,7 @@ struct Backend : public std::enable_shared_from_this<Backend>
 
 	virtual std::shared_ptr<TensorImpl> realize(const TensorImpl* x) {throw notImplemented("realize");}
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) {throw notImplemented("assign");}
+	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size) { throw notImplemented("num");}
 
 	inline EtError notImplemented(std::string func) const { return EtError(func + " not implemented on backend: " + name()); }
 };

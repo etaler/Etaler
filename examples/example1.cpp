@@ -10,6 +10,7 @@ using namespace et;
 int main()
 {
 	//Create a SP that takes in 128 input bits and generates 32 bit representation
+	setDefaultBackend(std::make_shared<OpenCLBackend>());
 	SpatialPooler sp({128}, {32});
 
 	//Encode the value 0.1 into a 32 bit SDR
@@ -19,4 +20,6 @@ int main()
 
 	auto state = sp.states();
 	sp.loadState(state);
+
+	std::cout << Tensor(defaultBackend()->sum(x, 32)) << std::endl;
 }

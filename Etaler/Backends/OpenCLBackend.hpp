@@ -114,6 +114,7 @@ struct OpenCLBackend : public Backend
 		, TensorImpl* permeances, float initial_perm) override;
 	virtual std::shared_ptr<TensorImpl> realize(const TensorImpl* x) override;
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) override;
+	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size) override;
 
 	cl::Buffer toSparse(const TensorImpl* x);
 
