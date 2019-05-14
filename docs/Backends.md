@@ -1,6 +1,6 @@
 # Backends
 
-Backends are how Etaler supports computing on different device/processors. They perform the acuatl computing and memory managment. Currently there are 2 backends avaliable.
+Backends are how Etaler supports computing on different device/processors. They perform the actual computing and memory managment. Currently there are 2 backends avaliable.
 
 * CPUBackend
 * OpenCLBackend
@@ -32,7 +32,7 @@ std::cout << backend->name() << "\n";//prints: CPU
 Etaler provices a convient function `defaultBackend()` that returns a usable backend.
 When no backends are provied to algorithms/objects the default backend is used.
 
-By default `defaultBackend()` will return a `CPUBackend`. You can which backend is used by calling the `setDefaultBackend()` function.
+By default `defaultBackend()` returns a `CPUBackend`. You can which backend is used by calling the `setDefaultBackend()` function.
 
 Like so:
 
@@ -43,4 +43,4 @@ setDefaultBackend(gpu);
 
 ## Using multiple backends
 
-Using multiple backends are supported. Just initalize multiple backends and tensors on them! You can even have different threads controlling different backends for maxium performance. The backends are not thread-safe tho. You'll have to handle that yourself.
+Using multiple backends should be easy. Just initalize multiple backends and tensors on them! You can even have different threads controlling different backends for maxium performance. The backends are not thread-safe tho. You'll have to handle that yourself.

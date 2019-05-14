@@ -1,11 +1,13 @@
 # Using with cling/ROOT
 
-`cling` is a JITed C++ interpter and `ROOT` is a data analyisis framework developed by CERN using cling (since version 6). Thay can be a valuable tool when using Etaler/doing experiments by providing a interactive C++ shell. This file documents how to use Etaler within clang/ROOT
+[cling](https://root.cern.ch/cling) is a JITed C++ interpter and [ROOT](https://root.cern.ch/) is a data analyisis framework by CERN built upon cling (since version 6). Thay are a valuable tool that provides a interactive C++ shell when using Etaler/doing experiments. This file documents how to use Etaler within clang/ROOT.
 
 ## General solutions
-After installing Etaler to system abd launching cling or ROOT. You can load Etaler by using the `#pragma cling load` command.
+
+After installing Etaler to system and launching cling or ROOT. You can load Etaler via the `#pragma cling load` command.
 
 By default cling only looks in `/usr/lib`. So you'll need to specisify the full path if the library is not located there.
+
 ```c++
 > cling -std=c++17
 
@@ -31,13 +33,6 @@ Otherwise, loading the library can be simplifed:
 [cling]$ #include <Etaler/Etaler.hpp>
 ```
 
-Or using the `.L` command:
-```c++
-> cling -std=c++17 -L /usr/local/lib
-[cling]$ .L Etaler
-[cling]$ #include <Etaler/Etaler.hpp>
-```
-
 The same solution works with ROOT too! Since ROOT by default turns on C++17 by default, the C++17 flags is not needed.
 ```c++
 > root
@@ -52,12 +47,21 @@ The same solution works with ROOT too! Since ROOT by default turns on C++17 by d
 root [0] #pragma cling load("/usr/local/lib/libEtaler.so")
 root [1] #include <Etaler/Etaler.hpp>
 ```
+
 The same -L flag can be applyed to ROOT.
 
 ```c++
 > root -L /usr/local/lib
 root [0] #pragma cling load("Etaler")
 root [1] #include <Etaler/Etaler.hpp>
+```
+
+## For cling
+Cling accepts the `.L` command. (ROOT also has a .L coomand, but it is for a different function)
+```c++
+> cling -std=c++17 -L /usr/local/lib
+[cling]$ .L Etaler
+[cling]$ #include <Etaler/Etaler.hpp>
 ```
 
 ## For ROOT
@@ -73,6 +77,7 @@ root [1] #include <Etaler/Etaler.hpp>
 ## Using Etaler under an interactive C++ shell
 
 After loading the library. You can use the library as you would normally. (And ROOT imports the `std` namespace by default.)
+
 ```c++
 root [2] using namespace et;
 root [3] Tensor t = ones({3,3});
