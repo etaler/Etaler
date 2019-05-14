@@ -13,7 +13,7 @@ kernel void sum(global InType* restrict x, global OutType* restrict y, int in_si
 
         int problem_size = in_size/chunk_size;
         for(int i=global_id;i<problem_size;i+=global_size) {
-                OutType s = 0;
+                InType s = 0;
                 for(int j=0;j<chunk_size;j++)
                         s += x[i*chunk_size+j];
                 y[i] = s;

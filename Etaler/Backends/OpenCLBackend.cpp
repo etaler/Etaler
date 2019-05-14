@@ -836,18 +836,21 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 	kernel_manager_.remove("__copy");//We are unlikely to use this kernel again?
 }
 
-std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk_size)
+std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
 	et_assert(points_to<OpenCLTensor>(x));
 	et_assert(x->size() % chunk_size == 0);
 
-	DType result_dtype = [x](){
-		DType dtype = x->dtype();
-		if(dtype == DType::Bool || dtype == DType::Int32)
-			return DType::Int32;
-		else
-			return DType::Float;
-        }();
+	DType result_dtype = dtype;
+	if(dtype == DType::Unknown) {
+		result_dtype = [x](){
+			DType dtype = x->dtype();
+			if(dtype == DType::Bool || dtype == DType::Int32)
+				return DType::Int32;
+			else
+				return DType::Float;
+		}();
+	}
 
 	std::string args = "-DInType=" + to_ctype_string(x->dtype()) + " -DOutType=" + to_ctype_string(result_dtype);
 	std::string program_name = "sum" + hash_string(args);

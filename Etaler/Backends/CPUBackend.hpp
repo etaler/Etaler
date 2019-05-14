@@ -78,7 +78,7 @@ struct CPUBackend : public Backend
 		, TensorImpl* permeances, float initial_perm) override;
 	virtual std::shared_ptr<TensorImpl> realize(const TensorImpl* x) override;
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) override;
-	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size) override;
+	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size, DType dtype=DType::Unknown) override;
 
 	virtual std::string name() const override {return "CPU";}
 };

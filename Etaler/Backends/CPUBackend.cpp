@@ -497,18 +497,22 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 	});
 }
 
-std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_size)
+std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
 	et_assert(points_to<CPUTensor>(x));
 	et_assert(x->size() % chunk_size == 0);
 
-	DType result_dtype = [x](){
-		DType dtype = x->dtype();
-		if(dtype == DType::Bool || dtype == DType::Int32)
-			return DType::Int32;
-		else
-			return DType::Float;
-	}();
+	DType result_dtype = dtype;
+
+	if(dtype == DType::Unknown) {
+		result_dtype = [x](){
+			DType dtype = x->dtype();
+			if(dtype == DType::Bool || dtype == DType::Int32)
+				return DType::Int32;
+			else
+				return DType::Float;
+		}();
+	}
 
 	auto res = createTensor({(intmax_t)(x->size()/chunk_size)}, result_dtype);
 

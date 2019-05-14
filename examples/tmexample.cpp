@@ -41,7 +41,7 @@ int main()
 		last_state = active;
 
 		//Display results
-		auto prediction = sum(pred, 1).cast(DType::Bool);
+		auto prediction = sum(pred, 1, DType::Bool);
 		std::vector<size_t> pred_category = decoder::category(prediction, num_category);
 
 		std::cout << "input, prediction of next = " << categoery
