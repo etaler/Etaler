@@ -5,7 +5,7 @@
 
 Etaler is a library for machine intelligence based on [HTM theory](https://numenta.org/resources/HTM_CorticalLearningAlgorithms.pdf). Providing two main features.
 
-* HTM algorithms with modern API design
+* HTM algorithms with modern API
 * A minimal cross-platform (CPU, GPU, etc..) Tensor implementation
 
 You can now explore HTM with modern, easy to use API and enjoy the performance boost by the GPU.
@@ -15,10 +15,10 @@ You can now explore HTM with modern, easy to use API and enjoy the performance b
 ### A GPU ready HTM library
 Unlike most previous HTM implementations, Etaler is designed from the ground up to work with GPUs and allows almost seamless data transfer between CPU and GPUs.
 
-Etaler provides HTM algorithms and a minimal Tensor implementation that operates on both CPU and GPU. You can select what works best for you and switch between them if you wish so with ease.
+Etaler provides HTM algorithms and a minimal Tensor implementation that operates on both CPU and GPU. You can choose what works best for you and switch between them with ease.
 
 ### Total front-end /back-end separation
-Etaler is written in a way that the front-end (Tensor operation calls, HTM APIs, layer save/load) businesses are totally separated from the backend where all the computation and memory management happens. This allows Etaler to be easily expanded and optimized. Have multiple GPUs? Just spawn multiple GPU backends! Thou shell not need any black-magic.
+Etaler is written in a way that the front-end businesses (Tensor operation calls, HTM APIs, layer save/load) are totally separated from the backend, where all the computation and memory management happens. This allows Etaler to be easily expanded and optimized. Have multiple GPUs? Just spawn multiple GPU backends! Thou shell not need any black-magic.
 
 ### Why the name?
 Etaler is named after the inverse of the word "relate" for no specific reason.
@@ -70,6 +70,7 @@ For more infmation see [the documents](docs/)
 * Build with GCC and libstdc++ on OS X 10.11. Clang should work after OS X 10.14. See [BuildOnOSX.md](docs/BuildOnOSX.md)
 
 ### Dependencies
+
 * Required
   * C++17 capable compiler
   * [Intel TBB](https://github.com/01org/tbb)
@@ -82,7 +83,8 @@ For more infmation see [the documents](docs/)
 * Tests
   * [catch2](https://github.com/catchorg/Catch2)
 
-### Build
+### Building the library
+
 Clone the repository. Then after fulfilling the dependencies. Execute `cmake` and then run whatever build system you're using.
 
 For example, on Linux.
@@ -128,15 +130,16 @@ See [CONTRIBUTION.md](docs/Contribution.md)
 
 ## For NuPIC users
 Etaler tho provides basically the same feature, is very different from NuPIC. Some noticeable ones are:
+
 * Data Orientated Design instead of Object Orientated
 * No Network API (planned in the future, by another repo)
 * SDR is handled as a Tensor instead of a sparse matrix
 * Swarming is not supported nor planned
 
 ## Testing
-If you have the tests builded. Run `tests/etaler_test -s`.
+If you have the tests builded. Run `tests/etaler_test`.
 
-We are still thinking about weather a CI is worth the problem. C++ projects takes too long to build on most CIs and is a problem for fast development.
+We are still thinking about weather a CI is worth the trouble. C++ projects takes too long to build on most CIs so it drags the development speed.
 
 ## Things to be done before release
 
