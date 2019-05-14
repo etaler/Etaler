@@ -20,6 +20,4 @@ int main()
 
 	auto state = sp.states();
 	sp.loadState(state);
-
-	std::cout << Tensor(defaultBackend()->sum(x, 32)) << std::endl;
 }

@@ -121,6 +121,20 @@ std::cout << t << '\n';
 //  { 1, 1, 1, 1}}
 ```
 
+### Technical note
+Numpy uses the `__set_key__` operator to determine when to write data. If the operator is not called. Python itself handles object reference assignment and thus data is not written.
+However thers is no such  mechanism  in C++. So Etaler distingishs when to copy the shared_ptr and when to write data using `operatpr= ()&` and `operator= ()&&`. When writing to an l-valued Tensor, the pointer is copied. While when assigning to an r-value, acuatal data is copied troug the view.
+
+Which works in most cases, but be careful that in C++. This causes a data write.
+```C++
+Tensor foo(const Tensor& x)
+{
+        return x;
+}
+
+foo(x) = ones({...}); //Oops. Data is written to x even tho it is passed as const!
+```
+
 ## Add, subtract, multiply, etc...
 Not supported.
 
