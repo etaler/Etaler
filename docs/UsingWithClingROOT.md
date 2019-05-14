@@ -60,13 +60,6 @@ root [0] #pragma cling load("Etaler")
 root [1] #include <Etaler/Etaler.hpp>
 ```
 
-And the `.L` command works too.
-```c++
-> root -L /usr/local/lib
-root [0] .L Etaler
-root [1] #include <Etaler/Etaler.hpp>
-```
-
 ## For ROOT
 
 If you want load the library programmatically. You can load Etaler via `gSystem`. You'll have to specisify the full path using this method.
