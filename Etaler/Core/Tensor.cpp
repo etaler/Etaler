@@ -98,6 +98,8 @@ std::string et::to_string(const Tensor& t)
 
 Tensor Tensor::to(Backend* dest_backend) const
 {
+	if(points_to<ViewTensor>(pimpl()))
+		return realize().to(dest_backend);
 	const void* ptr = data();
 	if(ptr != nullptr)
 		return dest_backend->createTensor(shape(), dtype(), ptr);
@@ -204,4 +206,45 @@ Tensor et::ones(const Shape& shape, DType dtype, Backend* backend)
 		return constant<float>(shape, 1, backend);
 	else
 		throw EtError("Cannot creatr a tensor of ones of type " + to_ctype_string(dtype));
+}
+
+Tensor Tensor::sum(intmax_t dim, DType dtype) const
+{
+	et_assert(dim >= -1 && dim < (intmax_t)dimentions());
+
+	if(points_to<ViewTensor>(pimpl()) == true)
+		return realize().sum(dim, dtype);
+
+	//-1 means sum the entire tensor
+	if(dim == -1)
+		return backend()->sum(pimpl(), size(), dtype);
+
+	Shape s = shape();
+	s.erase(s.begin()+dim);
+
+	if(size_t(dim) == dimentions()-1) { //Special, optimized case for the last dim
+		Tensor res = backend()->sum(pimpl(), shape().back(), dtype);
+		res.resize(s);
+		return res;
+	}
+
+	Tensor res = backend()->sum(swapaxis(dimentions()-1, dim).realize(), shape()[dim], dtype);
+	res.resize(s);
+
+	if(dim == (intmax_t)(res.dimentions()-1)) //special case, no need to swap axis
+		return res;
+
+	return res.swapaxis(res.shape().size()-1, dim).realize();
+}
+
+Tensor et::sum(const Tensor& x, intmax_t dim, DType dtype)
+{
+	return x.sum(dim, dtype);
+}
+
+Tensor Tensor::copy() const
+{
+	if(points_to<ViewTensor>(pimpl()))
+		return realize().copy();
+	return backend()->copy(pimpl());
 }

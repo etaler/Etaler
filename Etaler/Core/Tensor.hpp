@@ -43,6 +43,7 @@ struct Tensor
 	Tensor& operator= (const Tensor& t)& { this->pimpl_ = t.pimpl_; return *this; } //l-value assignment. i.e. normal assignment
 	Tensor& operator= (const Tensor& t)&& { assign(t); return *this; } //r-value assignment. i.e. Assigning to a returned value
 
+	//Member and property access
 	void* data() {return call_const(data);}
 	const void* data() const {return pimpl_->data();}
 	DType dtype() const {return pimpl_->dtype();}
@@ -60,6 +61,7 @@ struct Tensor
 	template <typename ImplType=TensorImpl>
 	TensorImpl* pimpl() {return call_const(pimpl<ImplType>);}
 
+	//Data transfer
 	template<typename T>
 	std::vector<T> toHost() const
 	{
@@ -74,14 +76,9 @@ struct Tensor
 
 	Tensor to(Backend* dest_backend) const;
 	Tensor to(std::shared_ptr<Backend> dest_backend) const {return to(dest_backend.get());}
-	Tensor copy() const {return backend()->copy(pimpl_.get());}
+	Tensor copy() const;
 
-	bool isSame (const Tensor& other) const;
-
-	operator TensorImpl* () {return pimpl();}
-	operator const TensorImpl* () const {return pimpl();}
-
-	bool has_value() const {return (bool)pimpl_;}
+	//View/Indexing
 	Tensor view(svector<Range> ranges) const;
 
 	Tensor reshape(Shape shape) const
@@ -108,6 +105,7 @@ struct Tensor
 		return std::make_shared<ViewTensor>(pimpl_, s, stride);
 	}
 
+	//Assigning and realizing
 	void assign(const Tensor& source)
 	{
 		backend()->assign(*this, source);
@@ -118,10 +116,22 @@ struct Tensor
 		return backend()->realize(pimpl());
 	}
 
+	// Common Tensor operators
 	Tensor cast(DType dtype) const
 	{
+		if(points_to<ViewTensor>(pimpl()) == true)
+			return realize().cast(dtype);
 		return backend()->cast(pimpl(), dtype);
 	}
+
+	Tensor sum(intmax_t dim=-1, DType dtype=DType::Unknown) const;
+	bool isSame (const Tensor& other) const;
+
+	//Utils
+	operator TensorImpl* () {return pimpl();}
+	operator const TensorImpl* () const {return pimpl();}
+
+	bool has_value() const {return (bool)pimpl_;}
 
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;
@@ -130,13 +140,13 @@ protected:
 std::ostream& operator<< (std::ostream& os, const Tensor& t);
 std::string to_string(const Tensor& t);
 
-//Healpers
+//Procedural  APIs
 template <typename T>
 Tensor constant(const Shape& shape, T value, Backend* backend=defaultBackend())
 {
 	static_assert(typeToDType<T>() != DType::Unknown);
 	std::vector<T> v(shape.volume(), value);
-	return Tensor(shape, v.data());
+	return Tensor(shape, v.data(), backend);
 }
 
 Tensor zeros(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
@@ -144,12 +154,16 @@ Tensor ones(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defau
 
 inline Tensor realize(const Tensor& t)
 {
-	if(points_to<const ViewTensor>(t.pimpl()) == false)
-		return t;
-	return t.backend()->realize(t);
+	return t.realize();
 }
 
-//Functional APIs
+inline Tensor attempt_realize(const Tensor& t)
+{
+	if(points_to<const ViewTensor>(t.pimpl()) == false)
+		return t;
+	return t.realize();
+}
+
 static Tensor cellActivity(const Tensor& x, const Tensor& connections, const Tensor& permeances
 	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true)
 {
@@ -169,7 +183,7 @@ static Tensor globalInhibition(const Tensor& x, float fraction)
 
 Tensor static cast(const Tensor& x, DType dtype)
 {
-	return x.backend()->cast(x, dtype);
+	return x.cast(dtype);
 }
 
 static Tensor copy(const Tensor& x)
@@ -202,29 +216,6 @@ static void assign(Tensor& x, const Tensor& y)
 	x.assign(y);
 }
 
-static Tensor sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown)
-{
-	et_assert(dim >= -1 && dim < (intmax_t)x.dimentions());
-	//-1 means sum the entire tensor
-	if(dim == -1)
-		return x.backend()->sum(x, x.size(), dtype);
-
-	Shape s = x.shape();
-	s.erase(s.begin()+dim);
-
-	if(size_t(dim) == x.dimentions()-1) { //Special, optimized case for the last dim
-		Tensor res = x.backend()->sum(x, x.shape().back(), dtype);
-		res.resize(s);
-		return res;
-	}
-
-	Tensor res = x.backend()->sum(realize(x.swapaxis(x.dimentions()-1, dim)), x.shape()[dim], dtype);
-	res.resize(s);
-
-	if(dim == (intmax_t)(res.dimentions()-1)) //special case, no need to swap axis
-		return res;
-
-	return realize(res.swapaxis(res.shape().size()-1, dim));
-}
+Tensor sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown);
 
 }
