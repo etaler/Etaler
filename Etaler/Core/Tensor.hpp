@@ -202,4 +202,29 @@ static void assign(Tensor& x, const Tensor& y)
 	x.assign(y);
 }
 
+static Tensor sum(const Tensor& x, intmax_t dim=-1)
+{
+	et_assert(dim >= -1 && dim < (intmax_t)x.dimentions());
+	//-1 means sum the entire tensor
+	if(dim == -1)
+		return x.backend()->sum(x, x.size());
+
+	Shape s = x.shape();
+	s.erase(s.begin()+dim);
+
+	if(size_t(dim) == x.dimentions()-1) { //Special, optimized case for the last dim
+		Tensor res = x.backend()->sum(x, x.shape().back());
+		res.resize(s);
+		return res;
+	}
+
+	Tensor res = x.backend()->sum(realize(x.swapaxis(x.dimentions()-1, dim)), x.shape()[dim]);
+	res.resize(s);
+
+	if(dim == (intmax_t)(res.dimentions()-1)) //special case, no need to swap axis
+		return res;
+
+	return realize(res.swapaxis(res.shape().size()-1, dim));
+}
+
 }

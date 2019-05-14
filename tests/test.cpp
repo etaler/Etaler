@@ -341,6 +341,30 @@ TEST_CASE("Backend functions", "[Backend]")
 		CHECK(s.isSame(pred_conn));
 		CHECK(p.isSame(pred_perm));
 	}
+
+	SECTION("sum") {
+		std::vector<int> v(16);
+		std::iota(v.begin(), v.end(), 0);
+		Tensor t = Tensor({4,4}, v.data());
+
+		auto res = sum(t).toHost<int32_t>();
+		CHECK(res.size() == 1);
+		CHECK(res[0] == 120);
+
+		Tensor s0 = sum(t, 0);
+		CHECK(s0.size() == 4);
+		CHECK(s0.dimentions() == 1);
+		CHECK(s0.dtype() == DType::Int32);
+		int32_t pred0[] = {24, 28, 32, 36};
+		CHECK(s0.isSame(Tensor({4}, pred0)));
+
+		Tensor s1 = sum(t, 1);
+		CHECK(s1.size() == 4);
+		CHECK(s1.dimentions() == 1);
+		CHECK(s1.dtype() == DType::Int32);
+		int32_t pred1[] = {6, 22, 38, 54};
+		CHECK(s1.isSame(Tensor({4}, pred1)));
+	}
 }
 
 TEST_CASE("StateDict", "[StateDict]")

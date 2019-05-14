@@ -8,19 +8,6 @@ using namespace et;
 #include <iostream>
 #include <numeric>
 
-//TODO: This should be computed using the backend
-Tensor sum(Tensor t)
-{
-	size_t length = t.shape().back();
-	auto vec = t.toHost<uint8_t>();
-	std::vector<uint8_t> res(t.size()/length);
-	for(size_t i=0;i<res.size();i++) {
-		size_t sum = std::accumulate(vec.begin()+i*length, vec.begin()+(i+1)*length, 0);
-		res[i] = (sum != 0);
-	}
-	return Tensor({(intmax_t)res.size()}, res.data());
-}
-
 int main()
 {
 	//auto backend = std::make_shared<et::OpenCLBackend>();
@@ -36,7 +23,7 @@ int main()
 		size_t categoery = i%num_category;
 		Tensor x = encoder::category(categoery, num_category, bits_per_category);
 		auto [pred, active] = tm.compute(x, last_state);
-		auto prediction = sum(pred);
+		auto prediction = sum(pred, 1).cast(DType::Bool);
 		std::vector<size_t> pred_category = decoder::category(prediction, num_category);
 
 		std::cout << "input, prediction of next = " << categoery << ", ";
