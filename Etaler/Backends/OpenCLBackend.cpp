@@ -85,6 +85,7 @@ OpenCLBackend::OpenCLBackend()
 
 	local_mem_size_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
 	local_mem_type_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>();
+	num_compute_units_ = device_.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
 }
 
 OpenCLBackend::OpenCLBackend(cl::Context context, cl::Platform platform, cl::Device device)
@@ -100,6 +101,7 @@ OpenCLBackend::OpenCLBackend(cl::Context context, cl::Platform platform, cl::Dev
 
 	local_mem_size_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
 	local_mem_type_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>();
+	num_compute_units_ = device_.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DType dtype, const void* data)
@@ -855,7 +857,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 	std::string args = "-DInType=" + to_ctype_string(x->dtype()) + " -DOutType=" + to_ctype_string(result_dtype);
 	std::string program_name = "sum" + hash_string(args);
 	kernel_manager_.compileFromFile("sum.cl", program_name, {"sum"}, false, args);
-	
+
 	cl::Kernel k = kernel_manager_.kernel(program_name, "sum");
 
 	auto res = createTensor({intmax_t(x->size()/chunk_size)}, result_dtype);
@@ -866,7 +868,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 	k.setArg(3, int(chunk_size));
 
 	size_t local_size = 128;
-	
+
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size()/chunk_size)), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));

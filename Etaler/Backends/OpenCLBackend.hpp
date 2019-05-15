@@ -129,6 +129,11 @@ protected:
 		return local_mem_type_;
 	}
 
+	cl_uint numComputeUnits() const
+	{
+		return num_compute_units_;
+	}
+
 	inline cl::Buffer allocBuffer(size_t size)
 	{
 		cl_int err;
@@ -147,6 +152,7 @@ protected:
 
 	cl_device_local_mem_type local_mem_type_;
 	cl_ulong local_mem_size_;
+	cl_uint num_compute_units_;
 };
 
 }
