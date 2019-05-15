@@ -137,7 +137,7 @@ See [CONTRIBUTION.md](docs/Contribution.md)
 * DSP/CPU/Xeon Phi based OpenCL should work out of the box. But we didn't test that.
 
 ## For NuPIC users
-Etaler tho provides basically the same feature, is very different from NuPIC. Some noticeable ones are:
+Etaler tho provides basically the same feature, is very different from [Numenta's](https://numenta.com/) [NuPIC](https://github.com/numenta/nupic). Some noticeable ones are:
 
 * Data Orientated Design instead of Object Orientated
 * No Network API (planned in the future, by another repo)
