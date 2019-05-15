@@ -874,3 +874,31 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
 	return res;
 }
+
+void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
+{
+	et_assert(connections->shape() == permeances->shape());
+	et_assert(points_to<OpenCLTensor>(connections));
+	et_assert(points_to<OpenCLTensor>(permeances));
+	et_assert(connections->dtype() == DType::Int32);
+	et_assert(permeances->dtype() == DType::Float);
+
+	size_t max_synapses_per_cell = connections->shape().back();
+	size_t input_cell_count = connections->size()/max_synapses_per_cell;
+
+	auto args = "-DNUM_CELLS="+str(input_cell_count) + " -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell);
+	std::string program_name = "sum" + hash_string(args);
+	kernel_manager_.compileFromFile("decaySynapses.cl", program_name, {"decaySynapses"}, false, args);
+
+	cl::Kernel k = kernel_manager_.kernel(program_name, "decaySynapses");
+
+	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(connections)->buffer());
+	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(permeances)->buffer());
+	k.setArg(2, threshold);
+
+	size_t local_size = 128;
+
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, input_cell_count)), cl::NDRange(local_size));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+}

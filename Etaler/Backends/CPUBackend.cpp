@@ -416,7 +416,6 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 template <typename T>
 const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 {
-	assert(t->dimentions() == location.size());
 	if(points_to<const CPUTensor>(t) == true) {
 		const T* ptr = (const T*) t->data();
 		return &ptr[parent_idx];
@@ -486,7 +485,7 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 	if(dest->dtype() != src->dtype())
 		source = cast(realize(source.get()).get(), dest->dtype());
-	
+
 	dispatch(dest->dtype(), [&](auto v) {
 		using T = decltype(v);
 		auto s = (T*)source->data();
@@ -531,4 +530,42 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 	});
 
 	return res;
+}
+
+void CPUBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
+{
+	et_assert(connections->shape() == permeances->shape());
+	et_assert(points_to<CPUTensor>(connections));
+	et_assert(points_to<CPUTensor>(permeances));
+	et_assert(connections->dtype() == DType::Int32);
+	et_assert(permeances->dtype() == DType::Float);
+
+	float* perms = (float*)permeances->data();
+	uint32_t* conns = (uint32_t*)connections->data();
+
+	size_t max_synapses_per_cell = connections->shape().back();
+	size_t input_cell_count = connections->size()/max_synapses_per_cell;
+
+	tbb::parallel_for(size_t(0), input_cell_count, [&](size_t i) {
+		uint32_t* synapses = (uint32_t*)conns+i*max_synapses_per_cell;
+		float* strengths = perms+i*max_synapses_per_cell;
+		uint32_t* end = synapses+max_synapses_per_cell;
+
+		uint32_t* it = std::lower_bound(synapses, end, uint32_t(-1));
+		size_t used_space = it - synapses;
+
+		for(size_t j=0;j<used_space;j++) {
+			if(strengths[j] < threshold)
+				synapses[j] = uint32_t(-1);
+		}
+
+		std::vector<size_t> sort_indices(used_space);
+		std::iota(sort_indices.begin(), sort_indices.begin()+used_space, 0);
+		std::sort(sort_indices.begin(), sort_indices.begin()+used_space,
+			[&](size_t i, size_t j)->bool {
+				return ((uint32_t*)synapses)[i] < ((uint32_t*)synapses)[j];
+			});
+		apply_permutation_in_place(synapses, synapses+used_space, sort_indices);
+		apply_permutation_in_place(strengths, strengths+used_space, sort_indices);
+	});
 }

@@ -36,6 +36,7 @@ struct Backend : public std::enable_shared_from_this<Backend>
 	virtual std::shared_ptr<TensorImpl> reverseBurst(const TensorImpl* x) {throw notImplemented("reverseBurst");}
 	virtual void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm) {throw notImplemented("growSynapses");}
+	virtual void decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold) {throw notImplemented("decaySynapses");}
 
 	virtual std::shared_ptr<TensorImpl> realize(const TensorImpl* x) {throw notImplemented("realize");}
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) {throw notImplemented("assign");}

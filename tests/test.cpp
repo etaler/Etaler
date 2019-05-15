@@ -360,6 +360,20 @@ TEST_CASE("Backend functions", "[Backend]")
 		int32_t pred1[] = {6, 22, 38, 54};
 		CHECK(s1.isSame(Tensor({4}, pred1)));
 	}
+
+	SECTION("decay synapses") {
+		int a[] = {0,1,0,1};
+		Tensor c({2,2}, a);
+
+		float b[] = {0.1, 0.7, 0.5, 0.01};
+		Tensor p({2,2}, b);
+
+		defaultBackend()->decaySynapses(c, p, 0.2);
+
+		int pred[] = {1, -1, 0, -1};
+		CHECK(Tensor({2,2}, pred).isSame(c));
+		//TODO: Add test for p
+	}
 }
 
 TEST_CASE("StateDict", "[StateDict]")

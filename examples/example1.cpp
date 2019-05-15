@@ -9,6 +9,7 @@ using namespace et;
 
 int main()
 {
+	/*
 	//Create a SP that takes in 128 input bits and generates 32 bit representation
 	setDefaultBackend(std::make_shared<OpenCLBackend>());
 	SpatialPooler sp({128}, {32});
@@ -19,5 +20,21 @@ int main()
 	std::cout << sp.compute(x) << std::endl;
 
 	auto state = sp.states();
-	sp.loadState(state);
+	sp.loadState(state);*/
+
+	setDefaultBackend(std::make_shared<OpenCLBackend>());
+
+	int a[] = {0,1,0,1};
+	Tensor c({2,2}, a);
+
+	float b[] = {0.1, 0.7, 0.5, 0.01};
+	Tensor p({2,2}, b);
+
+	std::cout << c << std::endl;
+	std::cout << p << std::endl;
+
+	defaultBackend()->decaySynapses(c, p, 0.2);
+
+	std::cout << c << std::endl;
+	std::cout << p << std::endl;
 }
