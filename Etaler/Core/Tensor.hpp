@@ -51,6 +51,8 @@ struct Tensor
 	template <typename ImplType=TensorImpl>
 	TensorImpl* pimpl() {return call_const(pimpl<ImplType>);}
 
+	std::shared_ptr<TensorImpl> shared_pimpl() const {return pimpl_;}
+
 	//Data transfer
 	template<typename T>
 	std::vector<T> toHost() const
@@ -208,5 +210,6 @@ static void assign(Tensor& x, const Tensor& y)
 }
 
 Tensor sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown);
+std::pair<Tensor, Tensor> brodcast_tensors(const Tensor& a, const Tensor& b);
 
 }

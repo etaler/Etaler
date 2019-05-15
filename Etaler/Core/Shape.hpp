@@ -109,4 +109,11 @@ inline std::ostream& operator << (std::ostream& os, const Shape& s)
 	return os;
 }
 
+inline Shape leftpad(Shape s, size_t size, intmax_t pad=1)
+{
+	if(s.size() >= size)
+		return s;
+	return Shape(size - s.size(), pad) + s;
+}
+
 }

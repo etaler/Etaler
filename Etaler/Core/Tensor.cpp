@@ -248,3 +248,55 @@ Tensor Tensor::copy() const
 		return realize().copy();
 	return backend()->copy(pimpl());
 }
+
+inline bool brodcastable(Shape a, Shape b)
+{
+	size_t max = std::max(a.size(), b.size());
+	a = leftpad(a, max);
+	b = leftpad(b, max);
+	assert(a.size() == b.size());
+
+	for(int i=(int)a.size()-1;i>=0;i--) {
+		if(a[i] == 1 || b[1] == 1)
+			continue;
+		if(a[i] != b[i])
+		 	return false;
+	}
+	return true;
+}
+
+inline Shape brodcast_result_shape(Shape a, Shape b)
+{
+	Shape s;
+
+	size_t max = std::max(a.size(), b.size());
+	a = leftpad(a, max);
+	b = leftpad(b, max);
+	assert(a.size() == b.size());
+
+	for(int i=(int)a.size()-1;i>=0;i--)
+		s.push_back(std::max(a[i], b[i]));
+	return s;
+}
+
+static Tensor brodcast_to(const Tensor& t, Shape s)
+{
+	et_assert(s.size() >= t.dimentions());
+	Shape stride = leftpad(shapeToStride(t.shape()), s.size(), 0);
+	Shape shape = leftpad(t.shape(), s.size(), 0);
+	for(size_t i=0;i<s.size();i++) {
+		if(shape[i] != s[i])
+			stride[i] = 0;
+	}
+	return std::make_shared<ViewTensor>(t.shared_pimpl(), s, RectangularView(stride));
+}
+
+std::pair<Tensor, Tensor> et::brodcast_tensors(const Tensor& a, const Tensor& b)
+{
+	if(brodcastable(a.shape(), b.shape()) == false)
+		throw EtError("Cannot brodcast " + to_string(a.shape()) + " and " + to_string(b.shape()) + " together.");
+
+	Shape result_shape = brodcast_result_shape(a.shape(), b.shape());
+
+	return {brodcast_to(a, result_shape), brodcast_to(b, result_shape)};
+}
