@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Etaler/Core/TensorImpl.hpp>
-#include <Etaler/Core/Tensor.hpp>
+#include <Etaler/Core/TypeHelpers.hpp>
 
 #include <memory>
 #include <variant>

@@ -1,6 +1,7 @@
 #include <memory>
 
 #include <Etaler/Backends/CPUBackend.hpp>
+#include "DefaultBackend.hpp"
 
 namespace et
 {
