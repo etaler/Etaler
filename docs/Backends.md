@@ -37,10 +37,17 @@ By default `defaultBackend()` returns a `CPUBackend`. You can which backend is u
 Like so:
 
 ```C++
-auto gpu = std::make_shared<OpenCLBackend>(); //Make sure this pointer is alive until exit
-setDefaultBackend(gpu);
+setDefaultBackend(std::make_shared<OpenCLBackend>());
 ```
 
 ## Using multiple backends
 
 Using multiple backends should be easy. Just initalize multiple backends and tensors on them! You can even have different threads controlling different backends for maxium performance. The backends are not thread-safe tho. You'll have to handle that yourself.
+
+## Tensors and views, how do they work
+
+From a technical point. Each backend implements it own XXXTensor (ex. CPUTensor) class, storing whatever is needed. When the backend being requested to create a tensor (thee `createTensor` method called). The backend returns a shared_ptr pointing to XXXTensor. When the reference counter drops to 0, the `releaseTensor` method is called automatically (Also all XXXTensor holds a shared_ptr to the backend, so you don't need to worry about the backend being destructed before all tensors being destructed).
+
+When creating a view. Unlike Numpy and PyTorch's implementation, modifing the stride of the Tensor. A ViewTensor is created. In which stores all the information needed to describie the view. i.e. It may contain information about the offset and the new stride of the tensor, or it may store that the new view is simply a reshape of the old tensor.
+
+I ended up with this design as it makes the most sense for seprating frontend and backend, and it allows the chaining of views. But it also complicates things that tensors needs to be `realize()`-ed before being usable for backends.
