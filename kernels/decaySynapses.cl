@@ -13,7 +13,7 @@ kernel void decaySynapses(global int* restrict connections, global float* restri
 	int global_id = get_global_id(0);
 
 	for(int i=global_id;i<NUM_CELLS;i+=global_size) {
-		global int* synapses = (global int*)connections+i*MAX_SYNAPSE_PER_CELL;
+		global int* synapses = connections+i*MAX_SYNAPSE_PER_CELL;
 		global float* strengths = permeances+i*MAX_SYNAPSE_PER_CELL;
 
 		int synapse_end = MAX_SYNAPSE_PER_CELL-1;

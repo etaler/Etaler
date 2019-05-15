@@ -3,7 +3,7 @@
 using namespace et;
 
 TemporalMemory::TemporalMemory(const Shape& input_shape, size_t cells_per_column, size_t max_synapses_per_cell, Backend* backend)
-		: cells_per_column_(cells_per_column)
+	:input_shape_(input_shape)
 {
 	Shape connection_shape = input_shape + cells_per_column + max_synapses_per_cell;
 
@@ -13,11 +13,12 @@ TemporalMemory::TemporalMemory(const Shape& input_shape, size_t cells_per_column
 
 std::pair<Tensor, Tensor> TemporalMemory::compute(const Tensor& x, const Tensor& last_state)
 {
+	et_assert(x.shape() == input_shape_);
 	Tensor active_cells;
 	if(last_state.has_value() == true)
 		active_cells = burst(x, last_state);
 	else
-		active_cells = burst(x, zeros(x.shape()+cells_per_column_, DType::Bool, x.backend()));
+		active_cells = burst(x, zeros(x.shape()+cellsPerColumn(), DType::Bool, x.backend()));
 	Tensor activity = cellActivity(active_cells, connections_, permances_, connected_permance_, active_threshold_);
 	Tensor predictive_cells = cast(activity, DType::Bool);
 
@@ -27,6 +28,7 @@ std::pair<Tensor, Tensor> TemporalMemory::compute(const Tensor& x, const Tensor&
 
 void TemporalMemory::learn(const Tensor& active_cells, const Tensor& last_active)
 {
+	et_assert(active_cells.shape() == last_active.shape());
 	if(last_active.has_value() == false)
 		return;
 

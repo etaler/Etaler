@@ -28,7 +28,9 @@ struct TemporalMemory
 	void setActiveThreshold(size_t thr) { active_threshold_ = thr; }
 	size_t activeThreshold() const { return active_threshold_; }
 
-	size_t cells_per_column_;
+	size_t cellsPerColumn() const {return connections_.shape().back();}
+
+	Shape input_shape_;
 	float connected_permance_ = 0.1;
 	size_t active_threshold_ = 2;
 	float permance_inc_ = 0.1;

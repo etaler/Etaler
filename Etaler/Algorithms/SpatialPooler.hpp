@@ -25,6 +25,8 @@ struct SpatialPooler
 
 	void learn(const Tensor& x, const Tensor& y)
 	{
+		et_assert(x.shape() == input_shape_);
+		et_assert(y.shape() == input_shape_);
 		learnCorrilation(x, y, connections_, permances_, permance_inc_, permance_dec_);
 	}
 
