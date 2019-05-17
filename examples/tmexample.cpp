@@ -13,7 +13,7 @@ inline std::string to_string(std::vector<size_t> v)
 {
 	if(v.size() == 0)
 		return "None";
-	
+
 	std::string res = "";
 	for(size_t i=0;i<v.size();i++)
 		res += std::to_string(v[i]) + std::string(i==v.size()-1 ? "" : " ");
@@ -26,11 +26,12 @@ int main()
 	//et::setDefaultBackend(backend.get());
 	size_t num_category = 3;
 	size_t bits_per_category = 5;
+	intmax_t cells_per_column = 2;
 
-	size_t sdr_size = bits_per_category*num_category;
-	TemporalMemory tm({(intmax_t)sdr_size}, 2);
+	intmax_t sdr_size = bits_per_category*num_category;
+	TemporalMemory tm({(intmax_t)sdr_size}, cells_per_column);
 
-	Tensor last_state;
+	Tensor last_state = zeros({sdr_size, cells_per_column}, DType::Bool);
 	for(size_t i=0;i<40;i++) {
 		size_t categoery = i%num_category;
 		Tensor x = encoder::category(categoery, num_category, bits_per_category);
@@ -48,6 +49,6 @@ int main()
 			<< ", " << to_string(pred_category);
 		std::cout << '\n';
 
-		
+
 	}
 }

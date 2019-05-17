@@ -28,10 +28,6 @@ std::pair<Tensor, Tensor> TemporalMemory::compute(const Tensor& x, const Tensor&
 
 void TemporalMemory::learn(const Tensor& active_cells, const Tensor& last_active)
 {
-	et_assert(active_cells.shape() == last_active.shape());
-	if(last_active.has_value() == false)
-		return;
-
 	Tensor learning_cells = reverseBurst(active_cells);
 
 	learnCorrilation(last_active, learning_cells, connections_, permances_, permance_inc_, permance_dec_);

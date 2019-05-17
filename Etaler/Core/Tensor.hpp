@@ -14,7 +14,7 @@ namespace et
 
 struct Tensor
 {
-	Tensor() = default;
+	Tensor() : pimpl_(defaultBackend()->createTensor({0}, DType::Int32)) {}
 	Tensor(std::shared_ptr<TensorImpl> pimpl)
 		: pimpl_(std::move(pimpl)) {}
 	Tensor(Shape s, DType dtype, Backend* backend=defaultBackend())
@@ -111,7 +111,7 @@ struct Tensor
 	// Common Tensor operators
 	Tensor cast(DType dtype) const
 	{
-		if(iscontiguous() == true)
+		if(iscontiguous() == false)
 			return realize().cast(dtype);
 		return backend()->cast(pimpl(), dtype);
 	}
@@ -123,7 +123,7 @@ struct Tensor
 	operator TensorImpl* () {return pimpl();}
 	operator const TensorImpl* () const {return pimpl();}
 
-	bool has_value() const {return (bool)pimpl_;}
+	bool has_value() const {return (bool)pimpl_ && size() > 0;}
 
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;
