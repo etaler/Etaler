@@ -47,19 +47,19 @@ void apply_permutation(
 }
 
 
-const void* CPUTensor::data() const
+void* CPUBuffer::data() const
 {
 	assert(dtype() != DType::Unknown);
-	return std::visit([](const auto& v){return (const void*)v;}, storage_);
+	return std::visit([](const auto& v){return (void*)v;}, storage_);
 }
 
 std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances
 	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
 	//Checks the input are sane
-	et_assert(points_to<CPUTensor>(x));
-	et_assert(points_to<CPUTensor>(connections));
-	et_assert(points_to<CPUTensor>(permeances));
+	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(points_to<CPUBuffer>(connections->buffer()));
+	et_assert(points_to<CPUBuffer>(permeances->buffer()));
 
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(connections->dtype() == DType::Int32);
@@ -114,10 +114,10 @@ std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const 
 void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections, TensorImpl* permeances
 	, float perm_inc, float perm_dec, bool has_unconnected_synapse)
 {
-	et_assert(points_to<CPUTensor>(x));
-	et_assert(points_to<CPUTensor>(connections));
-	et_assert(points_to<CPUTensor>(permeances));
-	et_assert(points_to<CPUTensor>(learn));
+	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(points_to<CPUBuffer>(connections->buffer()));
+	et_assert(points_to<CPUBuffer>(permeances->buffer()));
+	et_assert(points_to<CPUBuffer>(learn->buffer()));
 
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(x->shape() == learn->shape());
@@ -158,7 +158,7 @@ void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, 
 
 std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
-	et_assert(points_to<CPUTensor>(x));
+	et_assert(points_to<CPUBuffer>(x->buffer()));
 
 	et_assert(x->dtype() == DType::Int32);
 
@@ -187,7 +187,7 @@ std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, fl
 }
 
 template <typename Ret, typename Op>
-static Ret run(const CPUTensor& t, Op op)
+static Ret run(const CPUBuffer& t, Op op)
 {
 	if(t.dtype() == DType::Bool)
 		return op((const bool*)t.data());
@@ -207,9 +207,9 @@ static std::vector<To> castData(const From* ptr, size_t n)
 
 std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 {
-	et_assert(points_to<CPUTensor>(x));
-	const CPUTensor* p = dynamic_cast<const CPUTensor*>(x);
-	const CPUTensor& t = *p;
+	et_assert(points_to<CPUBuffer>(x->buffer()));
+	const CPUBuffer* p = dynamic_cast<const CPUBuffer*>(x->buffer().get());
+	const CPUBuffer& t = *p;
 	return run<std::shared_ptr<TensorImpl>>(t, [&x, toType, this](const auto* ptr){
 		if(toType == DType::Bool) {
 			auto castedData = castData<uint8_t>(ptr, x->size());
@@ -229,26 +229,23 @@ std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 	});
 }
 
-void CPUBackend::copyToHost(const TensorImpl* pimpl, void* ptr)
+void CPUBackend::copyToHost(const TensorImpl* t, void* ptr)
 {
-	et_assert(points_to<CPUTensor>(pimpl));
-	const CPUTensor* t = dynamic_cast<const CPUTensor*>(pimpl);
-	if(t == nullptr)
-		throw EtError("Cannot copy to host memory: Tensor/Backend mismach");
+	et_assert(points_to<CPUBuffer>(t->buffer().get()));
 	memcpy(ptr, t->data(), t->size()*dtypeToSize(t->dtype()));
 }
 
 std::shared_ptr<TensorImpl> CPUBackend::copy(const TensorImpl* x)
 {
-	et_assert(points_to<CPUTensor>(x));
-	return createTensor(x->shape(), x->dtype(), reinterpret_cast<const CPUTensor*>(x)->data());
+	et_assert(points_to<CPUBuffer>(x->buffer()));
+	return createTensor(x->shape(), x->dtype(), x->data());
 }
 
 void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(points_to<CPUTensor>(connections));
-	et_assert(points_to<CPUTensor>(permeances));
+	et_assert(points_to<CPUBuffer>(connections->buffer()));
+	et_assert(points_to<CPUBuffer>(permeances->buffer()));
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 
@@ -275,8 +272,8 @@ void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
-	et_assert(points_to<const CPUTensor>(x));
-	et_assert(points_to<const CPUTensor>(s));
+	et_assert(points_to<const CPUBuffer>(x->buffer()));
+	et_assert(points_to<const CPUBuffer>(s->buffer()));
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(s->dtype() == DType::Bool);
 
@@ -306,7 +303,7 @@ std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorI
 
 std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 {
-	et_assert(points_to<const CPUTensor>(x));
+	et_assert(points_to<const CPUBuffer>(x->buffer()));
 	et_assert(x->dtype() == DType::Bool);
 
 	size_t cells_per_column = x->shape().back();
@@ -334,10 +331,10 @@ std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 	, TensorImpl* permeances, float initial_perm)
 {
-	et_assert(points_to<const CPUTensor>(x));
-	et_assert(points_to<const CPUTensor>(y));
-	et_assert(points_to<CPUTensor>(connections));
-	et_assert(points_to<CPUTensor>(permeances));
+	et_assert(points_to<const CPUBuffer>(x->buffer()));
+	et_assert(points_to<const CPUBuffer>(y->buffer()));
+	et_assert(points_to<CPUBuffer>(connections->buffer()));
+	et_assert(points_to<CPUBuffer>(permeances->buffer()));
 
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(y->dtype() == DType::Bool);
@@ -416,29 +413,10 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 template <typename T>
 const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 {
-	if(points_to<const CPUTensor>(t) == true) {
-		const T* ptr = (const T*) t->data();
-		return &ptr[parent_idx];
-	}
-
-	et_assert(points_to<const ViewTensor>(t) == true);
-	return std::visit([&](const auto& view) {
-		const TensorImpl* parent = reinterpret_cast<const ViewTensor*>(t)->parent_.get();
-		using ViewType = std::decay_t<decltype(view)>;
-		if constexpr(std::is_same_v<ViewType, RectangularView>) {
-			Shape s = foldIndex(parent_idx, t->shape());
-			s = Shape(view.strides().size()-s.size(), 0) + s;
-			size_t offset = view.offset() + unfold(s, view.strides());
-			parent_idx = offset;
-		}
-		else if constexpr(std::is_same_v<ViewType, RawView>)
-			{} //No-op
-		else
-			throw EtError("Not supported");
-
-		return getPtrToValue<T>(parent_idx, parent);
-
-	}, reinterpret_cast<const ViewTensor*>(t)->view_);
+	Shape s = foldIndex(parent_idx, t->shape());
+	s = Shape(t->stride().size()-s.size(), 0) + s;
+	size_t offset = t->offset() + unfold(s, t->stride());
+	return ((const T*)t->data())+offset;
 }
 
 template <typename Func>
@@ -456,10 +434,8 @@ void dispatch(DType dtype, Func f)
 
 std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 {
-	if(points_to<const CPUTensor>(x) == true)
-		return copy(x);
-	if(points_to<const ViewTensor>(x) == false)
-		throw EtError("Cannot realize tensor, not a CPUTensor or ViewTensor");
+	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(x->data() != nullptr);
 	auto res = createTensor(x->shape(), x->dtype());
 
 	dispatch(x->dtype(), [&](auto v){
@@ -472,10 +448,11 @@ std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 	return res;
 }
 
+
 void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 {
-	et_assert(points_to<CPUTensor>(dest) || points_to<ViewTensor>(dest));
-	et_assert(points_to<CPUTensor>(src) || points_to<ViewTensor>(src));
+	et_assert(points_to<CPUBuffer>(dest->buffer()));
+	et_assert(points_to<CPUBuffer>(src->buffer()));
 
 	if(dest->shape() != src->shape())
 		throw EtError("Shape mismatch in tensor assignment. Shape "
@@ -498,7 +475,7 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
-	et_assert(points_to<CPUTensor>(x));
+	et_assert(points_to<CPUBuffer>(x->buffer()));
 	et_assert(x->size() % chunk_size == 0);
 
 	DType result_dtype = dtype;
@@ -535,8 +512,8 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 void CPUBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(points_to<CPUTensor>(connections));
-	et_assert(points_to<CPUTensor>(permeances));
+	et_assert(points_to<CPUBuffer>(connections->buffer()));
+	et_assert(points_to<CPUBuffer>(permeances->buffer()));
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 

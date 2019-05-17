@@ -19,7 +19,7 @@ struct Backend : public std::enable_shared_from_this<Backend>
 {
 	virtual ~Backend() = default;
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data = nullptr) {throw notImplemented("createTensor");};
-	virtual void releaseTensor(TensorImpl* pimpl) {throw notImplemented("releaseTensor");};
+	//virtual void releaseTensor(TensorImpl* pimpl) {throw notImplemented("releaseTensor");};
 	virtual void sync() const {} //Default empty implemention. For async backends
 	virtual std::shared_ptr<TensorImpl> cellActivity(const TensorImpl* x, const TensorImpl* connections,
 		const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true) {throw notImplemented("overlapScore");}

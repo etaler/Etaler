@@ -17,8 +17,6 @@ struct Tensor
 	Tensor() = default;
 	Tensor(std::shared_ptr<TensorImpl> pimpl)
 		: pimpl_(std::move(pimpl)) {}
-	Tensor(std::shared_ptr<ViewTensor> pimpl)
-		: pimpl_(std::move(pimpl)) {}
 	Tensor(Shape s, DType dtype, Backend* backend=defaultBackend())
 		: pimpl_(backend->createTensor(s, dtype, nullptr)) {}
 	template <typename T>
@@ -41,6 +39,7 @@ struct Tensor
 	size_t size() const {return pimpl_->size();}
 	size_t dimentions() const {return pimpl_->dimentions();}
 	void resize(Shape s) {pimpl()->resize(s);}
+	bool iscontiguous() const {return pimpl()->iscontiguous();}
 
 	Backend* backend() const {return pimpl()->backend();};
 
@@ -78,7 +77,7 @@ struct Tensor
 	{
 		if(size() != (size_t)shape.volume())
 			throw EtError("Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
-		return std::make_shared<ViewTensor>(pimpl_, shape, RawView());
+		return std::make_shared<TensorImpl>(pimpl_->buffer(), shape, shapeToStride(shape), pimpl_->offset());
 	}
 
 	Tensor flatten() const
@@ -91,11 +90,11 @@ struct Tensor
 	{
 		et_assert(axis1 < dimentions());
 		et_assert(axis2 < dimentions());
-		Shape stride = shapeToStride(shape());
+		Shape stride = pimpl_->stride();
 		Shape s = shape();
 		std::swap(stride[axis1], stride[axis2]);
 		std::swap(s[axis1], s[axis2]);
-		return std::make_shared<ViewTensor>(pimpl_, s, stride);
+		return std::make_shared<TensorImpl>(pimpl_->buffer(), s, stride, pimpl_->offset());
 	}
 
 	//Assigning and realizing
@@ -112,7 +111,7 @@ struct Tensor
 	// Common Tensor operators
 	Tensor cast(DType dtype) const
 	{
-		if(points_to<ViewTensor>(pimpl()) == true)
+		if(iscontiguous() == true)
 			return realize().cast(dtype);
 		return backend()->cast(pimpl(), dtype);
 	}
@@ -152,7 +151,7 @@ inline Tensor realize(const Tensor& t)
 
 inline Tensor attempt_realize(const Tensor& t)
 {
-	if(points_to<const ViewTensor>(t.pimpl()) == false)
+	if(t.iscontiguous() == false)
 		return t;
 	return t.realize();
 }

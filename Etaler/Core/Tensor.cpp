@@ -98,8 +98,8 @@ std::string et::to_string(const Tensor& t)
 
 Tensor Tensor::to(Backend* dest_backend) const
 {
-	if(points_to<ViewTensor>(pimpl()))
-		return realize().to(dest_backend);
+	//if(points_to<ViewTensor>(pimpl()))
+	//	return realize().to(dest_backend);
 	const void* ptr = data();
 	if(ptr != nullptr)
 		return dest_backend->createTensor(shape(), dtype(), ptr);
@@ -168,7 +168,7 @@ Tensor Tensor::view(svector<Range> ranges) const
 		if(size < 0)
 			throw EtError("Negative steps not supported now");
 		if(start < 0 || (start+size) > shape()[i])
-			throw EtError("Indexing from " + std::to_string(start+size) + " is out of the range of " + std::to_string(shape()[i]));
+			throw EtError("Indexing from " + std::to_string(start+size-1) + " is out of the range of " + std::to_string(shape()[i]));
 
 		offset.push_back(start);
 		if(size != 1 || result_shape.size() != 0) //Ignore heading 1 dimentions
@@ -179,9 +179,9 @@ Tensor Tensor::view(svector<Range> ranges) const
 	if(result_shape.size() == 0)
 		result_shape.push_back(1);
 
-	Shape view_meta_strides = shapeToStride(shape());
-	size_t initial_offset = unfoldIndex(offset, shape());
-	return std::make_shared<ViewTensor>(pimpl_, result_shape, RectangularView(initial_offset, view_meta_strides));
+	Shape view_meta_strides = pimpl_->stride();
+	size_t initial_offset = unfold(offset, pimpl_->stride())+pimpl_->offset();
+	return std::make_shared<TensorImpl>(pimpl_->buffer(), result_shape, view_meta_strides, initial_offset);
 }
 
 Tensor et::zeros(const Shape& shape, DType dtype, Backend* backend)
@@ -212,8 +212,8 @@ Tensor Tensor::sum(intmax_t dim, DType dtype) const
 {
 	et_assert(dim >= -1 && dim < (intmax_t)dimentions());
 
-	if(points_to<ViewTensor>(pimpl()) == true)
-		return realize().sum(dim, dtype);
+	//if(points_to<ViewTensor>(pimpl()) == true)
+	//	return realize().sum(dim, dtype);
 
 	//-1 means sum the entire tensor
 	if(dim == -1)
@@ -244,8 +244,8 @@ Tensor et::sum(const Tensor& x, intmax_t dim, DType dtype)
 
 Tensor Tensor::copy() const
 {
-	if(points_to<ViewTensor>(pimpl()))
-		return realize().copy();
+	//if(points_to<ViewTensor>(pimpl()))
+	//	return realize().copy();
 	return backend()->copy(pimpl());
 }
 
@@ -288,7 +288,7 @@ static Tensor brodcast_to(const Tensor& t, Shape s)
 		if(shape[i] != s[i])
 			stride[i] = 0;
 	}
-	return std::make_shared<ViewTensor>(t.shared_pimpl(), s, RectangularView(stride));
+	return std::make_shared<TensorImpl>(t.shared_pimpl()->buffer(), s, stride);
 }
 
 std::pair<Tensor, Tensor> et::brodcast_tensors(const Tensor& a, const Tensor& b)

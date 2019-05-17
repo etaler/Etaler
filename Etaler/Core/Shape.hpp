@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "SmallVector.hpp"
+#include "Error.hpp"
 
 namespace et
 {
@@ -114,6 +115,51 @@ inline Shape leftpad(Shape s, size_t size, intmax_t pad=1)
 	if(s.size() >= size)
 		return s;
 	return Shape(size - s.size(), pad) + s;
+}
+
+template <typename IdxType, typename StrideType>
+inline size_t unfold(const IdxType& index, const StrideType& stride)
+{
+	size_t s = 0;
+	et_assert(index.size() == stride.size());
+	for(int i=(int)index.size()-1;i>=0;i--)
+		s += stride[i] * index[i];
+
+	return s;
+}
+
+inline Shape shapeToStride(const Shape& shape)
+{
+	Shape v;
+	v.resize(shape.size());
+	size_t acc = 1;
+	v.back() = 1;
+	for(int i=(int)shape.size()-1;i>0;i--) {
+		acc *= shape[i];
+		v[i-1] = acc;
+	}
+	return v;
+}
+
+template <typename IdxType, typename ShapeType>
+inline size_t unfoldIndex(const IdxType& index, const ShapeType& shape)
+{
+	return unfold(index, shapeToStride(shape));
+}
+
+template <typename ShapeType>
+inline Shape foldIndex(size_t index, const ShapeType& shape)
+{
+	assert(shape.size() != 0);
+	svector<intmax_t> v = shapeToStride(shape);
+	Shape res;
+	res.resize(v.size());
+	for(size_t i=0;i<v.size();i++) {
+		res[i] = index/v[i];
+		index = index%v[i];
+	}
+
+	return res;
 }
 
 }

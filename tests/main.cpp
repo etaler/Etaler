@@ -2,7 +2,7 @@
 #include "catch2/catch.hpp"
 
 
-#include <Etaler/Backends/OpenCLBackend.hpp>
+//#include <Etaler/Backends/OpenCLBackend.hpp>
 //#include <Etaler/Backends/CPUBackend.hpp>
 #include <Etaler/Core/DefaultBackend.hpp>
 

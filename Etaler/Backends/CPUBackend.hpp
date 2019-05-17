@@ -12,14 +12,11 @@
 namespace et
 {
 
-struct CPUTensor : public TensorImpl
+struct CPUBuffer : public BufferImpl
 {
-	CPUTensor(const Shape& shape, DType dtype, std::shared_ptr<Backend> backend)
-		: TensorImpl(std::move(backend))
+	CPUBuffer(const Shape& shape, DType dtype, std::shared_ptr<Backend> backend)
+		: BufferImpl(shape.volume(), dtype, std::move(backend))
 	{
-		shape_ = shape;
-		dtype_ = dtype;
-
 		if(dtype == DType::Bool)
 			storage_ = new bool[shape.volume()];
 		else if(dtype == DType::Int32)
@@ -27,11 +24,11 @@ struct CPUTensor : public TensorImpl
 		else if(dtype == DType::Float)
 			storage_ = new float[shape.volume()];
 		else
-			std::cerr << "Critical Warning: CPUTensor Initialize failed. Unknown DType" << std::endl;
+			std::cerr << "Critical Warning: CPUBuffer Initialize failed. Unknown DType" << std::endl;
 	}
 
-	CPUTensor(const Shape& shape, DType dtype, std::shared_ptr<Backend> backend, const void* src_ptr)
-		: CPUTensor(shape, dtype, std::move(backend))
+	CPUBuffer(const Shape& shape, DType dtype, std::shared_ptr<Backend> backend, const void* src_ptr)
+		: CPUBuffer(shape, dtype, std::move(backend))
 	{
 		void* ptr = data();
 
@@ -40,10 +37,9 @@ struct CPUTensor : public TensorImpl
 			memcpy(ptr, src_ptr, shape.volume()*dtypeToSize(dtype));
 	}
 
-	virtual ~CPUTensor() {std::visit([](auto& ptr){delete [] ptr;}, storage_);}
+	virtual ~CPUBuffer() {std::visit([](auto& ptr){delete [] ptr;}, storage_);}
 
-	virtual const void* data() const override;
-	virtual void* data() override {return call_const(data);}
+	virtual void* data() const override;
 
 protected:
 	std::variant<bool*, int32_t*, float*> storage_;
@@ -53,14 +49,13 @@ struct CPUBackend : public Backend
 {
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data=nullptr) override
 	{
-		CPUTensor* ptr = new CPUTensor(shape, dtype, shared_from_this(), data);
-		return std::shared_ptr<CPUTensor>(ptr, [this](TensorImpl* ptr){releaseTensor(ptr);});
+		auto buf = std::make_shared<CPUBuffer>(shape, dtype, shared_from_this(), data);
+		return std::make_shared<TensorImpl>(buf, shape, shapeToStride(shape));
 	}
 
-	virtual void releaseTensor(TensorImpl* pimpl) override
+	void releaseTensor(CPUBuffer* buf)
 	{
-		assert(dynamic_cast<CPUTensor*>(pimpl) != nullptr);
-		delete pimpl;
+		delete buf;
 	}
 
 	virtual std::shared_ptr<TensorImpl> cellActivity(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances,
