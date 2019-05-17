@@ -53,11 +53,6 @@ struct CPUBackend : public Backend
 		return std::make_shared<TensorImpl>(buf, shape, shapeToStride(shape));
 	}
 
-	void releaseTensor(CPUBuffer* buf)
-	{
-		delete buf;
-	}
-
 	virtual std::shared_ptr<TensorImpl> cellActivity(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances,
 		float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true) override;
 	virtual void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,

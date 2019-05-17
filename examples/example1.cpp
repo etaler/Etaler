@@ -1,6 +1,6 @@
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Backends/CPUBackend.hpp>
-// #include <Etaler/Backends/OpenCLBackend.hpp>
+#include <Etaler/Backends/OpenCLBackend.hpp>
 #include <Etaler/Algorithms/SpatialPooler.hpp>
 #include <Etaler/Encoders/Scalar.hpp>
 using namespace et;
@@ -10,7 +10,7 @@ using namespace et;
 int main()
 {
 	//Create a SP that takes in 128 input bits and generates 32 bit representation
-	// setDefaultBackend(std::make_shared<OpenCLBackend>());
+	setDefaultBackend(std::make_shared<OpenCLBackend>());
 	/*SpatialPooler sp({128}, {32});
 
 	//Encode the value 0.1 into a 32 bit SDR
@@ -25,7 +25,8 @@ int main()
 	Tensor t = Tensor({4,4}, v.data());
 	std::cout << t << std::endl;
 	Tensor q = t.view({range(2, 4), range(2)});
-	std::cout << q << std::endl;
-	Tensor r = q.view({1,1});
-	std::cout << r << std::endl;
+	//std::cout << q << std::endl;
+	std::cout << realize(q) << std::endl;
+	/*Tensor r = q.view({1,1});
+	std::cout << r << std::endl;*/
 }

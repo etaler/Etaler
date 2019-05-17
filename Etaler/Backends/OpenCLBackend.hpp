@@ -15,21 +15,17 @@
 #include <deque>
 #include <map>
 #include <fstream>
+#include <optional>
 
 
 namespace et
 {
 
 
-struct OpenCLTensor : public TensorImpl
+struct OpenCLBuffer : public BufferImpl
 {
-	OpenCLTensor(const Shape& shape, DType dtype, const cl::Buffer& buffer, std::shared_ptr<Backend> backend)
-		: TensorImpl(std::move(backend))
-	{
-		shape_ = shape;
-		dtype_ = dtype;
-		buffer_ = buffer;
-	}
+	OpenCLBuffer(const Shape& shape, DType dtype, const cl::Buffer& buffer, std::shared_ptr<Backend> backend)
+		: BufferImpl(shape.volume(), dtype, backend), buffer_(buffer) {}
 
 	cl::Buffer& buffer() {return buffer_;}
 	const cl::Buffer& buffer() const {return buffer_;}
@@ -91,7 +87,8 @@ struct OpenCLBackend : public Backend
 	OpenCLBackend();
 	OpenCLBackend(cl::Context context, cl::Platform platform, cl::Device device);
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data=nullptr) override;
-	virtual void releaseTensor(TensorImpl* pimpl) override;
+	std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, cl::Buffer buf);
+	void releaseTensor(OpenCLBuffer* pimpl);
 	virtual void copyToHost(const TensorImpl* pimpl, void* dest) override;
 
 	virtual void sync() const override;
@@ -118,7 +115,7 @@ struct OpenCLBackend : public Backend
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) override;
 	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size, DType dtype=DType::Unknown) override;
 
-	cl::Buffer toSparse(const TensorImpl* x);
+	std::optional<cl::Buffer> toSparse(const TensorImpl* x);
 
 protected:
 

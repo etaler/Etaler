@@ -19,7 +19,10 @@ kernel void onBits(global bool* restrict x, global int* restrict y)
 		if(x[i] == true)
 			atomic_inc(&count);
 	}
-	*y = count;
+
+	barrier(CLK_LOCAL_MEM_FENCE);
+	if(id == 0)
+		*y = count;
 }
 
 //INPUT_SIZE: The size of the input SDR

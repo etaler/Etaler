@@ -13,6 +13,7 @@ struct BufferImpl : public std::enable_shared_from_this<BufferImpl>
 {
 	BufferImpl(size_t size, DType dtype, std::shared_ptr<Backend> backend)
 		: size_(size), dtype_(dtype), backend_(backend) {}
+	virtual ~BufferImpl() = default;
 	size_t size() const {return size_;}
 	virtual void* data() const {return nullptr;}
 	std::shared_ptr<Backend> backend() const {return backend_;}

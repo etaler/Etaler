@@ -1,6 +1,6 @@
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Backends/CPUBackend.hpp>
-//#include <Etaler/Backends/OpenCLBackend.hpp>
+#include <Etaler/Backends/OpenCLBackend.hpp>
 #include <Etaler/Algorithms/TemporalMemory.hpp>
 #include <Etaler/Encoders/Category.hpp>
 using namespace et;
@@ -22,8 +22,8 @@ inline std::string to_string(std::vector<size_t> v)
 
 int main()
 {
-	//auto backend = std::make_shared<et::OpenCLBackend>();
-	//et::setDefaultBackend(backend.get());
+	auto backend = std::make_shared<et::OpenCLBackend>();
+	et::setDefaultBackend(backend.get());
 	size_t num_category = 3;
 	size_t bits_per_category = 5;
 	intmax_t cells_per_column = 2;

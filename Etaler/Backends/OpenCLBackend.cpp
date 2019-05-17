@@ -64,7 +64,7 @@ OpenCLBackend::OpenCLBackend()
 	auto& platform = platforms[0];
 
 	std::vector<cl::Device> devices;
-	platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+	platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
 	if(devices.size() == 0)
 		throw EtError("No OpenCL device found in platorm " + platform.getInfo<CL_PLATFORM_NAME>());
 	auto& device = devices[0];
@@ -121,22 +121,26 @@ std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DTyp
 			throw EtError("OpenCL buffer write failed. Error: " + std::to_string(err) + ", write size " + std::to_string(buf_size));
 	}
 
-	OpenCLTensor* ptr = new OpenCLTensor(shape, dtype, buf, shared_from_this());
-	return std::shared_ptr<OpenCLTensor>(ptr, [this](TensorImpl* ptr){releaseTensor(ptr);});
+	return createTensor(shape, dtype, buf);
 }
 
-void OpenCLBackend::releaseTensor(TensorImpl* pimpl)
+std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DType dtype, cl::Buffer buf)
 {
-	et_assert(dynamic_cast<OpenCLTensor*>(pimpl) != nullptr);
-	delete pimpl;
+	auto ptr = std::shared_ptr<OpenCLBuffer>(new OpenCLBuffer(shape, dtype, buf, shared_from_this()), [this](OpenCLBuffer* ptr){releaseTensor(ptr);});
+	return std::make_shared<TensorImpl>(ptr, shape, shapeToStride(shape));
 }
 
-void OpenCLBackend::copyToHost(const TensorImpl* pimpl, void* dest)
+void OpenCLBackend::releaseTensor(OpenCLBuffer* buf)
 {
-	const OpenCLTensor* t = dynamic_cast<const OpenCLTensor*>(pimpl);
-	if(t == nullptr)
+	delete buf;
+}
+
+void OpenCLBackend::copyToHost(const TensorImpl* t, void* dest)
+{
+	auto b = std::static_pointer_cast<const OpenCLBuffer>(t->buffer());
+	if(b == nullptr)
 		throw EtError("Cannot copy to host memory: Tensor/Backend mismach");
-	cl_int err = queue_.enqueueReadBuffer(t->buffer(), CL_TRUE, 0, t->size()*dtypeToSize(t->dtype()), dest);
+	cl_int err = queue_.enqueueReadBuffer(b->buffer(), CL_TRUE, 0, t->size()*dtypeToSize(t->dtype()), dest);
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL buffer readback failed. Error: " + std::to_string(err));
 }
@@ -253,9 +257,9 @@ void KernelManager::addSearchPath(const std::string& path)
 std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections,
 	const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
-	et_assert(points_to<const OpenCLTensor>(x));
-	et_assert(points_to<const OpenCLTensor>(connections));
-	et_assert(points_to<const OpenCLTensor>(permeances));
+	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
+	et_assert(points_to<const OpenCLBuffer>(connections->buffer()));
+	et_assert(points_to<const OpenCLBuffer>(permeances->buffer()));
 
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(connections->dtype() == DType::Int32);
@@ -277,10 +281,10 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 		kernel_manager_.compileFromFile("overlapScore_global.cl", program_name, {"overlapScore"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "overlapScore");
 
-	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
-	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(connections)->buffer());
-	k.setArg(2, reinterpret_cast<const OpenCLTensor*>(permeances)->buffer());
-	k.setArg(3, reinterpret_cast<OpenCLTensor*>(y.get())->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(connections->buffer())->buffer());
+	k.setArg(2, std::static_pointer_cast<const OpenCLBuffer>(permeances->buffer())->buffer());
+	k.setArg(3, std::static_pointer_cast<OpenCLBuffer>(y->buffer())->buffer());
 	k.setArg(4, (float)connected_permeance);
 	k.setArg(5, (int)active_threshold);
 	k.setArg(6, (int)y->size());
@@ -296,7 +300,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 
 std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
-	et_assert(points_to<OpenCLTensor>(x));
+	et_assert(points_to<OpenCLBuffer>(x->buffer()));
 
 	et_assert(x->dtype() == DType::Int32);
 
@@ -314,14 +318,14 @@ std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x,
 
 	cl::Buffer threshold = allocBuffer(sizeof(int));
 
-	topKKernel.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
+	topKKernel.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
 	topKKernel.setArg(1, threshold);
 	topKKernel.setArg(2, (int)(x->size()*fraction));
 
 	queue_.enqueueNDRangeKernel(topKKernel, cl::NullRange, cl::NDRange(256), cl::NDRange(256));
 
-	thresholdKernel.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
-	thresholdKernel.setArg(1, reinterpret_cast<const OpenCLTensor*>(y.get())->buffer());
+	thresholdKernel.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
+	thresholdKernel.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(y->buffer())->buffer());
 	thresholdKernel.setArg(2, threshold);
 	queue_.enqueueNDRangeKernel(thresholdKernel, cl::NullRange, cl::NDRange(1024), cl::NDRange(32));
 
@@ -330,7 +334,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x,
 
 std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toType)
 {
-	et_assert(points_to<OpenCLTensor>(x));
+	et_assert(points_to<OpenCLBuffer>(x->buffer()));
 	auto args = "-DInType="+to_ctype_string(x->dtype())+" -DOutType="+to_ctype_string(toType);
 	auto hash = hash_string(args);
 	auto program_name = "cast"+hash;
@@ -338,8 +342,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toTyp
 	cl::Kernel k = kernel_manager_.kernel(program_name, "cast");
 
 	auto res = createTensor(x->shape(), toType);
-	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
-	k.setArg(1, reinterpret_cast<OpenCLTensor*>(res.get())->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<OpenCLBuffer>(res->buffer())->buffer());
 	k.setArg(2, (int)x->size());
 	queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(1024), cl::NDRange(32));
 
@@ -355,25 +359,24 @@ void OpenCLBackend::sync() const
 
 std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 {
-	et_assert(points_to<OpenCLTensor>(x));
+	et_assert(points_to<OpenCLBuffer>(x->buffer()));
 	size_t buf_size = x->size()*dtypeToSize(x->dtype());
 	cl::Buffer buf = allocBuffer(buf_size);
-	const cl::Buffer& src = reinterpret_cast<const OpenCLTensor*>(x)->buffer();
+	const cl::Buffer& src = std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer();
 	cl_int err = queue_.enqueueCopyBuffer(src, buf, 0, 0, buf_size);
 	if(err != CL_SUCCESS)
 		throw EtError("Data copy enqueuing failed. Error " + std::to_string(err));
 
-	OpenCLTensor* ptr = new OpenCLTensor(x->shape(), x->dtype(), buf, shared_from_this());
-	return std::shared_ptr<OpenCLTensor>(ptr, [this](TensorImpl* ptr){releaseTensor(ptr);});
+	return createTensor(x->shape(), x->dtype(), buf);
 }
 
 void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
 	TensorImpl* permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse)
 {
-	et_assert(points_to<OpenCLTensor>(x));
-	et_assert(points_to<OpenCLTensor>(connections));
-	et_assert(points_to<OpenCLTensor>(permeances));
-	et_assert(points_to<OpenCLTensor>(learn));
+	et_assert(points_to<OpenCLBuffer>(x->buffer()));
+	et_assert(points_to<OpenCLBuffer>(connections->buffer()));
+	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
+	et_assert(points_to<OpenCLBuffer>(learn->buffer()));
 
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(x->shape() == learn->shape());
@@ -393,10 +396,10 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 		kernel_manager_.compileFromFile("learnCorrilation_global.cl", program_name, {"learnCorrilation"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "learnCorrilation");
 
-	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
-	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(learn)->buffer());
-	k.setArg(2, reinterpret_cast<const OpenCLTensor*>(connections)->buffer());
-	k.setArg(3, reinterpret_cast<OpenCLTensor*>(permeances)->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(learn->buffer())->buffer());
+	k.setArg(2, std::static_pointer_cast<const OpenCLBuffer>(connections->buffer())->buffer());
+	k.setArg(3, std::static_pointer_cast<OpenCLBuffer>(permeances->buffer())->buffer());
 	k.setArg(4, (float)perm_inc);
 	k.setArg(5, (float)perm_dec);
 
@@ -411,8 +414,8 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(points_to<OpenCLTensor>(connections));
-	et_assert(points_to<OpenCLTensor>(permeances));
+	et_assert(points_to<OpenCLBuffer>(connections->buffer()));
+	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 
@@ -426,8 +429,8 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 	cl::Buffer aux_buffer1 = allocBuffer(connections->size()*sizeof(int));
 	cl::Buffer aux_buffer2 = allocBuffer(permeances->size()*sizeof(float));
 
-	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(connections)->buffer());
-	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(permeances)->buffer());
+	k.setArg(0, std::static_pointer_cast<OpenCLBuffer>(connections->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<OpenCLBuffer>(permeances->buffer())->buffer());
 	k.setArg(2, num_cells);
 	k.setArg(3, aux_buffer1);
 	k.setArg(4, aux_buffer2);
@@ -440,8 +443,8 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
-	et_assert(points_to<const OpenCLTensor>(x));
-	et_assert(points_to<const OpenCLTensor>(s));
+	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
+	et_assert(points_to<const OpenCLBuffer>(s->buffer()));
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(s->dtype() == DType::Bool);
 
@@ -458,8 +461,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const Tens
 	kernel_manager_.compileFromFile("applyBurst.cl", program_name, {"applyBurst"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "applyBurst");
 
-	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
-	k.setArg(1, reinterpret_cast<OpenCLTensor*>(res.get())->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<OpenCLBuffer>(res->buffer())->buffer());
 
 	size_t local_size = 128;
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, num_columns)), cl::NDRange(local_size));
@@ -470,7 +473,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const Tens
 
 std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 {
-	et_assert(points_to<const OpenCLTensor>(x));
+	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
 	et_assert(x->dtype() == DType::Bool);
 
 	size_t cells_per_column = x->shape().back();
@@ -485,7 +488,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 	kernel_manager_.compileFromFile("reverseBurst.cl", program_name, {"reverseBurst"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "reverseBurst");
 
-	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(res.get())->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(res->buffer())->buffer());
 	k.setArg(1, rng());
 	k.setArg(2, rng());
 
@@ -499,10 +502,10 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm)
 {
-	et_assert(points_to<const OpenCLTensor>(x));
-	et_assert(points_to<const OpenCLTensor>(y));
-	et_assert(points_to<OpenCLTensor>(connections));
-	et_assert(points_to<OpenCLTensor>(permeances));
+	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
+	et_assert(points_to<const OpenCLBuffer>(y->buffer()));
+	et_assert(points_to<OpenCLBuffer>(connections->buffer()));
+	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
 
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(y->dtype() == DType::Bool);
@@ -530,16 +533,19 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 	static cl::Buffer aux = allocBuffer(input_cell_count*num_groups);
 	if(input_cell_count*num_groups > aux.getInfo<CL_MEM_SIZE>())
 		aux = allocBuffer(input_cell_count*num_groups);
-	cl::Buffer sparse_x = toSparse(x);
+	auto sparse = toSparse(x);
+	if(sparse.has_value() == false)
+		return;
+	cl::Buffer sparse_x = sparse.value();
 
 	int sparse_size = sparse_x.getInfo<CL_MEM_SIZE>()/sizeof(int);
 	if(sparse_size == 0)
 		return;
 
 	k.setArg(0, sparse_x);
-	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(y)->buffer());
-	k.setArg(2, reinterpret_cast<OpenCLTensor*>(connections)->buffer());
-	k.setArg(3, reinterpret_cast<OpenCLTensor*>(permeances)->buffer());
+	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(y->buffer())->buffer());
+	k.setArg(2, std::static_pointer_cast<OpenCLBuffer>(connections->buffer())->buffer());
+	k.setArg(3, std::static_pointer_cast<OpenCLBuffer>(permeances->buffer())->buffer());
 	k.setArg(4, initial_perm);
 	k.setArg(5, sparse_size);
 	k.setArg(6, aux);
@@ -549,9 +555,9 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 		throw EtError("OpenCL kernel growSynapses execution failed. Code " + str(err));
 }
 
-cl::Buffer OpenCLBackend::toSparse(const TensorImpl* x)
+std::optional<cl::Buffer> OpenCLBackend::toSparse(const TensorImpl* x)
 {
-	et_assert(points_to<const OpenCLTensor>(x));
+	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
 	et_assert(x->dtype() == DType::Bool);
 
 	auto args = "-DINPUT_SIZE="+str(x->size());
@@ -562,8 +568,9 @@ cl::Buffer OpenCLBackend::toSparse(const TensorImpl* x)
 	cl::Kernel k = kernel_manager_.kernel(program_name, "toSparse");
 
 	cl::Buffer num = allocBuffer(sizeof(int));
+	cl::Buffer x_buf = std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer();
 
-	on_bits.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
+	on_bits.setArg(0, x_buf);
 	on_bits.setArg(1, num);
 	cl_int err = queue_.enqueueNDRangeKernel(on_bits, cl::NullRange, cl::NDRange(256), cl::NDRange(256));
 
@@ -571,13 +578,11 @@ cl::Buffer OpenCLBackend::toSparse(const TensorImpl* x)
 	int num_elements = *num_on;
 	queue_.enqueueUnmapMemObject(num, num_on);
 
-	cl::Buffer buf;
-	if(num_elements != 0) {
-		buf = allocBuffer(num_elements*sizeof(int));
-		return buf;
-	}
+	if(num_elements == 0)
+		return {};
 
-	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
+	cl::Buffer buf = allocBuffer(num_elements*sizeof(int));
+	k.setArg(0, x_buf);
 	k.setArg(1, buf);
 	err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(256), cl::NDRange(256));
 	if(err != CL_SUCCESS)
@@ -585,24 +590,7 @@ cl::Buffer OpenCLBackend::toSparse(const TensorImpl* x)
 	return buf;
 }
 
-static std::string jitRawView(const TensorImpl* x, size_t id)
-{
-	std::string func = R"(
-int location_func$ID(int location)
-{
-	return location;
-}
-)";
-	replaceAll(func, "$ID", std::to_string(id));
-	return func;
-}
-
-static std::string jitDataAccess(const OpenCLTensor* x, size_t id)
-{
-	return jitRawView(x, id);
-}
-
-static std::string jitRectangularView(const OpenCLTensor* x, const RectangularView& view, size_t id)
+static std::string jitStridedView(const TensorImpl* x, size_t id)
 {
 	std::string func = R"(
 int location_func$ID(int location)
@@ -610,7 +598,6 @@ int location_func$ID(int location)
 	int in_stride[] = $IN_STRIDE;
 	int stride[] = $STRIDE;
 	int bias = $BIAS;
-
 	int ndpos[$DIMS] = {0};
 	int loc = location;
 	for(int i=0;i<$IN_DIMS;i++) {
@@ -618,171 +605,83 @@ int location_func$ID(int location)
 		ndpos[$DIMS - $IN_DIMS + i] = loc / s;
 		loc %= s;
 	}
-
 	int sum = 0;
-	for(int i=0;i<$DIMS;i++)
+	for(int i=0;i<$IN_DIMS;i++)
 		sum += ndpos[i]*stride[i];
 	sum += bias;
-
 	return sum;
 }
 )";
-	const TensorImpl* parent = reinterpret_cast<const ViewTensor*>(x)->parent_.get();
-
 	replaceAll(func, "$ID", std::to_string(id));
 	auto in_strides = shapeToStride(x->shape());
 	replaceAll(func, "$IN_STRIDE", to_string(in_strides));
-	replaceAll(func, "$IN_DIMS", std::to_string(x->dimentions()));
-	replaceAll(func, "$DIMS", std::to_string(std::max(x->dimentions(), parent->dimentions())));
+	replaceAll(func, "$IN_DIMS", std::to_string(in_strides.size()));
+	replaceAll(func, "$DIMS", std::to_string(std::max(x->dimentions(), x->stride().size())));
 
-	replaceAll(func, "$STRIDE", to_string(view.strides()));
-	replaceAll(func, "$BIAS", std::to_string(view.offset()));
-	return func;
+	replaceAll(func, "$STRIDE", to_string(x->stride()));
+	replaceAll(func, "$BIAS", std::to_string(x->offset()));
+return func;
 }
 
-static std::string jitConversionFunc(const TensorImpl* t)
+static std::vector<std::string> jitCopyFromView(const TensorImpl* x)
 {
-	std::string func = R"(
-int calc_location(int i)
-{
-	int location0 = i;
-	$CONV
-	return position;
-}
-)";
+	std::vector<std::string> convertion;
+	convertion.push_back(jitStridedView(x, 0));
 
-	std::string conv;
-	TensorImpl const* x = t;
-	for(size_t i=0;;i++) {
-		if(points_to<ViewTensor>(x) == false) {
-			std::string call = "int position = location_func$ID(location$ID);\n";
-			replaceAll(call, "$ID", std::to_string(i));
-			conv += call;
-			break;
-		}
-		else {
-			std::string call = "int location$NEXT = location_func$ID(location$ID);\n";
-			replaceAll(call, "$ID", std::to_string(i));
-			replaceAll(call, "$NEXT", std::to_string(i+1));
-			conv += call;
-		}
-		x = reinterpret_cast<const ViewTensor*>(x)->parent_.get();
-	}
-
-	replaceAll(func, "$CONV", conv);
-	return func;
-}
-
-static std::string jitCopyFromViewKernel(const TensorImpl* t)
-{
 	std::string func = R"(
 #define Type $TYPE
-
 kernel void copy(global Type* restrict x, global Type* restrict y)
 {
 	int global_id = get_global_id(0);
 	int global_size = get_global_size(0);
 	for(int i=global_id;i<$SIZE;i+=global_size) {
-		int position = calc_location(i);
+		int position = location_func0(i);
 		y[i] = x[position];
 	}
 }
 )";
 
-	auto s = shapeToStride(t->shape());
+	auto s = shapeToStride(x->shape());
 
-	std::string type = to_ctype_string(t->dtype());
+	std::string type = to_ctype_string(x->dtype());
 	replaceAll(func, "$TYPE", type);
-	replaceAll(func, "$SIZE", std::to_string(t->size()));
-
-	return func;
+	replaceAll(func, "$SIZE", std::to_string(x->size()));
+	convertion.push_back(func);
+	return convertion;
 }
 
-static std::string jitCopyToViewKernel(const TensorImpl* t)
+static std::vector<std::string> jitCopyToView(const TensorImpl* x)
 {
+	std::vector<std::string> convertion;
+	convertion.push_back(jitStridedView(x, 0));
+
 	std::string func = R"(
 #define Type $TYPE
-
 kernel void copy(global Type* restrict x, global Type* restrict y)
 {
 	int global_id = get_global_id(0);
 	int global_size = get_global_size(0);
 	for(int i=global_id;i<$SIZE;i+=global_size) {
-		int position = calc_location(i);
+		int position = location_func0(i);
 		y[position] = x[i];
 	}
 }
 )";
 
-	auto s = shapeToStride(t->shape());
+	auto s = shapeToStride(x->shape());
 
-	std::string type = to_ctype_string(t->dtype());
+	std::string type = to_ctype_string(x->dtype());
 	replaceAll(func, "$TYPE", type);
-	replaceAll(func, "$SIZE", std::to_string(t->size()));
-
-	return func;
-}
-
-static std::vector<std::string> jitPositionConvertionFuncs(const TensorImpl* x)
-{
-	std::vector<std::string> functions;
-	const TensorImpl* t = x;
-
-	//Generate all the functions need to convert the coordinates
-	while(true) {
-		if(points_to<const OpenCLTensor>(t) == true) {
-			functions.push_back(jitDataAccess(reinterpret_cast<const OpenCLTensor*>(x), functions.size()));
-			break;
-		}
-
-		et_assert(points_to<const ViewTensor>(t));
-		std::visit([&](const auto& view) {
-			using ViewType = std::decay_t<decltype(view)>;
-			if constexpr(std::is_same_v<ViewType, RectangularView>)
-				functions.push_back(jitRectangularView(reinterpret_cast<const OpenCLTensor*>(x), view, functions.size()));
-			else if constexpr(std::is_same_v<ViewType, RawView>)
-				functions.push_back(jitRawView(reinterpret_cast<const OpenCLTensor*>(x), functions.size()));
-			else
-				throw EtError("View "+ std::string(typeid(ViewType).name()) +"  supported");
-
-		}, reinterpret_cast<const ViewTensor*>(t)->view_);
-
-		t = reinterpret_cast<const ViewTensor*>(t)->parent_.get();
-	}
-	return functions;
-}
-
-static std::vector<std::string> jitCopyFromView(const TensorImpl* x)
-{
-	std::vector<std::string> functions = jitPositionConvertionFuncs(x);
-	functions.push_back(jitConversionFunc(x));
-	//Generate the kernel function
-	functions.push_back(jitCopyFromViewKernel(x));
-	return functions;
-}
-
-static std::vector<std::string> jitCopyToView(const TensorImpl* x)
-{
-	std::vector<std::string> functions = jitPositionConvertionFuncs(x);
-	functions.push_back(jitConversionFunc(x));
-	//Generate the kernel function
-	functions.push_back(jitCopyToViewKernel(x));
-	return functions;
-}
-
-static const OpenCLTensor* findSourceTensor(const TensorImpl* t)
-{
-	if(points_to<const OpenCLTensor>(t) == false)
-		return findSourceTensor(reinterpret_cast<const ViewTensor*>(t)->parent_.get());
-	return reinterpret_cast<const OpenCLTensor*>(t);
+	replaceAll(func, "$SIZE", std::to_string(x->size()));
+	convertion.push_back(func);
+	return convertion;
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 {
-	if(points_to<const OpenCLTensor>(x) == true)
+	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
+	if(x->iscontiguous() == true)
 		return copy(x);
-	if(points_to<const ViewTensor>(x) == false)
-		throw EtError("Cannot realize tensor, not a OpenCLTensor or ViewTensor");
 
 	std::vector<std::string> conversion = jitCopyFromView(x);
 
@@ -790,12 +689,11 @@ std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 	cl::Kernel k = kernel_manager_.kernel("__copy", "copy");
 
 	cl::Buffer buf = allocBuffer(x->size()*dtypeToSize(x->dtype()));
-	auto source = findSourceTensor(x);
-	k.setArg(0, source->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
 	k.setArg(1, buf);
 
 	size_t local_size = 128;
-	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, source->size())), cl::NDRange(local_size));
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size())), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
 
@@ -804,13 +702,14 @@ std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 
 	kernel_manager_.remove("__copy");//We are unlikely to use this kernel again?
 
-	return std::make_shared<OpenCLTensor>(x->shape(), x->dtype(), buf, shared_from_this());
+	return createTensor(x->shape(), x->dtype(), buf);
 }
+
 
 void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 {
-	et_assert(points_to<OpenCLTensor>(dest) || points_to<ViewTensor>(dest));
-	et_assert(points_to<OpenCLTensor>(src) || points_to<ViewTensor>(src));
+	et_assert(points_to<OpenCLBuffer>(dest->buffer()));
+	et_assert(points_to<const OpenCLBuffer>(src->buffer()));
 
 	if(dest->shape() != src->shape())
 	throw EtError("Shape mismatch in tensor assignment. Shape "
@@ -826,9 +725,8 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 	kernel_manager_.compileKernel(conversion, "__copy", {"copy"});
 	cl::Kernel k = kernel_manager_.kernel("__copy", "copy");
 
-	auto desitnation = findSourceTensor(dest);
-	k.setArg(0, reinterpret_cast<OpenCLTensor*>(source.get())->buffer());
-	k.setArg(1, desitnation->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(src->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(dest->buffer())->buffer());
 
 	size_t local_size = 128;
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, source->size())), cl::NDRange(local_size));
@@ -840,7 +738,7 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
-	et_assert(points_to<OpenCLTensor>(x));
+	et_assert(points_to<OpenCLBuffer>(x->buffer()));
 	et_assert(x->size() % chunk_size == 0);
 
 	DType result_dtype = dtype;
@@ -854,7 +752,13 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 		}();
 	}
 
-	std::string args = "-DInType=" + to_ctype_string(x->dtype()) + " -DOutType=" + to_ctype_string(result_dtype);
+	DType intermid_type = [](DType in, DType out) {
+		if(in == DType::Float)
+			return DType::Float;
+		return DType::Int32;
+	}(x->dtype(), result_dtype);
+
+	std::string args = "-DInType=" + to_ctype_string(x->dtype()) + " -DOutType=" + to_ctype_string(result_dtype) + " -DIntermidType=" + to_ctype_string(intermid_type);
 	std::string program_name = "sum" + hash_string(args);
 	kernel_manager_.compileFromFile("sum.cl", program_name, {"sum"}, false, args);
 
@@ -862,8 +766,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 
 	auto res = createTensor({intmax_t(x->size()/chunk_size)}, result_dtype);
 
-	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(x)->buffer());
-	k.setArg(1, reinterpret_cast<OpenCLTensor*>(res.get())->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<OpenCLBuffer>(res->buffer())->buffer());
 	k.setArg(2, int(x->size()));
 	k.setArg(3, int(chunk_size));
 
@@ -878,8 +782,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(points_to<OpenCLTensor>(connections));
-	et_assert(points_to<OpenCLTensor>(permeances));
+	et_assert(points_to<OpenCLBuffer>(connections->buffer()));
+	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 
@@ -892,8 +796,8 @@ void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeance
 
 	cl::Kernel k = kernel_manager_.kernel(program_name, "decaySynapses");
 
-	k.setArg(0, reinterpret_cast<const OpenCLTensor*>(connections)->buffer());
-	k.setArg(1, reinterpret_cast<const OpenCLTensor*>(permeances)->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(connections->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(permeances->buffer())->buffer());
 	k.setArg(2, threshold);
 
 	size_t local_size = 128;

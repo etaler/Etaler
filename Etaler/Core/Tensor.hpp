@@ -14,7 +14,7 @@ namespace et
 
 struct Tensor
 {
-	Tensor() : pimpl_(defaultBackend()->createTensor({0}, DType::Int32)) {}
+	Tensor() = default;
 	Tensor(std::shared_ptr<TensorImpl> pimpl)
 		: pimpl_(std::move(pimpl)) {}
 	Tensor(Shape s, DType dtype, Backend* backend=defaultBackend())
