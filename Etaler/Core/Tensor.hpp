@@ -73,10 +73,13 @@ struct Tensor
 	//View/Indexing
 	Tensor view(svector<Range> ranges) const;
 
+	//TODO: Handle reshape for non-continous Tensor
 	Tensor reshape(Shape shape) const
 	{
 		if(size() != (size_t)shape.volume())
 			throw EtError("Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
+		if(iscontiguous() == false)
+			throw EtError("Reshaping on a non contingous Tensor is not supported.");
 		return std::make_shared<TensorImpl>(pimpl_->buffer(), shape, shapeToStride(shape), pimpl_->offset());
 	}
 
