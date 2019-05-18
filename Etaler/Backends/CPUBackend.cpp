@@ -61,6 +61,9 @@ std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const 
 	et_assert(points_to<CPUBuffer>(x->buffer()));
 	et_assert(points_to<CPUBuffer>(connections->buffer()));
 	et_assert(points_to<CPUBuffer>(permeances->buffer()));
+	et_assert(x->iscontiguous());
+	et_assert(connections->iscontiguous());
+	et_assert(permeances->iscontiguous());
 
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(connections->dtype() == DType::Int32);
@@ -119,6 +122,10 @@ void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, 
 	et_assert(points_to<CPUBuffer>(connections->buffer()));
 	et_assert(points_to<CPUBuffer>(permeances->buffer()));
 	et_assert(points_to<CPUBuffer>(learn->buffer()));
+	et_assert(x->iscontiguous());
+	et_assert(learn->iscontiguous());
+	et_assert(connections->iscontiguous());
+	et_assert(permeances->iscontiguous());
 
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(x->shape() == learn->shape());
@@ -160,6 +167,7 @@ void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, 
 std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
 	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(x->iscontiguous());
 
 	et_assert(x->dtype() == DType::Int32);
 
@@ -209,6 +217,7 @@ static std::vector<To> castData(const From* ptr, size_t n)
 std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 {
 	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(x->iscontiguous());
 	const CPUBuffer* p = dynamic_cast<const CPUBuffer*>(x->buffer().get());
 	const CPUBuffer& t = *p;
 	return run<std::shared_ptr<TensorImpl>>(t, [&x, toType, this](const auto* ptr){
@@ -233,12 +242,14 @@ std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 void CPUBackend::copyToHost(const TensorImpl* t, void* ptr)
 {
 	et_assert(points_to<CPUBuffer>(t->buffer().get()));
+	et_assert(t->iscontiguous());
 	memcpy(ptr, t->data(), t->size()*dtypeToSize(t->dtype()));
 }
 
 std::shared_ptr<TensorImpl> CPUBackend::copy(const TensorImpl* x)
 {
 	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(x->iscontiguous());
 	return createTensor(x->shape(), x->dtype(), x->data());
 }
 
@@ -249,6 +260,8 @@ void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 	et_assert(points_to<CPUBuffer>(permeances->buffer()));
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
+	et_assert(connections->iscontiguous());
+	et_assert(permeances->iscontiguous());
 
 	size_t max_synapse_per_cell = connections->shape().back();
 	size_t num_cells = connections->size()/max_synapse_per_cell;
@@ -277,6 +290,8 @@ std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorI
 	et_assert(points_to<const CPUBuffer>(s->buffer()));
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(s->dtype() == DType::Bool);
+	et_assert(x->iscontiguous());
+	et_assert(s->iscontiguous());
 
 	Shape shape = s->shape();
 	shape.pop_back();
@@ -306,6 +321,7 @@ std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 {
 	et_assert(points_to<const CPUBuffer>(x->buffer()));
 	et_assert(x->dtype() == DType::Bool);
+	et_assert(x->iscontiguous());
 
 	size_t cells_per_column = x->shape().back();
 	size_t num_columns = x->size()/cells_per_column;
@@ -336,6 +352,10 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 	et_assert(points_to<const CPUBuffer>(y->buffer()));
 	et_assert(points_to<CPUBuffer>(connections->buffer()));
 	et_assert(points_to<CPUBuffer>(permeances->buffer()));
+	et_assert(x->iscontiguous());
+	et_assert(y->iscontiguous());
+	et_assert(connections->iscontiguous());
+	et_assert(permeances->iscontiguous());
 
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(y->dtype() == DType::Bool);
@@ -587,6 +607,8 @@ void CPUBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, 
 	et_assert(points_to<CPUBuffer>(permeances->buffer()));
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
+	et_assert(permeances->iscontiguous());
+	et_assert(connections->iscontiguous());
 
 	float* perms = (float*)permeances->data();
 	uint32_t* conns = (uint32_t*)connections->data();
