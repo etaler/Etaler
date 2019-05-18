@@ -114,6 +114,11 @@ struct OpenCLBackend : public Backend
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) override;
 	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size, DType dtype=DType::Unknown) override;
 
+	virtual std::shared_ptr<TensorImpl> exp(const TensorImpl* x);
+	virtual std::shared_ptr<TensorImpl> negate(const TensorImpl* x);
+	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x);
+	virtual std::shared_ptr<TensorImpl> log(const TensorImpl* x);
+
 	std::optional<cl::Buffer> toSparse(const TensorImpl* x);
 
 protected:
@@ -140,6 +145,8 @@ protected:
 			throw EtError("OpenCL memory allocation failed. Requested size: " + std::to_string(size) + ", " + " error: " + std::to_string(err));
 		return buf;
 	}
+
+	inline std::shared_ptr<TensorImpl> applyUnaryOp(const TensorImpl* x, std::string f, DType resType);
 
 	KernelManager kernel_manager_;
 

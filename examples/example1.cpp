@@ -1,6 +1,6 @@
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Backends/CPUBackend.hpp>
-//#include <Etaler/Backends/OpenCLBackend.hpp>
+#include <Etaler/Backends/OpenCLBackend.hpp>
 #include <Etaler/Algorithms/SpatialPooler.hpp>
 #include <Etaler/Encoders/Scalar.hpp>
 using namespace et;
@@ -10,7 +10,7 @@ using namespace et;
 int main()
 {
 	//Create a SP that takes in 128 input bits and generates 32 bit representation
-	//setDefaultBackend(std::make_shared<OpenCLBackend>());
+	setDefaultBackend(std::make_shared<OpenCLBackend>());
 	SpatialPooler sp({128}, {32});
 
 	//Encode the value 0.1 into a 32 bit SDR
@@ -20,4 +20,6 @@ int main()
 
 	auto state = sp.states();
 	sp.loadState(state);
+
+	std::cerr << x.exp() << std::endl;
 }

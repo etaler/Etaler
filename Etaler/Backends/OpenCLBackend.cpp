@@ -807,3 +807,70 @@ void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeance
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
 }
+
+static std::string jitUniaryOperation(const TensorImpl* x, std::string f)
+{
+	std::string kernel = R"(
+
+kernel void op(global T0* restrict x, global ResType* restrict y)
+{
+	int global_id = get_global_id(0);
+	int global_size = get_global_size(0);
+	for(int i=global_id;i<$SIZE;i+=global_size) {
+		int position = location_func0(i);
+		y[i] = f(x[position]);
+	}
+}
+
+)";
+
+	std::string res = f + "\n" + jitStridedView(x, 0) + "\n" + kernel;
+	replaceAll(res, "$SIZE", std::to_string(x->size()));
+	return res;
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std::string f, DType resType)
+{
+	et_assert(points_to<OpenCLBuffer>(x->buffer()));
+	
+	std::string args = "-DT0="+to_ctype_string(x->dtype())+" -DResType="+to_ctype_string(resType);
+	std::string program_name = f+hash_string(args)+std::to_string(x->offset())+to_string(x->shape())+to_string(x->stride());
+
+	if(kernel_manager_.exists(program_name, "op") == false) {
+		std::string source = jitUniaryOperation(x, f);
+		kernel_manager_.compileKernel(source, program_name, "op", false, args);
+	}
+	cl::Kernel k = kernel_manager_.kernel(program_name, "op");
+
+	auto res = createTensor(x->shape(), DType::Float);
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<OpenCLBuffer>(res->buffer())->buffer());
+
+	size_t local_size = 128;
+
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size())), cl::NDRange(local_size));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+	
+	return res;
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::exp(const TensorImpl* x)
+{
+	return applyUnaryOp(x, "#define f(x) (exp((float)x))", DType::Float);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::negate(const TensorImpl* x)
+{
+	return applyUnaryOp(x, "#define f(x) (-x)", x->dtype()==DType::Float? DType::Float : DType::Int32);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::inverse(const TensorImpl* x)
+{
+	return applyUnaryOp(x, "#define f(x) (1.0f/(float)x)", DType::Float);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::log(const TensorImpl* x)
+{
+	return applyUnaryOp(x, "#define f(x) (log((float)x))", DType::Float);
+}
