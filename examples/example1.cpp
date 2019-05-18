@@ -20,6 +20,4 @@ int main()
 
 	auto state = sp.states();
 	sp.loadState(state);
-
-	std::cerr << x.exp() << std::endl;
 }

@@ -63,6 +63,8 @@ struct Tensor
 	{
 		static_assert(std::is_same_v<T, bool> == false && "You should NOT use coptToHost<bool> as std::vector<bool> is a "
 								"specillation. Use copyToHost<uint8_t> instead.");
+		if(pimpl()->iscontiguous() == false)
+			return realize().toHost<T>();
 		if(dtype() != typeToDType<T>())
 			throw EtError("toHost() failed. Requested type and dtype mismatch");
 		std::vector<T> res(size());
@@ -153,6 +155,11 @@ struct Tensor
 	Tensor operator> (const Tensor& other) const {return greater(other);}
 	Tensor operator&& (const Tensor& other) const {return logical_and(other);}
 	Tensor operator|| (const Tensor& other) const {return logical_or(other);}
+
+	//Operators can the optimized
+	Tensor operator<= (const Tensor& other) const {return lesser(other) || equal(other);}
+	Tensor operator>= (const Tensor& other) const {return greater(other) || equal(other);}
+	Tensor operator!= (const Tensor& other) const {return !equal(other);}
 
 	Tensor sum(intmax_t dim=-1, DType dtype=DType::Unknown) const;
 	bool isSame (const Tensor& other) const;
