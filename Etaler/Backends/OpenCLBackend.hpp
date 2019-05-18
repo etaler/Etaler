@@ -119,6 +119,11 @@ struct OpenCLBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x);
 	virtual std::shared_ptr<TensorImpl> log(const TensorImpl* x);
 
+	virtual std::shared_ptr<TensorImpl> add(const TensorImpl* x1, const TensorImpl* x2);
+	virtual std::shared_ptr<TensorImpl> subtract(const TensorImpl* x1, const TensorImpl* x2);
+	virtual std::shared_ptr<TensorImpl> mul(const TensorImpl* x1, const TensorImpl* x2);
+	virtual std::shared_ptr<TensorImpl> div(const TensorImpl* x1, const TensorImpl* x2);
+
 	std::optional<cl::Buffer> toSparse(const TensorImpl* x);
 
 protected:
@@ -146,7 +151,9 @@ protected:
 		return buf;
 	}
 
-	inline std::shared_ptr<TensorImpl> applyUnaryOp(const TensorImpl* x, std::string f, DType resType);
+	std::shared_ptr<TensorImpl> applyUnaryOp(const TensorImpl* x, std::string f, DType resType);
+	std::shared_ptr<TensorImpl> applyBinaryOp(const TensorImpl* x1, const TensorImpl* x2, std::string f, DType resType);
+
 
 	KernelManager kernel_manager_;
 

@@ -829,6 +829,27 @@ kernel void op(global T0* restrict x, global ResType* restrict y)
 	return res;
 }
 
+static std::string jitBinaryOperation(const TensorImpl* x1,const TensorImpl* x2 , std::string f)
+{
+	std::string kernel = R"(
+
+kernel void op(global T0* restrict x1, global T1* restrict x2, global ResType* restrict y)
+{
+	int global_id = get_global_id(0);
+	int global_size = get_global_size(0);
+	for(int i=global_id;i<$SIZE;i+=global_size) {
+		int p1 = location_func0(i);
+		int p2 = location_func1(i);
+		y[i] = f(x1[1], x2[p2]);
+	}
+}
+)";
+
+	std::string res = f + "\n" + jitStridedView(x1, 0) + "+n"  + jitStridedView(x2, 1) + "\n" + kernel;
+	replaceAll(res, "$SIZE", std::to_string(x1->size()));
+	return res;
+}
+
 std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std::string f, DType resType)
 {
 	et_assert(points_to<OpenCLBuffer>(x->buffer()));
@@ -855,6 +876,39 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std
 	return res;
 }
 
+std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, const TensorImpl* x2, std::string f, DType resType)
+{
+	et_assert(points_to<OpenCLBuffer>(x1->buffer()));
+	et_assert(points_to<OpenCLBuffer>(x2->buffer()));
+	et_assert(x1->shape() == x2->shape());
+
+	auto to_str = [](auto x){
+		return std::to_string(x->offset())+to_string(x->shape())+to_string(x->stride());
+	};
+	
+	std::string args = "-DT0="+to_ctype_string(x1->dtype())+" -DT1="+to_ctype_string(x2->dtype()) + " -DResType="+to_ctype_string(resType);
+	std::string program_name = f+hash_string(args)+to_str(x1)+to_str(x2);
+
+	if(kernel_manager_.exists(program_name, "op") == false) {
+		std::string source = jitBinaryOperation(x1, x2, f);
+		kernel_manager_.compileKernel(source, program_name, "op", false, args);
+	}
+	cl::Kernel k = kernel_manager_.kernel(program_name, "op");
+
+	auto res = createTensor(x1->shape(), DType::Float);
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x1->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(x2->buffer())->buffer());
+	k.setArg(2, std::static_pointer_cast<OpenCLBuffer>(res->buffer())->buffer());
+
+	size_t local_size = 128;
+
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x1->size())), cl::NDRange(local_size));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel execution failed. Code " + str(err));
+	
+	return res;
+}
+
 std::shared_ptr<TensorImpl> OpenCLBackend::exp(const TensorImpl* x)
 {
 	return applyUnaryOp(x, "#define f(x) (exp((float)x))", DType::Float);
@@ -874,3 +928,35 @@ std::shared_ptr<TensorImpl> OpenCLBackend::log(const TensorImpl* x)
 {
 	return applyUnaryOp(x, "#define f(x) (log((float)x))", DType::Float);
 }
+
+static DType solveBinaryOpDType(DType t1, DType t2)
+{
+	if(t1 == DType::Float || t2 == DType::Float)
+		return DType::Float;
+	return DType::Int32;
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::add(const TensorImpl* x1, const TensorImpl* x2)
+{
+	DType resType = solveBinaryOpDType(x1->dtype(), x2->dtype());
+	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1+x2)", resType);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::subtract(const TensorImpl* x1, const TensorImpl* x2)
+{
+	DType resType = solveBinaryOpDType(x1->dtype(), x2->dtype());
+	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1-x2)", resType);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::mul(const TensorImpl* x1, const TensorImpl* x2)
+{
+	DType resType = solveBinaryOpDType(x1->dtype(), x2->dtype());
+	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1*x2)", resType);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::div(const TensorImpl* x1, const TensorImpl* x2)
+{
+	DType resType = solveBinaryOpDType(x1->dtype(), x2->dtype());
+	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1/x2)", resType);
+}
+
