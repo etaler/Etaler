@@ -133,6 +133,11 @@ struct Tensor
 	Tensor subtract(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->subtract(a, b); }
 	Tensor mul(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->mul(a, b); }
 	Tensor div(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->div(a, b); }
+	Tensor equal(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->equal(a, b); }
+	Tensor greater(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->greater(a, b); }
+	Tensor lesser(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->lesser(a, b); }
+	Tensor logical_and(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_and(a, b); }
+	Tensor logical_or(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_or(a, b); }
 
 	Tensor operator- () const {return negate();}
 
@@ -140,6 +145,12 @@ struct Tensor
 	Tensor operator- (const Tensor& other) const {return subtract(other);}
 	Tensor operator* (const Tensor& other) const {return mul(other);}
 	Tensor operator/ (const Tensor& other) const {return div(other);}
+
+	Tensor operator== (const Tensor& other) const {return equal(other);}
+	Tensor operator< (const Tensor& other) const {return lesser(other);}
+	Tensor operator> (const Tensor& other) const {return greater(other);}
+	Tensor operator&& (const Tensor& other) const {return logical_and(other);}
+	Tensor operator|| (const Tensor& other) const {return logical_or(other);}
 
 	Tensor sum(intmax_t dim=-1, DType dtype=DType::Unknown) const;
 	bool isSame (const Tensor& other) const;
@@ -234,5 +245,20 @@ static void assign(Tensor& x, const Tensor& y)
 
 Tensor sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown);
 std::pair<Tensor, Tensor> brodcast_tensors(const Tensor& a, const Tensor& b);
+
+static Tensor exp(const Tensor& x) { return x.exp(); }
+static Tensor negate(const Tensor& x) { return x.negate(); }
+static Tensor inverse(const Tensor& x) { return x.inverse(); }
+static Tensor log(const Tensor& x) { return x.log(); }
+
+static Tensor add(const Tensor& x1, const Tensor& x2) { return x1.add(x2); }
+static Tensor subtract(const Tensor& x1, const Tensor& x2) { return x1.subtract(x2); }
+static Tensor mul(const Tensor& x1, const Tensor& x2) { return x1.mul(x2); }
+static Tensor div(const Tensor& x1, const Tensor& x2) { return x1.div(x2); }
+static Tensor equal(const Tensor& x1, const Tensor& x2) { return x1.equal(x2); }
+static Tensor greater(const Tensor& x1, const Tensor& x2) { return x1.greater(x2); }
+static Tensor lesser(const Tensor& x1, const Tensor& x2) { return x1.lesser(x2); }
+static Tensor logical_and(const Tensor& x1, const Tensor& x2) { return x1.logical_and(x2); }
+static Tensor logical_or(const Tensor& x1, const Tensor& x2) { return x1.logical_or(x2); }
 
 }
