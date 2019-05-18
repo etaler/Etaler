@@ -73,16 +73,21 @@ struct CPUBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size, DType dtype=DType::Unknown) override;
 
 	//Unary Operations
-	virtual std::shared_ptr<TensorImpl> exp(const TensorImpl* x);
-	virtual std::shared_ptr<TensorImpl> negate(const TensorImpl* x);
-	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x);
-	virtual std::shared_ptr<TensorImpl> log(const TensorImpl* x);
+	virtual std::shared_ptr<TensorImpl> exp(const TensorImpl* x) override;
+	virtual std::shared_ptr<TensorImpl> negate(const TensorImpl* x) override;
+	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x) override;
+	virtual std::shared_ptr<TensorImpl> log(const TensorImpl* x) override;
 
 	//Binary Operations
-	virtual std::shared_ptr<TensorImpl> add(const TensorImpl* x1, const TensorImpl* x2);
-	virtual std::shared_ptr<TensorImpl> subtract(const TensorImpl* x1, const TensorImpl* x2);
-	virtual std::shared_ptr<TensorImpl> mul(const TensorImpl* x1, const TensorImpl* x2);
-	virtual std::shared_ptr<TensorImpl> div(const TensorImpl* x1, const TensorImpl* x2);
+	virtual std::shared_ptr<TensorImpl> add(const TensorImpl* x1, const TensorImpl* x2) override;
+	virtual std::shared_ptr<TensorImpl> subtract(const TensorImpl* x1, const TensorImpl* x2) override;
+	virtual std::shared_ptr<TensorImpl> mul(const TensorImpl* x1, const TensorImpl* x2) override;
+	virtual std::shared_ptr<TensorImpl> div(const TensorImpl* x1, const TensorImpl* x2) override;
+	virtual std::shared_ptr<TensorImpl> equal(const TensorImpl* x1, const TensorImpl* x2) override ;
+	virtual std::shared_ptr<TensorImpl> greater(const TensorImpl* x1, const TensorImpl* x2) override;
+	virtual std::shared_ptr<TensorImpl> lesser(const TensorImpl* x1, const TensorImpl* x2) override;
+	virtual std::shared_ptr<TensorImpl> logical_and(const TensorImpl* x1, const TensorImpl* x2) override;
+	virtual std::shared_ptr<TensorImpl> logical_or(const TensorImpl* x1, const TensorImpl* x2) override;
 
 	virtual std::string name() const override {return "CPU";}
 };

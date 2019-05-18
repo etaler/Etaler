@@ -654,3 +654,24 @@ std::shared_ptr<TensorImpl> CPUBackend::div(const TensorImpl* x1, const TensorIm
 {
 	return binaryOp(x1, x2, [](auto a, auto b) {return a/b;});
 }
+
+std::shared_ptr<TensorImpl> CPUBackend::equal(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return binaryOp(x1, x2, [](auto a, auto b) {return a==b;});
+}
+std::shared_ptr<TensorImpl> CPUBackend::greater(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return binaryOp(x1, x2, [](auto a, auto b) {return a>b;});
+}
+std::shared_ptr<TensorImpl> CPUBackend::lesser(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return binaryOp(x1, x2, [](auto a, auto b) {return a<b;});
+}
+std::shared_ptr<TensorImpl> CPUBackend::logical_and(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return binaryOp(x1, x2, [](auto a, auto b) {return a&&b;});
+}
+std::shared_ptr<TensorImpl> CPUBackend::logical_or(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return binaryOp(x1, x2, [](auto a, auto b) {return a||b;});
+}

@@ -960,3 +960,27 @@ std::shared_ptr<TensorImpl> OpenCLBackend::div(const TensorImpl* x1, const Tenso
 	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1/x2)", resType);
 }
 
+std::shared_ptr<TensorImpl> OpenCLBackend::equal(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1==x2)", DType::Bool);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::greater(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1>x2)", DType::Bool);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::lesser(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1<x2)", DType::Bool);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::logical_and(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1&&x2)", DType::Bool);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::logical_or(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1||x2)", DType::Bool);
+}

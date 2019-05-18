@@ -53,8 +53,14 @@ struct Backend : public std::enable_shared_from_this<Backend>
 	virtual std::shared_ptr<TensorImpl> subtract(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("subtract");}
 	virtual std::shared_ptr<TensorImpl> mul(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("mul");}
 	virtual std::shared_ptr<TensorImpl> div(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("div");}
+	virtual std::shared_ptr<TensorImpl> equal(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("equal");}
+	virtual std::shared_ptr<TensorImpl> greater(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("greater");}
+	virtual std::shared_ptr<TensorImpl> lesser(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("lesster");}
+	virtual std::shared_ptr<TensorImpl> logical_and(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("and");}
+	virtual std::shared_ptr<TensorImpl> logical_or(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("or");}
 
 	inline EtError notImplemented(std::string func) const { return EtError(func + " not implemented on backend: " + name()); }
 };
 
 }
+
