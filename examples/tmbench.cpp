@@ -52,8 +52,8 @@ std::vector<Tensor> generateRandomData(size_t input_length, size_t num_data)
 
 int main()
 {
-	std::shared_ptr<Backend> backend = std::make_shared<OpenCLBackend>();
-	setDefaultBackend(backend);
+	//std::shared_ptr<Backend> backend = std::make_shared<OpenCLBackend>();
+	//setDefaultBackend(backend);
 
 	std::cout << "Benchmarking TemporalMemory algorithm on backend: " << defaultBackend()->name() <<" \n\n";
 
