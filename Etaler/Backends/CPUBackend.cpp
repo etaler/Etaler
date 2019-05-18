@@ -3,6 +3,7 @@
 #include "Etaler/Core/Random.hpp"
 
 #include <numeric>
+#include <cmath>
 
 #include <tbb/tbb.h>
 
@@ -432,6 +433,40 @@ void dispatch(DType dtype, Func f)
 		throw EtError("Cannot realize such dtype");
 }
 
+template <typename T2, typename T1>
+void write(T2* ptr, T1 v)
+{
+	*ptr = v;
+}
+
+template <typename Op>
+std::shared_ptr<TensorImpl> uniaryOp(const TensorImpl* src, Op op)
+{
+	std::shared_ptr<TensorImpl> dest;
+	dispatch(src->dtype(), [&](auto v){
+		using T = decltype(v);
+		for(size_t i=0;i<src->size();i++) {
+			auto ptr = getPtrToValue<T>(i, src);
+			auto res = op(*ptr);
+			using ResType = decltype(res);
+			if(i == 0) {
+				if constexpr(std::is_same<ResType, double>::value == false)
+					dest = src->backend()->createTensor(src->shape(), typeToDType<ResType>());
+				else
+					dest = src->backend()->createTensor(src->shape(), typeToDType<float>());
+			}
+
+			if constexpr(std::is_same<ResType, double>::value == false)
+				((ResType*)dest->data())[i] = res;
+			else
+				((float*)dest->data())[i] = res;
+		}
+	});
+
+	et_assert((bool)dest);
+	return dest;
+}
+
 std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 {
 	et_assert(points_to<CPUBuffer>(x->buffer()));
@@ -545,4 +580,24 @@ void CPUBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, 
 		apply_permutation_in_place(synapses, synapses+used_space, sort_indices);
 		apply_permutation_in_place(strengths, strengths+used_space, sort_indices);
 	});
+}
+
+std::shared_ptr<TensorImpl> CPUBackend::exp(const TensorImpl* x)
+{
+	return uniaryOp(x, [](auto v){return std::exp(v);});
+}
+
+std::shared_ptr<TensorImpl> CPUBackend::negate(const TensorImpl* x)
+{
+	return uniaryOp(x, [](auto v){return -v;});
+}
+
+std::shared_ptr<TensorImpl> CPUBackend::inverse(const TensorImpl* x)
+{
+	return uniaryOp(x, [](auto v){return 1.f/v;});
+}
+
+std::shared_ptr<TensorImpl> CPUBackend::log(const TensorImpl* x)
+{
+	return uniaryOp(x, [](auto v){return std::log(v);});
 }

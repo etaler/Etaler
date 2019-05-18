@@ -19,7 +19,7 @@ struct Backend : public std::enable_shared_from_this<Backend>
 {
 	virtual ~Backend() = default;
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data = nullptr) {throw notImplemented("createTensor");};
-	//virtual void releaseTensor(TensorImpl* pimpl) {throw notImplemented("releaseTensor");};
+
 	virtual void sync() const {} //Default empty implemention. For async backends
 	virtual std::shared_ptr<TensorImpl> cellActivity(const TensorImpl* x, const TensorImpl* connections,
 		const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true) {throw notImplemented("overlapScore");}
@@ -41,6 +41,18 @@ struct Backend : public std::enable_shared_from_this<Backend>
 	virtual std::shared_ptr<TensorImpl> realize(const TensorImpl* x) {throw notImplemented("realize");}
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) {throw notImplemented("assign");}
 	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size, DType dtype=DType::Unknown) { throw notImplemented("sum");}
+
+	//Unary operations
+	virtual std::shared_ptr<TensorImpl> exp(const TensorImpl* x) { throw notImplemented("exp");}
+	virtual std::shared_ptr<TensorImpl> negate(const TensorImpl* x) { throw notImplemented("negate");}
+	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x) { throw notImplemented("inverse");}
+	virtual std::shared_ptr<TensorImpl> log(const TensorImpl* x) { throw notImplemented("log");}
+
+	//Binary operations
+	virtual std::shared_ptr<TensorImpl> add(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("add");}
+	virtual std::shared_ptr<TensorImpl> subtract(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("subtract");}
+	virtual std::shared_ptr<TensorImpl> mul(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("mul");}
+	virtual std::shared_ptr<TensorImpl> div(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("div");}
 
 	inline EtError notImplemented(std::string func) const { return EtError(func + " not implemented on backend: " + name()); }
 };

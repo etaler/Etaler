@@ -124,6 +124,11 @@ struct Tensor
 		return backend()->cast(pimpl(), dtype);
 	}
 
+	Tensor exp() const { return backend()->exp(pimpl()); }
+	Tensor negate() const { return backend()->negate(pimpl()); }
+	Tensor inverse() const { return backend()->inverse(pimpl()); }
+	Tensor log() const { return backend()->log(pimpl()); }
+
 	Tensor sum(intmax_t dim=-1, DType dtype=DType::Unknown) const;
 	bool isSame (const Tensor& other) const;
 

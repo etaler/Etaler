@@ -72,6 +72,12 @@ struct CPUBackend : public Backend
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) override;
 	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size, DType dtype=DType::Unknown) override;
 
+	//Unary Operations
+	virtual std::shared_ptr<TensorImpl> exp(const TensorImpl* x);
+	virtual std::shared_ptr<TensorImpl> negate(const TensorImpl* x);
+	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x);
+	virtual std::shared_ptr<TensorImpl> log(const TensorImpl* x);
+
 	virtual std::string name() const override {return "CPU";}
 };
 
