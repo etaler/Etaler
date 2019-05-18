@@ -882,7 +882,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std
 	}
 	cl::Kernel k = kernel_manager_.kernel(program_name, "op");
 
-	auto res = createTensor(x->shape(), DType::Float);
+	auto res = createTensor(x->shape(), resType);
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
 	k.setArg(1, std::static_pointer_cast<OpenCLBuffer>(res->buffer())->buffer());
 
@@ -914,7 +914,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, c
 	}
 	cl::Kernel k = kernel_manager_.kernel(program_name, "op");
 
-	auto res = createTensor(x1->shape(), DType::Float);
+	auto res = createTensor(x1->shape(), resType);
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x1->buffer())->buffer());
 	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(x2->buffer())->buffer());
 	k.setArg(2, std::static_pointer_cast<OpenCLBuffer>(res->buffer())->buffer());

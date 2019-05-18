@@ -140,10 +140,42 @@ foo(x) = ones({...}); //Oops. Data is written to x even tho it is passed as cons
 ```
 
 ## Add, subtract, multiply, etc...
-Not supported.
+Common Tensor operations are supported. Incluing +, -, *, /, exp, log(ln), negation, Tensor comparsions, and more! Use them like how you would in Python. The comparsion operators alowys return a Tensor to bools. The others return a Tensor of what you get in plan C/C++ code.
+
+```
+Tensor a = ones({4,4});
+Tensor b = a + a;
+```
 
 ## Brodcasting
-Not supported.
+Etaler supports PyTorch's brodcasting rules without the legacy rules. Any pair of Tensors are bordcastable if the following rules holds true.
+
+(Stolen from PyTorch's document.)
+* Each tensor has at least one dimension.
+* When iterating over the dimension sizes, starting at the trailing dimension, the dimension sizes must either be equal, one of them is 1, or one of them does not exist.
+
+For example:
+```C++
+Tensor a, b;
+
+//The trailing dimensions match
+a = ones({2, 2});
+b = ones({   2});
+std::cout << (a+b).shape() << std::endl;
+// {2, 2}
+
+//But not necessary
+a = ones({6, 4});
+b = ones({1});
+std::cout << (a+b).shape() << std::endl;
+// {6, 4}
+
+//This fails
+a = ones({2, 3});
+b = ones({   2});
+std::cout << (a+b).shape() << std::endl;
+//Fails
+```
 
 ## Copy Tensor from backend to backend
 If you have multiple backends (ex: one on the CPU and one for GPU), you can easily transfer data between the backends.

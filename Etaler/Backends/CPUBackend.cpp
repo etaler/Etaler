@@ -568,6 +568,7 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 {
 	et_assert(points_to<CPUBuffer>(x->buffer()));
 	et_assert(x->size() % chunk_size == 0);
+	et_assert(x->iscontiguous());
 
 	DType result_dtype = dtype;
 

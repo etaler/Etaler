@@ -251,17 +251,17 @@ Tensor Tensor::copy() const
 
 inline bool brodcastable(Shape a, Shape b)
 {
-	size_t max = std::max(a.size(), b.size());
-	a = leftpad(a, max);
-	b = leftpad(b, max);
-	assert(a.size() == b.size());
+	size_t min = std::min(a.size(), b.size());
 
-	for(int i=(int)a.size()-1;i>=0;i--) {
-		if(a[i] == 1 || b[1] == 1)
+	for(size_t i=0;i<min;i++) {
+		intmax_t s1 = *(a.rbegin()+i);
+		intmax_t s2 = *(b.rbegin()+i);
+		if(s1 == 1 || s2 == 1)
 			continue;
-		if(a[i] != b[i])
-		 	return false;
+		if(s1 != s2)
+			return false;
 	}
+	
 	return true;
 }
 
