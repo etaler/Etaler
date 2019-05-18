@@ -39,10 +39,10 @@ struct TensorImpl : public std::enable_shared_from_this<TensorImpl>
 	size_t dimentions() const {return shape_.size();}
 	size_t size() const {return shape_.volume();}
 	size_t offset() const {return offset_;}
-	void resize(Shape s) {if(s.volume() == shape_.volume()) shape_ = s; else throw EtError("Cannot resize");}
+	void resize(Shape s) {if(s.volume() == shape_.volume() && offset() == 0){ shape_ = s; stride_ = shapeToStride(s);} else throw EtError("Cannot resize");}
 	Backend* backend() const {return buffer_->backend().get();}
 	std::shared_ptr<Backend> backend_ptr() const {return buffer_->backend();}
-	bool iscontiguous() const {return shapeToStride(shape_) == stride_;} //TODO: More cases can be containouse
+	bool iscontiguous() const {return shapeToStride(shape_) == stride_;}
 
 protected:
 	std::shared_ptr<BufferImpl> buffer_;

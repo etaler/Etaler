@@ -12,6 +12,11 @@
 namespace et
 {
 
+struct Tensor;
+
+std::ostream& operator<< (std::ostream& os, const Tensor& t);
+std::string to_string(const Tensor& t);
+
 struct Tensor
 {
 	Tensor() = default;
@@ -78,9 +83,9 @@ struct Tensor
 	{
 		if(size() != (size_t)shape.volume())
 			throw EtError("Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
-		if(iscontiguous() == false)
-			throw EtError("Reshaping on a non contingous Tensor is not supported.");
-		return std::make_shared<TensorImpl>(pimpl_->buffer(), shape, shapeToStride(shape), pimpl_->offset());
+		Tensor res = realize();
+		res.resize(shape);
+		return res;
 	}
 
 	Tensor flatten() const
@@ -131,9 +136,6 @@ struct Tensor
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };
-
-std::ostream& operator<< (std::ostream& os, const Tensor& t);
-std::string to_string(const Tensor& t);
 
 //Procedural  APIs
 template <typename T>
