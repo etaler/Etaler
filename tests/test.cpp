@@ -392,6 +392,67 @@ TEST_CASE("StateDict", "[StateDict]")
 	CHECK(s == s2);
 }
 
+TEST_CASE("Tensor operations")
+{
+	using namespace et;
+	SECTION("Unary operation") {
+		int arr[] = {0,1,2,3};
+		Tensor a = Tensor({4}, arr);
+
+		SECTION("negate") {
+			Tensor b = -a;
+			CHECK(b.size() == a.size());
+			CHECK(b.dtype() == a.dtype());
+			int pred[] = {0, -1, -2, -3};
+			Tensor p = Tensor({4}, pred);
+			CHECK(b.isSame(p));
+		}
+
+
+	}
+
+	SECTION("Binary Operations") {
+		int arr[] = {1,2,3};
+		Tensor a = Tensor({3}, arr);
+
+		SECTION("add") {
+			Tensor b = a + a;
+			CHECK(b.shape() == Shape({3}));
+			CHECK(b.dtype() == DType::Int32);
+			int pred[] = {2,4,6};
+			Tensor p = Tensor({3}, pred);
+			CHECK(b.isSame(p));
+		}
+
+		SECTION("subtract") {
+			Tensor b = a - a;
+			CHECK(b.shape() == Shape({3}));
+			CHECK(b.dtype() == DType::Int32);
+			int pred[] = {0,0,0};
+			Tensor p = Tensor({3}, pred);
+			CHECK(b.isSame(p));
+		}
+
+		SECTION("mul") {
+			Tensor b = a * a;
+			CHECK(b.shape() == Shape({3}));
+			CHECK(b.dtype() == DType::Int32);
+			int pred[] = {1,4,9};
+			Tensor p = Tensor({3}, pred);
+			CHECK(b.isSame(p));
+		}
+
+		SECTION("div") {
+			Tensor b = a / a;
+			CHECK(b.shape() == Shape({3}));
+			CHECK(b.dtype() == DType::Int32);
+			int pred[] = {1,1,1};
+			Tensor p = Tensor({3}, pred);
+			CHECK(b.isSame(p));
+		}
+	}
+}
+
 // TEST_CASE("Serealize")
 // {
 // 	using namespace et;
