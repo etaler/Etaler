@@ -129,6 +129,18 @@ struct Tensor
 	Tensor inverse() const { return backend()->inverse(pimpl()); }
 	Tensor log() const { return backend()->log(pimpl()); }
 
+	Tensor add(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->add(a, b); }
+	Tensor subtract(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->subtract(a, b); }
+	Tensor mul(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->mul(a, b); }
+	Tensor div(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->div(a, b); }
+
+	Tensor operator- () const {return negate();}
+
+	Tensor operator+ (const Tensor& other) const {return add(other);}
+	Tensor operator- (const Tensor& other) const {return subtract(other);}
+	Tensor operator* (const Tensor& other) const {return mul(other);}
+	Tensor operator/ (const Tensor& other) const {return div(other);}
+
 	Tensor sum(intmax_t dim=-1, DType dtype=DType::Unknown) const;
 	bool isSame (const Tensor& other) const;
 
@@ -137,6 +149,8 @@ struct Tensor
 	operator const TensorImpl* () const {return pimpl();}
 
 	bool has_value() const {return (bool)pimpl_ && size() > 0;}
+
+	std::pair<Tensor, Tensor> brodcast(const Tensor& other) const;
 
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;

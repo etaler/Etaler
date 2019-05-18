@@ -440,7 +440,7 @@ void write(T2* ptr, T1 v)
 }
 
 template <typename Op>
-std::shared_ptr<TensorImpl> uniaryOp(const TensorImpl* src, Op op)
+static std::shared_ptr<TensorImpl> uniaryOp(const TensorImpl* src, Op op)
 {
 	std::shared_ptr<TensorImpl> dest;
 	dispatch(src->dtype(), [&](auto v){
@@ -461,6 +461,42 @@ std::shared_ptr<TensorImpl> uniaryOp(const TensorImpl* src, Op op)
 			else
 				((float*)dest->data())[i] = res;
 		}
+	});
+
+	et_assert((bool)dest);
+	return dest;
+}
+
+template <typename Op>
+static std::shared_ptr<TensorImpl> binaryOp(const TensorImpl* src, const TensorImpl* src2, Op op)
+{
+	std::shared_ptr<TensorImpl> dest;
+	et_assert(src->shape() == src2->shape());
+
+	dispatch(src->dtype(), [&](auto v){
+		using T = decltype(v);
+		
+		dispatch(src2->dtype(), [&](auto v){
+			using T2 = decltype(v);
+
+			for(size_t i=0;i<src->size();i++) {
+				auto ptr = getPtrToValue<T>(i, src);
+				auto ptr2 = getPtrToValue<T2>(i, src2);
+				auto res = op(*ptr, *ptr2);
+				using ResType = decltype(res);
+				if(i == 0) {
+					if constexpr(std::is_same<ResType, double>::value == false)
+						dest = src->backend()->createTensor(src->shape(), typeToDType<ResType>());
+					else
+						dest = src->backend()->createTensor(src->shape(), typeToDType<float>());
+				}
+
+				if constexpr(std::is_same<ResType, double>::value == false)
+					((ResType*)dest->data())[i] = res;
+				else
+					((float*)dest->data())[i] = res;
+			}
+		});
 	});
 
 	et_assert((bool)dest);
@@ -600,4 +636,21 @@ std::shared_ptr<TensorImpl> CPUBackend::inverse(const TensorImpl* x)
 std::shared_ptr<TensorImpl> CPUBackend::log(const TensorImpl* x)
 {
 	return uniaryOp(x, [](auto v){return std::log(v);});
+}
+
+std::shared_ptr<TensorImpl> CPUBackend::add(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return binaryOp(x1, x2, [](auto a, auto b) {return a+b;});
+}
+std::shared_ptr<TensorImpl> CPUBackend::subtract(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return binaryOp(x1, x2, [](auto a, auto b) {return a-b;});
+}
+std::shared_ptr<TensorImpl> CPUBackend::mul(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return binaryOp(x1, x2, [](auto a, auto b) {return a*b;});
+}
+std::shared_ptr<TensorImpl> CPUBackend::div(const TensorImpl* x1, const TensorImpl* x2)
+{
+	return binaryOp(x1, x2, [](auto a, auto b) {return a/b;});
 }

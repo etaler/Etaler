@@ -78,6 +78,12 @@ struct CPUBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x);
 	virtual std::shared_ptr<TensorImpl> log(const TensorImpl* x);
 
+	//Binary Operations
+	virtual std::shared_ptr<TensorImpl> add(const TensorImpl* x1, const TensorImpl* x2);
+	virtual std::shared_ptr<TensorImpl> subtract(const TensorImpl* x1, const TensorImpl* x2);
+	virtual std::shared_ptr<TensorImpl> mul(const TensorImpl* x1, const TensorImpl* x2);
+	virtual std::shared_ptr<TensorImpl> div(const TensorImpl* x1, const TensorImpl* x2);
+
 	virtual std::string name() const override {return "CPU";}
 };
 

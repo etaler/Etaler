@@ -300,3 +300,8 @@ std::pair<Tensor, Tensor> et::brodcast_tensors(const Tensor& a, const Tensor& b)
 
 	return {brodcast_to(a, result_shape), brodcast_to(b, result_shape)};
 }
+
+std::pair<Tensor, Tensor> Tensor::brodcast(const Tensor& other) const
+{
+	return brodcast_tensors(*this, other);
+}
