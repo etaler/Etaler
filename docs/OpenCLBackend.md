@@ -29,9 +29,6 @@ The OpenCL backend generates the OpenCL kernels to copy/write to Tensor views at
 ## NVIDIA's OpenCL implementation
 NVIDIA's OpenCL implementation can crash without notifing the user. (kerenl can crash without abort, generating error code at the wrong places, etc...). Use POCL's CUDA backend for varification that the kernel is running correctly.
 
-## POCL's CPU backend
-POCL 1.3's LLVM-CPU backend seems always crashing.
-
 ## program name mangling
 Since the OpenCL backend tracks programes using a key. Name mangling (in Etaler's case, appending the hash of the compiler argumnents to the end of the key) is required to support multiple versions of the same program (with different `-D` defines, etc...).
 
