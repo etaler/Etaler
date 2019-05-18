@@ -261,6 +261,9 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
 	et_assert(points_to<const OpenCLBuffer>(connections->buffer()));
 	et_assert(points_to<const OpenCLBuffer>(permeances->buffer()));
+	et_assert(x->iscontiguous());
+	et_assert(connections->iscontiguous());
+	et_assert(permeances->iscontiguous());
 
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(connections->dtype() == DType::Int32);
@@ -302,6 +305,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
 	et_assert(points_to<OpenCLBuffer>(x->buffer()));
+	et_assert(x->iscontiguous());
 
 	et_assert(x->dtype() == DType::Int32);
 
@@ -336,6 +340,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x,
 std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toType)
 {
 	et_assert(points_to<OpenCLBuffer>(x->buffer()));
+	et_assert(x->iscontiguous());
 	auto args = "-DInType="+to_ctype_string(x->dtype())+" -DOutType="+to_ctype_string(toType);
 	auto hash = hash_string(args);
 	auto program_name = "cast"+hash;
@@ -361,6 +366,7 @@ void OpenCLBackend::sync() const
 std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 {
 	et_assert(points_to<OpenCLBuffer>(x->buffer()));
+	et_assert(x->iscontiguous());
 	size_t buf_size = x->size()*dtypeToSize(x->dtype());
 	cl::Buffer buf = allocBuffer(buf_size);
 	const cl::Buffer& src = std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer();
@@ -419,6 +425,8 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
+	et_assert(connections->iscontiguous());
+	et_assert(permeances->iscontiguous());
 
 	auto args = "-DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back());
 	auto program_name = "sortSynapse"+hash_string(args);
@@ -448,6 +456,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const Tens
 	et_assert(points_to<const OpenCLBuffer>(s->buffer()));
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(s->dtype() == DType::Bool);
+	et_assert(x->iscontiguous());
+	et_assert(s->iscontiguous());
 
 	Shape shape = s->shape();
 	shape.pop_back();
@@ -476,6 +486,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 {
 	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
 	et_assert(x->dtype() == DType::Bool);
+	et_assert(x->iscontiguous());
 
 	size_t cells_per_column = x->shape().back();
 	size_t num_columns = x->size()/cells_per_column;
@@ -507,6 +518,10 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 	et_assert(points_to<const OpenCLBuffer>(y->buffer()));
 	et_assert(points_to<OpenCLBuffer>(connections->buffer()));
 	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
+	et_assert(x->iscontiguous());
+	et_assert(y->iscontiguous());
+	et_assert(connections->iscontiguous());
+	et_assert(permeances->iscontiguous());
 
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(y->dtype() == DType::Bool);
@@ -560,6 +575,7 @@ std::optional<cl::Buffer> OpenCLBackend::toSparse(const TensorImpl* x)
 {
 	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
 	et_assert(x->dtype() == DType::Bool);
+	et_assert(x->iscontiguous());
 
 	auto args = "-DINPUT_SIZE="+str(x->size());
 	auto program_name = "toSparse"+hash_string(args);
@@ -741,6 +757,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 {
 	et_assert(points_to<OpenCLBuffer>(x->buffer()));
 	et_assert(x->size() % chunk_size == 0);
+	et_assert(x->iscontiguous());
 
 	DType result_dtype = dtype;
 	if(dtype == DType::Unknown) {
@@ -787,6 +804,8 @@ void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeance
 	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
+	et_assert(connections->iscontiguous());
+	et_assert(permeances->iscontiguous());
 
 	size_t max_synapses_per_cell = connections->shape().back();
 	size_t input_cell_count = connections->size()/max_synapses_per_cell;
