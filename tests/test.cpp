@@ -408,7 +408,14 @@ TEST_CASE("Tensor operations")
 			CHECK(b.isSame(p));
 		}
 
-
+		SECTION("logical_not") {
+			Tensor b = !a;
+			CHECK(b.size() == 4l);
+			CHECK(b.dtype() == DType::Bool);
+			bool pred[] = {1, 0, 0, 0};
+			Tensor p = Tensor({4}, pred);
+			CHECK(b.isSame(p));
+		}
 	}
 
 	SECTION("Binary Operations") {
@@ -447,6 +454,15 @@ TEST_CASE("Tensor operations")
 			CHECK(b.shape() == Shape({3}));
 			CHECK(b.dtype() == DType::Int32);
 			int pred[] = {1,1,1};
+			Tensor p = Tensor({3}, pred);
+			CHECK(b.isSame(p));
+		}
+
+		SECTION("equal") {
+			Tensor b = a == a;
+			CHECK(b.shape() == Shape({3}));
+			CHECK(b.dtype() == DType::Bool);
+			bool pred[] = {1,1,1};
 			Tensor p = Tensor({3}, pred);
 			CHECK(b.isSame(p));
 		}
