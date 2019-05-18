@@ -929,6 +929,11 @@ std::shared_ptr<TensorImpl> OpenCLBackend::log(const TensorImpl* x)
 	return applyUnaryOp(x, "#define f(x) (log((float)x))", DType::Float);
 }
 
+std::shared_ptr<TensorImpl> OpenCLBackend::logical_not(const TensorImpl* x)
+{
+	return applyUnaryOp(x, "#define f(x) (!((bool)x))", DType::Bool);
+}
+
 static DType solveBinaryOpDType(DType t1, DType t2)
 {
 	if(t1 == DType::Float || t2 == DType::Float)

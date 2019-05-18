@@ -77,6 +77,7 @@ struct CPUBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> negate(const TensorImpl* x) override;
 	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x) override;
 	virtual std::shared_ptr<TensorImpl> log(const TensorImpl* x) override;
+	virtual std::shared_ptr<TensorImpl> logical_not(const TensorImpl* x) override;
 
 	//Binary Operations
 	virtual std::shared_ptr<TensorImpl> add(const TensorImpl* x1, const TensorImpl* x2) override;

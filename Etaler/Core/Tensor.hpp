@@ -128,6 +128,7 @@ struct Tensor
 	Tensor negate() const { return backend()->negate(pimpl()); }
 	Tensor inverse() const { return backend()->inverse(pimpl()); }
 	Tensor log() const { return backend()->log(pimpl()); }
+	Tensor logical_not() const { return backend()->logical_not(pimpl()); }
 
 	Tensor add(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->add(a, b); }
 	Tensor subtract(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->subtract(a, b); }
@@ -140,6 +141,7 @@ struct Tensor
 	Tensor logical_or(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_or(a, b); }
 
 	Tensor operator- () const {return negate();}
+	Tensor operator! () const {return logical_not();}
 
 	Tensor operator+ (const Tensor& other) const {return add(other);}
 	Tensor operator- (const Tensor& other) const {return subtract(other);}
@@ -250,6 +252,7 @@ static Tensor exp(const Tensor& x) { return x.exp(); }
 static Tensor negate(const Tensor& x) { return x.negate(); }
 static Tensor inverse(const Tensor& x) { return x.inverse(); }
 static Tensor log(const Tensor& x) { return x.log(); }
+static Tensor logical_not(const Tensor& x) { return x.logical_not(); }
 
 static Tensor add(const Tensor& x1, const Tensor& x2) { return x1.add(x2); }
 static Tensor subtract(const Tensor& x1, const Tensor& x2) { return x1.subtract(x2); }

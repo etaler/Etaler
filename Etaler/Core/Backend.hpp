@@ -47,6 +47,7 @@ struct Backend : public std::enable_shared_from_this<Backend>
 	virtual std::shared_ptr<TensorImpl> negate(const TensorImpl* x) { throw notImplemented("negate");}
 	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x) { throw notImplemented("inverse");}
 	virtual std::shared_ptr<TensorImpl> log(const TensorImpl* x) { throw notImplemented("log");}
+	virtual std::shared_ptr<TensorImpl> logical_not(const TensorImpl* x) { throw notImplemented("logical_not");}
 
 	//Binary operations
 	virtual std::shared_ptr<TensorImpl> add(const TensorImpl* x1, const TensorImpl* x2) { throw notImplemented("add");}

@@ -638,6 +638,11 @@ std::shared_ptr<TensorImpl> CPUBackend::log(const TensorImpl* x)
 	return uniaryOp(x, [](auto v){return std::log(v);});
 }
 
+std::shared_ptr<TensorImpl> CPUBackend::logical_not(const TensorImpl* x)
+{
+	return uniaryOp(x, [](auto v){return !((bool)v);});
+}
+
 std::shared_ptr<TensorImpl> CPUBackend::add(const TensorImpl* x1, const TensorImpl* x2)
 {
 	return binaryOp(x1, x2, [](auto a, auto b) {return a+b;});
