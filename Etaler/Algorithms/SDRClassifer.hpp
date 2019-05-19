@@ -7,13 +7,11 @@
 namespace et
 {
 
-#if 0
-
 struct SDRClassifer
 {
 	SDRClassifer() = default;
 	SDRClassifer(Shape input_shape, size_t num_classes)
-		: input_shape_(input_shape), references_(num_classes, std::vector<uint32_t>(input_shape.volume()))
+		: input_shape_(input_shape), references_(num_classes, zeros(input_shape))
 		, num_patterns_(num_classes)
 	{
 	}
@@ -32,7 +30,8 @@ struct SDRClassifer
 		size_t best_match_id = -1;
 		size_t best_match = 0;
 		for(size_t i=0;i<references_.size();i++) {
-			size_t overlaps = sum((references_ > num_patterns_*0.75) && x);
+			int threshold = num_patterns_[i]*min_common_frac;
+			size_t overlaps = sum((references_[i] > threshold) && x).toHost<int32_t>()[0];
 
 			if(overlaps > best_match)
 				std::tie(best_match_id, best_match) = std::pair(i, overlaps);
@@ -44,7 +43,5 @@ struct SDRClassifer
 	std::vector<Tensor> references_;
 	std::vector<uint32_t> num_patterns_;
 };
-
-#endif
 
 }

@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <variant>
 
 #include "TensorImpl.hpp"
 #include "Error.hpp"
@@ -179,6 +180,26 @@ struct Tensor
 protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };
+
+static Tensor operator+ (std::variant<float, int, bool> v, const Tensor& t)
+{
+	return std::visit([&t](auto v) {return Tensor(v)+t;}, v);
+}
+
+static Tensor operator- (std::variant<float, int, bool> v, const Tensor& t)
+{
+	return std::visit([&t](auto v) {return Tensor(v)-t;}, v);
+}
+
+static Tensor operator* (std::variant<float, int, bool> v, const Tensor& t)
+{
+	return std::visit([&t](auto v) {return Tensor(v)*t;}, v);
+}
+
+static Tensor operator/ (std::variant<float, int, bool> v, const Tensor& t)
+{
+	return std::visit([&t](auto v) {return Tensor(v)/t;}, v);
+}
 
 //Procedural  APIs
 template <typename T>
