@@ -34,3 +34,23 @@ void TemporalMemory::learn(const Tensor& active_cells, const Tensor& last_active
 	growSynapses(last_active, learning_cells, connections_, permances_, 0.21);
 
 }
+
+void TemporalMemory::loadState(const StateDict& states)
+{
+	permance_inc_ = std::any_cast<float>(states.at("permance_inc"));
+	permance_dec_ = std::any_cast<float>(states.at("permance_dec"));
+	connected_permance_ = std::any_cast<float>(states.at("connected_permance"));
+	active_threshold_ = std::any_cast<int>(states.at("active_threshold"));
+	input_shape_ = std::any_cast<Shape>(states.at("input_shape"));
+	connections_ = std::any_cast<Tensor>(states.at("connections"));
+	permances_ = std::any_cast<Tensor>(states.at("permances"));
+}
+
+TemporalMemory TemporalMemory::to(Backend* b) const
+{
+	TemporalMemory tm = *this;
+	tm.connections_ = connections_.to(b);
+	tm.permances_ = permances_.to(b);
+
+	return tm;
+}

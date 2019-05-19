@@ -30,6 +30,17 @@ struct TemporalMemory
 
 	size_t cellsPerColumn() const {return connections_.shape().back();}
 
+	StateDict states() const
+	{
+		return {{"input_shape", input_shape_}, {"connections", connections_} , {"permances", permances_}
+			, {"permance_inc", permance_inc_}, {"permance_dec", permance_dec_}
+			, {"connected_permance", connected_permance_}, {"active_threshold", (int)active_threshold_}};
+	}
+
+	TemporalMemory to(Backend* b) const;
+
+	void loadState(const StateDict& states);
+
 	Shape input_shape_;
 	float connected_permance_ = 0.1;
 	size_t active_threshold_ = 2;
