@@ -22,7 +22,7 @@ struct Tensor
 	Tensor() = default;
 	Tensor(std::shared_ptr<TensorImpl> pimpl)
 		: pimpl_(std::move(pimpl)) {}
-	Tensor(Shape s, DType dtype, Backend* backend=defaultBackend())
+	explicit Tensor(Shape s, DType dtype, Backend* backend=defaultBackend())
 		: pimpl_(backend->createTensor(s, dtype, nullptr)) {}
 	template <typename T>
 	Tensor(Shape s, const T* data, Backend* backend=defaultBackend())
@@ -32,6 +32,10 @@ struct Tensor
 		static_assert(dtype !=  DType::Unknown && "Cannot process this kind on data type");
 		pimpl_ = backend->createTensor(s, dtype, data);
 	}
+
+	Tensor(int v) : Tensor({1}, &v) {}
+	Tensor(float v) : Tensor({1}, &v) {}
+	Tensor(bool v) : Tensor({1}, &v) {}
 
 	Tensor& operator= (const Tensor& t)& { this->pimpl_ = t.pimpl_; return *this; } //l-value assignment. i.e. normal assignment
 	Tensor& operator= (const Tensor& t)&& { assign(t); return *this; } //r-value assignment. i.e. Assigning to a returned value
@@ -110,7 +114,7 @@ struct Tensor
 	//Assigning and realizing
 	void assign(const Tensor& source)
 	{
-		backend()->assign(*this, source);
+		backend()->assign(pimpl(), source.pimpl());
 	}
 
 	Tensor realize() const
@@ -132,15 +136,15 @@ struct Tensor
 	Tensor log() const { return backend()->log(pimpl()); }
 	Tensor logical_not() const { return backend()->logical_not(pimpl()); }
 
-	Tensor add(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->add(a, b); }
-	Tensor subtract(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->subtract(a, b); }
-	Tensor mul(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->mul(a, b); }
-	Tensor div(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->div(a, b); }
-	Tensor equal(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->equal(a, b); }
-	Tensor greater(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->greater(a, b); }
-	Tensor lesser(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->lesser(a, b); }
-	Tensor logical_and(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_and(a, b); }
-	Tensor logical_or(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_or(a, b); }
+	Tensor add(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->add(a(), b()); }
+	Tensor subtract(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->subtract(a(), b()); }
+	Tensor mul(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->mul(a(), b()); }
+	Tensor div(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->div(a(), b()); }
+	Tensor equal(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->equal(a(), b()); }
+	Tensor greater(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->greater(a(), b()); }
+	Tensor lesser(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->lesser(a(), b()); }
+	Tensor logical_and(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_and(a(), b()); }
+	Tensor logical_or(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_or(a(), b()); }
 
 	Tensor operator- () const {return negate();}
 	Tensor operator! () const {return logical_not();}
@@ -165,8 +169,8 @@ struct Tensor
 	bool isSame (const Tensor& other) const;
 
 	//Utils
-	operator TensorImpl* () {return pimpl();}
-	operator const TensorImpl* () const {return pimpl();}
+	TensorImpl* operator () () {return pimpl();}
+	const TensorImpl* operator () () const {return pimpl();}
 
 	bool has_value() const {return (bool)pimpl_ && size() > 0;}
 
@@ -203,18 +207,18 @@ inline Tensor attempt_realize(const Tensor& t)
 static Tensor cellActivity(const Tensor& x, const Tensor& connections, const Tensor& permeances
 	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true)
 {
-	return x.backend()->cellActivity(x, connections, permeances, connected_permeance, active_threshold, has_unconnected_synapse);
+	return x.backend()->cellActivity(x(), connections(), permeances(), connected_permeance, active_threshold, has_unconnected_synapse);
 }
 
 static void learnCorrilation(const Tensor& x, const Tensor& learn, const Tensor& connection
 	, Tensor& permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse=true)
 {
-	x.backend()->learnCorrilation(x, learn, connection, permeances, perm_inc, perm_dec, has_unconnected_synapse);
+	x.backend()->learnCorrilation(x(), learn(), connection(), permeances(), perm_inc, perm_dec, has_unconnected_synapse);
 }
 
 static Tensor globalInhibition(const Tensor& x, float fraction)
 {
-	return x.backend()->globalInhibition(x, fraction);
+	return x.backend()->globalInhibition(x(), fraction);
 }
 
 Tensor static cast(const Tensor& x, DType dtype)
@@ -229,22 +233,27 @@ static Tensor copy(const Tensor& x)
 
 static void sortSynapse(Tensor& connection, Tensor& permeances)
 {
-	connection.backend()->sortSynapse(connection, permeances);
+	connection.backend()->sortSynapse(connection(), permeances());
 }
 
 static Tensor burst(const Tensor& x, const Tensor& s)
 {
-	return x.backend()->burst(x, s);
+	return x.backend()->burst(x(), s());
 }
 
 static Tensor reverseBurst(const Tensor& x)
 {
-	return x.backend()->reverseBurst(x);
+	return x.backend()->reverseBurst(x());
 }
 
 static void growSynapses(const Tensor& x, const Tensor& y, Tensor& connections, Tensor& permeances, float init_perm)
 {
-	x.backend()->growSynapses(x, y, connections, permeances, init_perm);
+	x.backend()->growSynapses(x(), y(), connections(), permeances(), init_perm);
+}
+
+static void decaySynapses(Tensor& connections, Tensor& permeances, float threshold)
+{
+	connections.backend()->decaySynapses(connections(), permeances(), threshold);
 }
 
 static void assign(Tensor& x, const Tensor& y)

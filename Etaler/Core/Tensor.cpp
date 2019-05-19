@@ -228,7 +228,7 @@ Tensor Tensor::sum(intmax_t dim, DType dtype) const
 		return res;
 	}
 
-	Tensor res = backend()->sum(swapaxis(dimentions()-1, dim).realize(), shape()[dim], dtype);
+	Tensor res = backend()->sum(swapaxis(dimentions()-1, dim).realize().pimpl(), shape()[dim], dtype);
 	res.resize(s);
 
 	if(dim == (intmax_t)(res.dimentions()-1)) //special case, no need to swap axis

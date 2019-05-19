@@ -368,7 +368,7 @@ TEST_CASE("Backend functions", "[Backend]")
 		float b[] = {0.1, 0.7, 0.5, 0.01};
 		Tensor p({2,2}, b);
 
-		defaultBackend()->decaySynapses(c, p, 0.2);
+		decaySynapses(c, p, 0.2);
 
 		int pred[] = {1, -1, 0, -1};
 		CHECK(Tensor({2,2}, pred).isSame(c));
