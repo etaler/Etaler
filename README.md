@@ -182,7 +182,7 @@ We are still thinking about weather a CI is worth the trouble. C++ projects take
 * [x] Serialize to...
   * [x] Cereal
   * [x] JSON (via cereal)
-* [ ] SP Boosting support
+* [x] SP Boosting support
 * [ ] Make the algorithms compliant to BAMI
 * [x] Basic Tensor indexing
 
