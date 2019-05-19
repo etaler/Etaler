@@ -509,6 +509,13 @@ TEST_CASE("brodcast")
 		CHECK((a+b).shape() == Shape({2, 4}));
 	}
 
+	SECTION("brodcast with a 1 axis")
+	{
+		a = ones({2, 1, 4});
+		b = ones({2, 5, 4});
+		CHECK((a+b).shape() == Shape({2, 5, 4}));
+	}
+
 	SECTION("bad brodcasting")
 	{
 		a = ones({2, 4});
