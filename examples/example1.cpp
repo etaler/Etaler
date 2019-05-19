@@ -3,6 +3,7 @@
 //#include <Etaler/Backends/OpenCLBackend.hpp>
 #include <Etaler/Algorithms/SpatialPooler.hpp>
 #include <Etaler/Encoders/Scalar.hpp>
+#include <Etaler/Algorithms/Anomaly.hpp>
 using namespace et;
 
 #include <iostream>
