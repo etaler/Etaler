@@ -273,8 +273,9 @@ inline Shape brodcast_result_shape(Shape a, Shape b)
 	a = leftpad(a, max);
 	b = leftpad(b, max);
 	assert(a.size() == b.size());
+	assert(a.size() == max);
 
-	for(int i=(int)a.size()-1;i>=0;i--)
+	for(size_t i=0;i<max;i++)
 		s.push_back(std::max(a[i], b[i]));
 	return s;
 }

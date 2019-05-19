@@ -41,6 +41,15 @@ TEST_CASE("Testing Shape", "[Shape]")
 
 		CHECK(foldIndex(7, s) == Shape({1,2}));
 	}
+
+	SECTION("leftpad") {
+		Shape s = {1,2,3};
+		Shape t = leftpad(s, 4, 1);
+		CHECK(t == Shape({1,1,2,3}));
+
+		Shape q = leftpad(s, 1, 10);
+		CHECK(q == Shape({1,2,3}));
+	}
 }
 
 TEST_CASE("Testing Tensor", "[Tensor]")
