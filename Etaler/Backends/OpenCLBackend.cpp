@@ -401,6 +401,8 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 
 	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
 		kernel_manager_.compileFromFile("learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args);
+	else if(x->size() < localMemorySize()*8-8 && localMemoryType() == CL_LOCAL)
+		kernel_manager_.compileFromFile("learnCorrilation_compressed_local.cl", program_name, {"learnCorrilation"}, false, args);
 	else
 		kernel_manager_.compileFromFile("learnCorrilation_global.cl", program_name, {"learnCorrilation"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "learnCorrilation");
