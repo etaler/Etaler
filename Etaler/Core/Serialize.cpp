@@ -88,6 +88,25 @@ void load(Archive & archive, Tensor & t)
 }
 
 template <class Archive>
+void save(Archive & archive , std::vector<Tensor> const & v)
+{
+	archive(make_size_tag(static_cast<size_type>(v.size())));
+	for(const auto& t : v)
+		archive(t);
+}
+
+template <class Archive>
+void load(Archive & archive , std::vector<Tensor> & v)
+{
+	size_type size;
+	archive(make_size_tag(size));
+
+	v.resize(size);
+	for(auto& t : v)
+		archive(t);
+}
+
+template <class Archive>
 void save(Archive & archive ,StateDict const & item)
 {
 	std::vector<std::string> keys;
@@ -112,6 +131,12 @@ void save(Archive & archive ,StateDict const & item)
 			types.push_back("Tensor");
 		else if(v.type() == typeid(StateDict))
 			types.push_back("StateDict");
+		else if(v.type() == typeid(std::vector<Tensor>))
+			types.push_back("std::vector<Tensor>");
+		else if(v.type() == typeid(std::vector<int>))
+			types.push_back("std::vector<int>");
+		else if(v.type() == typeid(std::vector<float>))
+			types.push_back("std::vector<float>");
 		else
 			throw EtError("Cannot save (mangled name:) type " + std::string(v.type().name()) + ", key " + k);
 	}
@@ -132,6 +157,12 @@ void save(Archive & archive ,StateDict const & item)
 			archive(std::any_cast<Tensor>(v));
 		else if(v.type() == typeid(StateDict))
 			archive(std::any_cast<StateDict>(v));
+		else if(v.type() == typeid(std::vector<Tensor>))
+			archive(std::any_cast<std::vector<Tensor>>(v));
+		else if(v.type() == typeid(std::vector<int>))
+			archive(std::any_cast<std::vector<int>>(v));
+		else if(v.type() == typeid(std::vector<float>))
+			archive(std::any_cast<std::vector<float>>(v));
 		else
 			throw EtError("Cannot save type " + std::string(typeid(decltype(v)).name()) + ", key " + k);
 
@@ -174,6 +205,12 @@ void load(Archive & archive ,StateDict & item)
 			read_archive<Tensor>(archive, item, key);
 		else if(type == "StateDict")
 			read_archive<StateDict>(archive, item, key);
+		else if(type == "std::vector<Tensor>")
+			read_archive<std::vector<Tensor>>(archive, item, key);
+		else if(type == "std::vector<int>")
+			read_archive<std::vector<int>>(archive, item, key);
+		else if(type == "std::vector<float>")
+			read_archive<std::vector<float>>(archive, item, key);
 		else
 			throw EtError("Cannot serealize type " + type);
 

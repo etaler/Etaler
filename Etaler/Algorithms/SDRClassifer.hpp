@@ -39,9 +39,29 @@ struct SDRClassifer
 		return best_match;
 	}
 
+	StateDict states() const
+	{
+		return {{"input_shape", input_shape_}, {"references", references_}, {"num_patterns", num_patterns_}};
+	}
+
+	void loadState(const StateDict& states)
+	{
+		input_shape_ = std::any_cast<Shape>(states["input_shape"]);
+		references_ = std::any_cast<Tensor>(states["references"]);
+		num_patterns_ = std::any_cast<std::vector<int>>(states["num_patterns"]);
+	}
+
+	SDRClassifer to(Backend* b)
+	{
+		SDRClassifer c = *this;
+		c.references_ = references_.to(b);
+	}
+
+
+
 	Shape input_shape_;
 	std::vector<Tensor> references_;
-	std::vector<uint32_t> num_patterns_;
+	std::vector<int> num_patterns_;
 };
 
 }
