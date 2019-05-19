@@ -281,6 +281,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 
 	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
 		kernel_manager_.compileFromFile("overlapScore.cl", program_name, {"overlapScore"}, false, args);
+	else if(x->size() < localMemorySize()*8-8 && localMemoryType() == CL_LOCAL)
+		kernel_manager_.compileFromFile("overlapScore_compressed_local.cl", program_name, {"overlapScore"}, false, args);
 	else
 		kernel_manager_.compileFromFile("overlapScore_global.cl", program_name, {"overlapScore"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "overlapScore");
@@ -872,7 +874,7 @@ kernel void op(global T0* restrict x1, global T1* restrict x2, global ResType* r
 std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std::string f, DType resType)
 {
 	et_assert(points_to<OpenCLBuffer>(x->buffer()));
-	
+
 	std::string args = "-DT0="+to_ctype_string(x->dtype())+" -DResType="+to_ctype_string(resType);
 	std::string program_name = f+hash_string(args)+std::to_string(x->offset())+to_string(x->shape())+to_string(x->stride());
 
@@ -891,7 +893,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size())), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
-	
+
 	return res;
 }
 
@@ -904,7 +906,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, c
 	auto to_str = [](auto x){
 		return std::to_string(x->offset())+to_string(x->shape())+to_string(x->stride());
 	};
-	
+
 	std::string args = "-DT0="+to_ctype_string(x1->dtype())+" -DT1="+to_ctype_string(x2->dtype()) + " -DResType="+to_ctype_string(resType);
 	std::string program_name = f+hash_string(args)+to_str(x1)+to_str(x2);
 
@@ -924,7 +926,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, c
 	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x1->size())), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
-	
+
 	return res;
 }
 
