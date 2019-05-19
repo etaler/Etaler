@@ -19,16 +19,11 @@ struct SpatialPooler
 {
 	SpatialPooler() = default;
 	SpatialPooler(const Shape& input_shape, const Shape& output_shape, float potential_pool_pct=0.75, size_t seed=42
-		, float global_density = 0.15, Backend* b = defaultBackend());
+		, float global_density = 0.15, float boost_factor = 0, Backend* b = defaultBackend());
 
 	Tensor compute(const Tensor& x) const;
 
-	void learn(const Tensor& x, const Tensor& y)
-	{
-		et_assert(x.shape() == input_shape_);
-		et_assert(y.shape() == input_shape_);
-		learnCorrilation(x, y, connections_, permances_, permance_inc_, permance_dec_);
-	}
+	void learn(const Tensor& x, const Tensor& y);
 
 	void setPermanceInc(float inc) { permance_inc_ = inc; }
 	float permanceInc() const {return permance_inc_;}
@@ -45,12 +40,16 @@ struct SpatialPooler
 	void setGlobalDensity(float d) { global_density_ = d; }
 	size_t globalDensity() const { return global_density_; }
 
+	void setBoostingFactor(float f) { boost_factor_ = f; }
+	float boostFactor() { return boost_factor_; }
+
 	StateDict states() const
 	{
 		return {{"input_shape", input_shape_}, {"output_shape", output_shape_}, {"connections", connections_}
 			, {"permances", permances_}, {"permance_inc", permance_inc_}, {"permance_dec", permance_dec_}
 			, {"connected_permance", connected_permance_}, {"active_threshold", (int)active_threshold_}
-			, {"global_density", global_density_}};
+			, {"global_density", global_density_}, {"average_activity", average_activity_}
+			, {"boost_factor", boost_factor_}};
 	}
 
 
@@ -64,10 +63,12 @@ protected:
 	float connected_permance_ = 0.21;
 	size_t active_threshold_ = 5;
 	float global_density_ = 0.1;
+	float boost_factor_ = 0;
 
 	Shape input_shape_;
 	Shape output_shape_;
 	Tensor connections_;
+	Tensor average_activity_;
 	Tensor permances_;
 };
 

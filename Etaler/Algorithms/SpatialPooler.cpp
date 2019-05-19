@@ -1,5 +1,6 @@
 #include "SpatialPooler.hpp"
 #include <Etaler/Core/Random.hpp>
+#include "Boost.hpp"
 
 using namespace et;
 
@@ -13,8 +14,8 @@ inline std::vector<size_t> vector_range(size_t start, size_t end)
 
 
 SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape, float potential_pool_pct, size_t seed
-	, float global_density, Backend* b)
-	: global_density_(global_density), input_shape_(input_shape), output_shape_(output_shape)
+	, float global_density, float boost_factor, Backend* b)
+	: global_density_(global_density), boost_factor_(boost_factor), input_shape_(input_shape), output_shape_(output_shape)
 {
 	if(potential_pool_pct > 1 or potential_pool_pct < 0)
 		throw EtError("potential_pool_pct must be between 0~1, but get" + std::to_string(potential_pool_pct));
@@ -41,6 +42,9 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 		}
 	}
 
+	if(boost_factor != 0)
+		average_activity_ = constant(input_shape, global_density);
+
 	Shape s = output_shape + potential_pool_size;
 	connections_ = Tensor(s, connections.data(), b);
 	permances_ = Tensor(s, permances.data(), b);
@@ -53,9 +57,22 @@ Tensor SpatialPooler::compute(const Tensor& x) const
 	Tensor activity = cellActivity(x, connections_, permances_
 		, connected_permance_, active_threshold_, false);
 
+	if(boost_factor_ != 0)
+		activity = boost(activity, average_activity_, global_density_, boost_factor_);
+
 	Tensor res = globalInhibition(activity, global_density_);
 
 	return res;
+}
+
+void SpatialPooler::learn(const Tensor& x, const Tensor& y)
+{
+	et_assert(x.shape() == input_shape_);
+	et_assert(y.shape() == input_shape_);
+	learnCorrilation(x, y, connections_, permances_, permance_inc_, permance_dec_);
+
+	if(boost_factor_ != 0)
+		average_activity_ = average_activity_*0.9f + y * 0.1f;
 }
 
 void SpatialPooler::loadState(const StateDict& states)
@@ -69,6 +86,8 @@ void SpatialPooler::loadState(const StateDict& states)
 	output_shape_ = std::any_cast<Shape>(states.at("output_shape"));
 	connections_ = std::any_cast<Tensor>(states.at("connections"));
 	permances_ = std::any_cast<Tensor>(states.at("permances"));
+	average_activity_ = std::any_cast<Tensor>(states.at("average_activity"));
+	boost_factor_ = std::any_cast<float>(states.at("boost_factor"));
 }
 
 SpatialPooler SpatialPooler::to(Backend* b) const
