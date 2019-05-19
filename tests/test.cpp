@@ -7,9 +7,10 @@
 #include <Etaler/Encoders/GridCell1d.hpp>
 #include <Etaler/Core/Serialize.hpp>
 
+using namespace et;
+
 TEST_CASE("Testing Shape", "[Shape]")
 {
-	using namespace et;
 	Shape s = {3,5};
 
 	SECTION("Shape") {
@@ -44,8 +45,6 @@ TEST_CASE("Testing Shape", "[Shape]")
 
 TEST_CASE("Testing Tensor", "[Tensor]")
 {
-	using namespace et;
-
 	SECTION("Tensor creation") {
 		int a[] = {1,2,3,4};
 		Tensor t = Tensor({4}, a);
@@ -192,8 +191,6 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 TEST_CASE("Testing Encoders", "[Encoder]")
 {
-	using namespace et;
-
 	SECTION("Scalar Encoder") {
 		size_t total_bits = 32;
 		size_t num_on_bits = 4;
@@ -238,8 +235,6 @@ TEST_CASE("Testing Encoders", "[Encoder]")
 
 TEST_CASE("Backend functions", "[Backend]")
 {
-	using namespace et;
-
 	SECTION("Cell Activity") {
 		int32_t synapses[4] = {0, 1, 1, -1};
 		Tensor s = Tensor({2,2}, synapses);
@@ -392,7 +387,6 @@ TEST_CASE("Backend functions", "[Backend]")
 
 TEST_CASE("StateDict", "[StateDict]")
 {
-	using namespace et;
 	StateDict state;
 
 	Shape s = {4,5,6};
@@ -408,7 +402,6 @@ TEST_CASE("StateDict", "[StateDict]")
 
 TEST_CASE("Tensor operations")
 {
-	using namespace et;
 	SECTION("Unary operation") {
 		int arr[] = {0,1,2,3};
 		Tensor a = Tensor({4}, arr);
@@ -480,6 +473,38 @@ TEST_CASE("Tensor operations")
 			Tensor p = Tensor({3}, pred);
 			CHECK(b.isSame(p));
 		}
+	}
+}
+
+TEST_CASE("brodcast")
+{
+	Tensor a, b;
+	SECTION("no brodcast")
+	{
+		a = ones({4});
+		b = ones({4});
+		CHECK((a+b).shape() == Shape({4}));
+	}
+
+	SECTION("simple brodcast")
+	{
+		a = ones({2, 4});
+		b = ones({4});
+		CHECK((a+b).shape() == Shape({2, 4}));
+	}
+
+	SECTION("brodcast from {1}")
+	{
+		a = ones({2, 4});
+		b = ones({1});
+		CHECK((a+b).shape() == Shape({2, 4}));
+	}
+
+	SECTION("bad brodcasting")
+	{
+		a = ones({2, 4});
+		b = ones({7});
+		CHECK_THROWS(a+b);
 	}
 }
 
