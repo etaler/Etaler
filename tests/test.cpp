@@ -63,6 +63,20 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(r.shape() == Shape({4}));
 	}
 
+	SECTION("Create Tensor from scalar") {
+		Tensor t = 7;
+		CHECK(t.dtype() == DType::Int32);
+		CHECK(t.shape() == Shape({1}));
+
+		Tensor q = 1.2f;
+		CHECK(q.dtype() == DType::Float);
+		CHECK(q.shape() == Shape({1}));
+
+		Tensor r = true;
+		CHECK(r.dtype() == DType::Bool);
+		CHECK(r.shape() == Shape({1}));
+	}
+
 	SECTION("Tesnor basic") {
 		Tensor t = Tensor({1,2,5,6,7}, DType::Float);
 
