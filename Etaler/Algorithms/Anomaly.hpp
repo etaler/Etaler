@@ -2,12 +2,10 @@
 
 #include <Etaler/Core/Tensor.hpp>
 
-#include <numeric>
-
 namespace et
 {
 
-float anomaly(const Tensor& pred, const Tensor& real)
+static float anomaly(const Tensor& pred, const Tensor& real)
 {
 	et_assert(real.dtype() == DType::Bool);
 	et_assert(pred.dtype() == DType::Bool);
