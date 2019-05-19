@@ -17,11 +17,9 @@ WORKDIR /home/
 RUN mkdir /usr/include/catch2 &&  wget https://github.com/catchorg/Catch2/releases/download/v2.7.2/catch.hpp -P /usr/include/catch2
 
 # etaler files
-RUN sudo git clone https://github.com/etaler/Etaler.git 
+RUN sudo git clone  --recurse-submodules  https://github.com/etaler/Etaler.git 
 
 WORKDIR /home/Etaler
-RUN ls -la
-RUN pwd
 
 # delete a preexisting build dir - ignore if there isn't one already...
 RUN  rm -rf build ; exit 0
@@ -33,4 +31,3 @@ RUN mkdir -p /home/Etaler/build
 WORKDIR /home/Etaler/build
 RUN  cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  -DETALER_BUILD_TESTS=OFF ..
 RUN cmake --build . ; exit 0
-#RUN  make  --debug=j --trace; exit 0
