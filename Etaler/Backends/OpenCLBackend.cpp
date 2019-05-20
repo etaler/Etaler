@@ -863,7 +863,7 @@ kernel void op(global T0* restrict x1, global T1* restrict x2, global ResType* r
 	for(int i=global_id;i<$SIZE;i+=global_size) {
 		int p1 = location_func0(i);
 		int p2 = location_func1(i);
-		y[i] = f(x1[1], x2[p2]);
+		y[i] = f(x1[p1], x2[p2]);
 	}
 }
 )";
