@@ -251,6 +251,9 @@ Tensor Tensor::copy() const
 
 inline bool brodcastable(Shape a, Shape b)
 {
+	if(a.size() == 0 || b.size() == 0)
+		return false;
+
 	size_t min = std::min(a.size(), b.size());
 
 	for(size_t i=0;i<min;i++) {
@@ -261,7 +264,7 @@ inline bool brodcastable(Shape a, Shape b)
 		if(s1 != s2)
 			return false;
 	}
-	
+
 	return true;
 }
 
