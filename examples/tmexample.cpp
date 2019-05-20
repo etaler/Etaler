@@ -1,6 +1,6 @@
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Backends/CPUBackend.hpp>
-#include <Etaler/Backends/OpenCLBackend.hpp>
+//#include <Etaler/Backends/OpenCLBackend.hpp>
 #include <Etaler/Algorithms/TemporalMemory.hpp>
 #include <Etaler/Encoders/Category.hpp>
 using namespace et;
