@@ -1,6 +1,5 @@
 #include "catch2/catch.hpp"
 
-#include <Etaler/Backends/CPUBackend.hpp>
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Encoders/Scalar.hpp>
 #include <Etaler/Encoders/Category.hpp>

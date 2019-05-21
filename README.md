@@ -57,7 +57,8 @@ Tensor t = encoder::scalar(0.1);
 //Transfer data to GPU
 Tensot q = t.to(gpu);
 
-SpatialPooler sp(/*Spatial Pooler params here*/, gpu.get());
+SpatialPooler sp = SpatialPooler(/*Spatial Pooler params here*/).to(gpu);
+//SpatialPooler sp(/*Spatial Pooler params here*/, gpu.get()); //Alternativelly
 Tensor r = sp.compute(q);
 ```
 
