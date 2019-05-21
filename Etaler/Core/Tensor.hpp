@@ -68,7 +68,7 @@ struct Tensor
 	{
 		static_assert(std::is_same_v<T, bool> == false && "You should NOT use coptToHost<bool> as std::vector<bool> is a "
 								"specillation. Use copyToHost<uint8_t> instead.");
-		if(pimpl()->iscontiguous() == false)
+		if(pimpl()->isplain() == false)
 			return realize().toHost<T>();
 		if(dtype() != typeToDType<T>())
 			throw EtError("toHost() failed. Requested type and dtype mismatch");
