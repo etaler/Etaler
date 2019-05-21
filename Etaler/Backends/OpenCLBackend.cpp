@@ -55,6 +55,11 @@ std::string str(T&& s)
 }
 
 OpenCLBackend::OpenCLBackend()
+	: OpenCLBackend(0, 0)
+{	
+}
+
+OpenCLBackend::OpenCLBackend(size_t platform_id, size_t device_id)
 {
 	std::vector<cl::Platform> platforms;
 	cl_int err = cl::Platform::get(&platforms);
@@ -62,34 +67,34 @@ OpenCLBackend::OpenCLBackend()
 		throw EtError("Failed to get OpenCL platforms. Error: " + std::to_string(err));
 	if(platforms.size() == 0)
 		throw EtError("No OpenCL platform found.");
-	auto& platform = platforms[0];
+	if(platforms.size() <= platform_id)
+		throw EtError("OpenCL platform " + std::to_string(platform_id) + " not found.");
+	auto& platform = platforms[platform_id];
 
 	std::vector<cl::Device> devices;
-	platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
+	platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
 	if(devices.size() == 0)
 		throw EtError("No OpenCL device found in platorm " + platform.getInfo<CL_PLATFORM_NAME>());
-	auto& device = devices[0];
+	if(devices.size() <= device_id)
+		throw EtError("OpenCL device " + std::to_string(device_id) + " in platform " + platform.getInfo<CL_PLATFORM_NAME>() + " not found.");
+	auto& device = devices[device_id];
 	if(device.getInfo<CL_DEVICE_COMPILER_AVAILABLE>() == CL_FALSE)
 		throw EtError("Compiler for " + device.getInfo<CL_DEVICE_NAME>() + " is not avliable. (Devices like Altera/Xilinx FPGAs not supported"
 			" in the OpenCL backend.)");
 
-	platform_ = platform;
-	device_ = device;
-	context_ = cl::Context(device, nullptr, nullptr, nullptr, &err);
+	cl::Context context = cl::Context(device, nullptr, nullptr, nullptr, &err);
 	if(err != CL_SUCCESS)
 		throw EtError("Failed to create OpenCL context. Error " + std::to_string(err));
 
-	//I trust these won't fail
-	queue_ = cl::CommandQueue(context_);
-	kernel_manager_ = KernelManager(device, context_);
-	kernel_manager_.compileKernel("kernel void __etaler_dummy__(global int* p){p[get_global_id(0)] = 0;}", "__etaler_dummy__", "__etaler_dummy__");
-
-	local_mem_size_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
-	local_mem_type_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>();
-	num_compute_units_ = device_.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+	init(context, platform, device);
 }
 
 OpenCLBackend::OpenCLBackend(cl::Context context, cl::Platform platform, cl::Device device)
+{
+	init(context, platform, device);
+}
+
+void OpenCLBackend::init(cl::Context context, cl::Platform platform, cl::Device device)
 {
 	context_ = std::move(context);
 	platform_ = std::move(platform);
@@ -97,7 +102,7 @@ OpenCLBackend::OpenCLBackend(cl::Context context, cl::Platform platform, cl::Dev
 
 	//I trust these won't fail
 	queue_ = cl::CommandQueue(context_);
-	kernel_manager_ = KernelManager(device, context_);
+	kernel_manager_ = KernelManager(device_, context_);
 	kernel_manager_.compileKernel("kernel void __etaler_dummy__(global int* p){p[get_global_id(0)] = 0;}", "__etaler_dummy__", "__etaler_dummy__");
 
 	local_mem_size_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
