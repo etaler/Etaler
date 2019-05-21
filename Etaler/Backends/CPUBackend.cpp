@@ -544,7 +544,6 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 {
 	et_assert(points_to<CPUBuffer>(dest->buffer()));
 	et_assert(points_to<CPUBuffer>(src->buffer()));
-	et_assert(dest->shape() == src->shape());
 
 	if(dest->shape() != src->shape())
 		throw EtError("Shape mismatch in tensor assignment. Shape "
