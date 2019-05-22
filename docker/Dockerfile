@@ -3,7 +3,7 @@ FROM  ubuntu:18.04
 
 USER root
 RUN rm /bin/sh && ln -s /bin/bash /bin/sh
-RUN apt-get update && apt-get install -y g++  wget git  opencl-headers ocl-icd-opencl-dev libcereal-dev sudo nano cmake apt-utils libtbb-dev 
+RUN apt-get update && apt-get install -y g++  wget git  opencl-headers ocl-icd-opencl-dev libcereal-dev sudo nano cmake apt-utils libtbb-dev gdb 
 
 WORKDIR /home/
 # catch2 testing framwork
