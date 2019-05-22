@@ -410,6 +410,17 @@ TEST_CASE("StateDict", "[StateDict]")
 
 TEST_CASE("Tensor operations")
 {
+	SECTION("cast") {
+		int arr[] = {0, 768, 200, 40};
+		Tensor t = Tensor({4}, arr);
+		Tensor q = t.cast(DType::Bool);
+
+		uint8_t pred[] = {0, 1, 1, 1};
+		Tensor p = Tensor({4}, pred);
+		CHECK(q.shape() == Shape({4}));
+		CHECK(q.isSame(p));
+	}
+
 	SECTION("Unary operation") {
 		int arr[] = {0,1,2,3};
 		Tensor a = Tensor({4}, arr);
