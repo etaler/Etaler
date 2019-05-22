@@ -113,6 +113,16 @@ Some cmake options are available:
 | ETALER_BUILD_EXAMPLES |  Build the examples        |  ON      |
 | ETALER_BUILD_TESTS    |  Build the tests           |  ON      |
 
+### Building in Docker/VSC
+```shell
+cd docker
+./build.sh
+./run.sh
+```
+
+
+Clone the repository. Then after fulfilling the dependencies. Execute `cmake` and then run whatever build system you're using.
+
 ## LICENSE
 Etaler is licensed under BSD 3-Clause License. So use it freely!
 

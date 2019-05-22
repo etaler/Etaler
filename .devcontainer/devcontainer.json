@@ -1,11 +1,14 @@
 // See https://aka.ms/vscode-remote/devcontainer.json for format details.
 {
     "name": "Etaler in Docker",
-    "dockerFile": "../docker/Dockerfile",
+    "dockerFile": "Dockerfile",
     "extensions": [
         "peterjausovec.vscode-docker",
         "ms-vscode.cpptools",
-        "austin.code-gnu-global"
+        "austin.code-gnu-global",
+        "vector-of-bool.cmake-tools",
+        "twxs.cmake",
+        "maddouri.cmake-tools-helper"
     ],
     "runArgs": ["-v","/var/run/docker.sock:/var/run/docker.sock"]
 }
