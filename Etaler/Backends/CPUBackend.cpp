@@ -222,17 +222,17 @@ std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 	const CPUBuffer& t = *p;
 	return run<std::shared_ptr<TensorImpl>>(t, [&x, toType, this](const auto* ptr){
 		if(toType == DType::Bool) {
-			auto castedData = castData<uint8_t>(ptr, x->size());
-			std::transform(castedData.begin(), castedData.end(), castedData.begin(), [](auto v) {return bool(v);});
-			return createTensor(x->shape(), toType, castedData.data());
+			auto bool_vec = castData<bool>(ptr, x->size());
+			std::vector<uint8_t> casted_data(bool_vec.begin(), bool_vec.end());
+			return createTensor(x->shape(), toType, casted_data.data());
 		}
 		else if(toType == DType::Int32) {
-			auto castedData = castData<int32_t>(ptr, x->size());
-			return createTensor(x->shape(), toType, castedData.data());
+			auto casted_data = castData<int32_t>(ptr, x->size());
+			return createTensor(x->shape(), toType, casted_data.data());
 		}
 		else if(toType == DType::Float){
-			auto castedData = castData<float>(ptr, x->size());
-			return createTensor(x->shape(), toType, castedData.data());
+			auto casted_data = castData<float>(ptr, x->size());
+			return createTensor(x->shape(), toType, casted_data.data());
 		}
 		else
 			throw EtError("Cannot cast");
