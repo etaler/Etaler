@@ -4,6 +4,7 @@
 #include <Etaler/Encoders/Scalar.hpp>
 #include <Etaler/Encoders/Category.hpp>
 #include <Etaler/Encoders/GridCell1d.hpp>
+#include <Etaler/Encoders/GridCell2d.hpp>
 #include <Etaler/Core/Serialize.hpp>
 
 using namespace et;
@@ -239,6 +240,18 @@ TEST_CASE("Testing Encoders", "[Encoder]")
 		CHECK(std::accumulate(v.begin(), v.end(), 0) == 16);
 
 		Tensor q = encoder::gridCell1d(0.1, 16, 2, 16);
+		CHECK(q.size() == 16*16);
+		auto u = q.toHost<uint8_t>();
+		CHECK(std::accumulate(u.begin(), u.end(), 0) == 32);
+	}
+
+	SECTION("GridCell2d Encoder") {
+		Tensor t = encoder::gridCell2d({0.1, 0.1}, 16, 1, {4,4});
+		CHECK(t.size() == 16*4*4);
+		auto v = t.toHost<uint8_t>();
+		CHECK(std::accumulate(v.begin(), v.end(), 0) == 16);
+
+		Tensor q = encoder::gridCell2d({0.1, 0.1}, 16, 2, {4,4});
 		CHECK(q.size() == 16*16);
 		auto u = q.toHost<uint8_t>();
 		CHECK(std::accumulate(u.begin(), u.end(), 0) == 32);
