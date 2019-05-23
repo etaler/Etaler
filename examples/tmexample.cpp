@@ -7,7 +7,8 @@ using namespace et;
 
 #include <iostream>
 #include <numeric>
-
+#include "matplotlibcpp.h"
+namespace plt = matplotlibcpp;
 
 inline std::string to_string(std::vector<size_t> v)
 {
@@ -49,6 +50,7 @@ int main()
 			<< ", " << to_string(pred_category);
 		std::cout << '\n';
 
-
+  		plt::plot({1,3,2,4});
+    	plt::show();
 	}
 }
