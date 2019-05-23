@@ -11,5 +11,9 @@
         "twxs.cmake",
         "maddouri.cmake-tools-helper"
     ],
-    "runArgs": [ "-e",  "DISPLAY=$DISPLAY" , "-v" ,"/tmp/.X11-unix:/tmp/.X11-unix" , "--cap-add=SYS_PTRACE" ,"--security-opt=seccomp:unconfined", "-v","/var/run/docker.sock:/var/run/docker.sock"]
+    "runArgs": [  "-e" ,"DISPLAY=:0" , "-v" ,"/tmp/.X11-unix:/tmp/.X11-unix" ,
+        "--cap-add=SYS_PTRACE" ,"--security-opt=seccomp:unconfined",
+        "-v","/var/run/docker.sock:/var/run/docker.sock"]
+
+
 }
