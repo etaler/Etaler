@@ -70,8 +70,10 @@ struct Tensor
 								"specillation. Use copyToHost<uint8_t> instead.");
 		if(pimpl()->isplain() == false)
 			return realize().toHost<T>();
-		if(dtype() != typeToDType<T>())
-			throw EtError("toHost() failed. Requested type and dtype mismatch");
+		if(dtype() != typeToDType<T>()) {
+			throw EtError("toHost() failed. Requested type and dtype mismatch. " + demangle(typeid(T).name())
+				+ " requested but " + to_ctype_string(dtype()) + "is stored.");
+		}
 		std::vector<T> res(size());
 		backend()->copyToHost(pimpl(), res.data());
 		return res;
