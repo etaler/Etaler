@@ -106,8 +106,6 @@ Tensor SpatialPooler::compute(const Tensor& x) const
 
 	Tensor activity = cellActivity(x, connections_, permances_
 		, connected_permance_, active_threshold_, false);
-	std::cout << connections_ << std::endl;
-	std::cout << permances_ << std::endl;
 
 	if(boost_factor_ != 0)
 		activity = boost(activity, average_activity_, global_density_, boost_factor_);
