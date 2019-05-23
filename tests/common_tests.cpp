@@ -71,6 +71,12 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(r.shape() == Shape({4}));
 	}
 
+	SECTION("Empty Tensor") {
+		CHECK(Tensor().has_value() == false);
+		int n = 1;
+		CHECK(Tensor({1}, &n).has_value() == true);
+	}
+
 	SECTION("Create Tensor from scalar") {
 		Tensor t = 7;
 		CHECK(t.dtype() == DType::Int32);
