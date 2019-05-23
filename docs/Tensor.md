@@ -184,3 +184,12 @@ auto gpu = make_shared<OpenCLBackend>();
 Tensor t = zeros({4,4}, DType::Float);
 Tensor q = t.to(gpu);
 ```
+
+## Catch-yas
+
+Using the Tensor() constructor to create a Tensor of 1 dimentions in facts creates a Tensor of the given value.
+```C++
+Tensor t = Tensor({4});
+std::cout << t << std::endl;
+//Prints {4} instead of {x, x, x, x}
+```

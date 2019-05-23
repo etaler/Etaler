@@ -115,6 +115,8 @@ struct Tensor
 	//Assigning and realizing
 	void assign(const Tensor& source)
 	{
+		if(pimpl() == source.pimpl())
+			return;
 		backend()->assign(pimpl(), source.pimpl());
 	}
 
