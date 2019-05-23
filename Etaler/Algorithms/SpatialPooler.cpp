@@ -18,7 +18,7 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 	, float global_density, float boost_factor, Backend* b)
 	: global_density_(global_density), boost_factor_(boost_factor), input_shape_(input_shape), output_shape_(output_shape)
 {
-	if(potential_pool_pct > 1 or potential_pool_pct < 0)
+	if(potential_pool_pct > 1 || potential_pool_pct < 0)
 		throw EtError("potential_pool_pct must be between 0~1, but get" + std::to_string(potential_pool_pct));
 
 	size_t input_cell_num = input_shape.volume();
