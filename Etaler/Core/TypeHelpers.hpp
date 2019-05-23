@@ -1,6 +1,7 @@
 #pragma once
 
 #include <type_traits>
+#include <string>
 
 //A handy macro to call duplicated const version of the non const function.
 #define call_const(func) [&](){\
@@ -11,3 +12,10 @@
 	else \
 		return r;\
 }()
+
+namespace et
+{
+
+std::string demangle(const char* name);
+
+}

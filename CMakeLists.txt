@@ -20,6 +20,8 @@ else()
 	#Add support for MSVC and ICC if needed
 endif()
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
 option(ETALER_ENABLE_OPENCL "Enable the OpenCL backend" OFF)
 
 include_directories(.)
