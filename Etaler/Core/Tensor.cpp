@@ -197,9 +197,6 @@ Tensor Tensor::sum(intmax_t dim, DType dtype) const
 {
 	et_assert(dim >= -1 && dim < (intmax_t)dimentions());
 
-	//if(points_to<ViewTensor>(pimpl()) == true)
-	//	return realize().sum(dim, dtype);
-
 	//-1 means sum the entire tensor
 	if(dim == -1)
 		return backend()->sum(pimpl(), size(), dtype);

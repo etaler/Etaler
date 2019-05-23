@@ -226,6 +226,10 @@ TEST_CASE("Testing Encoders", "[Encoder]")
 		for(size_t i=0;i<t.size();i++)
 			overlap += v[i] && u[i];
 		CHECK(overlap == 0);
+
+		auto categories = decoder::category(t, num_categories);
+		CHECK(categories.size() == 1);
+		CHECK(categories[0] == 0);
 	}
 
 	SECTION("GridCell1d Encoder") {
@@ -498,36 +502,31 @@ TEST_CASE("Tensor operations")
 TEST_CASE("brodcast")
 {
 	Tensor a, b;
-	SECTION("no brodcast")
-	{
+	SECTION("no brodcast") {
 		a = ones({4});
 		b = ones({4});
 		CHECK((a+b).shape() == Shape({4}));
 	}
 
-	SECTION("simple brodcast")
-	{
+	SECTION("simple brodcast") {
 		a = ones({2, 4});
 		b = ones({4});
 		CHECK((a+b).shape() == Shape({2, 4}));
 	}
 
-	SECTION("brodcast from {1}")
-	{
+	SECTION("brodcast from {1}") {
 		a = ones({2, 4});
 		b = ones({1});
 		CHECK((a+b).shape() == Shape({2, 4}));
 	}
 
-	SECTION("brodcast with a 1 axis")
-	{
+	SECTION("brodcast with a 1 axis") {
 		a = ones({2, 1, 4});
 		b = ones({2, 5, 4});
 		CHECK((a+b).shape() == Shape({2, 5, 4}));
 	}
 
-	SECTION("bad brodcasting")
-	{
+	SECTION("bad brodcasting") {
 		a = ones({2, 4});
 		b = ones({7});
 		CHECK_THROWS(a+b);
