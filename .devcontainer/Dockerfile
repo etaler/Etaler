@@ -11,8 +11,8 @@ RUN mkdir /usr/include/catch2 &&  wget https://github.com/catchorg/Catch2/releas
 
 # etaler files fetched from repo (
 # we write some small random num in order to prevent the cahce from kicking in and not download a fresh copy
-#RUN head -c 5 /dev/random > random_bytes &&  sudo git clone  --recurse-submodules  https://github.com/etaler/Etaler.git 
-COPY ../Etaler /home/ 
+RUN head -c 5 /dev/random > random_bytes 
+RUN git clone  --recurse-submodules  https://github.com/etaler/Etaler.git 
 
 WORKDIR /home/Etaler
 
