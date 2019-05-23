@@ -112,14 +112,6 @@ Tensor Tensor::to(Backend* dest_backend) const
 	return res;
 }
 
-template <typename T>
-bool compareTensor(const Tensor& a, const Tensor& b)
-{
-	auto a1 = a.toHost<T>();
-	auto a2 = b.toHost<T>();
-	return memcmp(a1.data(), a2.data(), a1.size()*sizeof(T)) == 0;
-}
-
 bool Tensor::isSame(const Tensor& other) const
 {
 	if(dtype() != other.dtype())
@@ -127,14 +119,7 @@ bool Tensor::isSame(const Tensor& other) const
 	if(shape() != other.shape())
 		return false;
 
-	if(dtype() == DType::Float)
-		return compareTensor<float>(*this, other);
-	else if(dtype() == DType::Int32)
-		return compareTensor<int32_t>(*this, other);
-	else if(dtype() == DType::Bool)
-		return compareTensor<uint8_t>(*this, other);
-	et_assert(dtype() != DType::Unknown);
-	return false;
+	return (*this == other).sum().toHost<int32_t>()[0] == (int32_t)size();
 }
 
 Tensor Tensor::view(svector<Range> ranges) const
