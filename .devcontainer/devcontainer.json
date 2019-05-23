@@ -2,7 +2,7 @@
 {
     "name": "Etaler in Docker",
     "dockerFile": "Dockerfile",
-    "context": "..",
+    "context": ".",
     "extensions": [
         "peterjausovec.vscode-docker",
         "ms-vscode.cpptools",
@@ -12,6 +12,7 @@
         "maddouri.cmake-tools-helper"
     ],
     "runArgs": [  "-e" ,"DISPLAY=:0" , "-v" ,"/tmp/.X11-unix:/tmp/.X11-unix" ,
+        "--mount" , "source=etaler-volume,target=/home",
         "--cap-add=SYS_PTRACE" ,"--security-opt=seccomp:unconfined",
         "-v","/var/run/docker.sock:/var/run/docker.sock"]
 
