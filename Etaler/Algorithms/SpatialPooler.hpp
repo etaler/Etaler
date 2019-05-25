@@ -50,7 +50,7 @@ struct SpatialPooler
 	StateDict states() const
 	{
 		return {{"input_shape", input_shape_}, {"output_shape", output_shape_}, {"connections", connections_}
-			, {"permances", permances_}, {"permance_inc", permance_inc_}, {"permance_dec", permance_dec_}
+			, {"permanences", permanences_}, {"permance_inc", permance_inc_}, {"permance_dec", permance_dec_}
 			, {"connected_permance", connected_permance_}, {"active_threshold", (int)active_threshold_}
 			, {"global_density", global_density_}, {"average_activity", average_activity_}
 			, {"boost_factor", boost_factor_}};
@@ -73,7 +73,7 @@ protected:
 	Shape output_shape_;
 	Tensor connections_;
 	Tensor average_activity_;
-	Tensor permances_;
+	Tensor permanences_;
 };
 
 

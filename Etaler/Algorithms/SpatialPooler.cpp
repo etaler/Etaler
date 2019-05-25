@@ -29,7 +29,7 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 	std::vector<size_t> all_input_cell = vector_range(0, input_cell_num);
 
 	std::vector<int32_t> connections(output_shape.volume()*potential_pool_size, -1);
-	std::vector<float> permances(output_shape.volume()*potential_pool_size);
+	std::vector<float> permanences(output_shape.volume()*potential_pool_size);
 
 	auto clamp = [](float x){return std::min(1.f, std::max(x, 0.f));};
 	for(intmax_t i=0;i<output_shape.volume();i++) {
@@ -39,7 +39,7 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 
 		for(size_t j=0;j<potential_pool_size;j++) {
 			connections[i*potential_pool_size+j] = all_input_cell[j];
-			permances[i*potential_pool_size+j] = clamp(dist(rng));
+			permanences[i*potential_pool_size+j] = clamp(dist(rng));
 		}
 	}
 
@@ -48,7 +48,7 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 
 	Shape s = output_shape + potential_pool_size;
 	connections_ = Tensor(s, connections.data(), b);
-	permances_ = Tensor(s, permances.data(), b);
+	permanences_ = Tensor(s, permanences.data(), b);
 }
 
 SpatialPooler::SpatialPooler(const Shape& input_shape, size_t kernel_size, size_t stride, float potential_pool_pct, size_t seed
@@ -72,7 +72,7 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, size_t kernel_size, size_
 	all_input_cell.clear();
 
 	connections_ = Tensor(output_shape+potential_pool_size, DType::Int32, b);
-	permances_ = Tensor(output_shape+potential_pool_size, DType::Float, b);
+	permanences_ = Tensor(output_shape+potential_pool_size, DType::Float, b);
 
 	for(size_t i=0;i<(size_t)output_shape.volume();i++) {
 		svector<Range> write_loc;
@@ -91,12 +91,12 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, size_t kernel_size, size_
 		std::shuffle(conns.begin(), conns.end(), rng);
 		std::sort(conns.begin(), conns.begin()+potential_pool_size);
 		
-		std::vector<float> permances(potential_pool_size);
+		std::vector<float> permanences(potential_pool_size);
 		std::normal_distribution<float> dist(connected_permance_, 1);
-		std::generate(permances.begin(), permances.end(), [&](){return std::max(std::min(dist(rng), 1.f), 0.f);});
+		std::generate(permanences.begin(), permanences.end(), [&](){return std::max(std::min(dist(rng), 1.f), 0.f);});
 
 		connections_.view(write_loc) = Tensor({(intmax_t)potential_pool_size}, conns.data());
-		permances_.view(write_loc) = Tensor({(intmax_t)potential_pool_size}, permances.data());
+		permanences_.view(write_loc) = Tensor({(intmax_t)potential_pool_size}, permanences.data());
 	}
 }
 
@@ -104,7 +104,7 @@ Tensor SpatialPooler::compute(const Tensor& x) const
 {
 	et_assert(x.shape() == input_shape_);
 
-	Tensor activity = cellActivity(x, connections_, permances_
+	Tensor activity = cellActivity(x, connections_, permanences_
 		, connected_permance_, active_threshold_, false);
 
 	if(boost_factor_ != 0)
@@ -119,7 +119,7 @@ void SpatialPooler::learn(const Tensor& x, const Tensor& y)
 {
 	et_assert(x.shape() == input_shape_);
 	et_assert(y.shape() == input_shape_);
-	learnCorrilation(x, y, connections_, permances_, permance_inc_, permance_dec_);
+	learnCorrilation(x, y, connections_, permanences_, permance_inc_, permance_dec_);
 
 	if(boost_factor_ != 0)
 		average_activity_ = average_activity_*0.9f + y * 0.1f;
@@ -135,7 +135,7 @@ void SpatialPooler::loadState(const StateDict& states)
 	input_shape_ = std::any_cast<Shape>(states.at("input_shape"));
 	output_shape_ = std::any_cast<Shape>(states.at("output_shape"));
 	connections_ = std::any_cast<Tensor>(states.at("connections"));
-	permances_ = std::any_cast<Tensor>(states.at("permances"));
+	permanences_ = std::any_cast<Tensor>(states.at("permanences"));
 	average_activity_ = std::any_cast<Tensor>(states.at("average_activity"));
 	boost_factor_ = std::any_cast<float>(states.at("boost_factor"));
 }
@@ -144,7 +144,7 @@ SpatialPooler SpatialPooler::to(Backend* b) const
 {
 	SpatialPooler sp = *this;
 	sp.connections_ = connections_.to(b);
-	sp.permances_ = permances_.to(b);
+	sp.permanences_ = permanences_.to(b);
 	sp.average_activity_ = average_activity_.to(b);
 
 	return sp;

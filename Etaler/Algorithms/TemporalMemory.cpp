@@ -8,7 +8,7 @@ TemporalMemory::TemporalMemory(const Shape& input_shape, size_t cells_per_column
 	Shape connection_shape = input_shape + cells_per_column + max_synapses_per_cell;
 
 	connections_ = constant(connection_shape, -1, backend);
-	permances_ = Tensor(connection_shape, DType::Float, backend);
+	permanences_ = Tensor(connection_shape, DType::Float, backend);
 }
 
 std::pair<Tensor, Tensor> TemporalMemory::compute(const Tensor& x, const Tensor& last_state)
@@ -19,7 +19,7 @@ std::pair<Tensor, Tensor> TemporalMemory::compute(const Tensor& x, const Tensor&
 		active_cells = burst(x, last_state);
 	else
 		active_cells = burst(x, zeros(x.shape()+cellsPerColumn(), DType::Bool, x.backend()));
-	Tensor activity = cellActivity(active_cells, connections_, permances_, connected_permance_, active_threshold_);
+	Tensor activity = cellActivity(active_cells, connections_, permanences_, connected_permance_, active_threshold_);
 	Tensor predictive_cells = cast(activity, DType::Bool);
 
 	return {predictive_cells, active_cells};
@@ -30,8 +30,8 @@ void TemporalMemory::learn(const Tensor& active_cells, const Tensor& last_active
 {
 	Tensor learning_cells = reverseBurst(active_cells);
 
-	learnCorrilation(last_active, learning_cells, connections_, permances_, permance_inc_, permance_dec_);
-	growSynapses(last_active, learning_cells, connections_, permances_, 0.21);
+	learnCorrilation(last_active, learning_cells, connections_, permanences_, permance_inc_, permance_dec_);
+	growSynapses(last_active, learning_cells, connections_, permanences_, 0.21);
 
 }
 
@@ -43,14 +43,14 @@ void TemporalMemory::loadState(const StateDict& states)
 	active_threshold_ = std::any_cast<int>(states.at("active_threshold"));
 	input_shape_ = std::any_cast<Shape>(states.at("input_shape"));
 	connections_ = std::any_cast<Tensor>(states.at("connections"));
-	permances_ = std::any_cast<Tensor>(states.at("permances"));
+	permanences_ = std::any_cast<Tensor>(states.at("permanences"));
 }
 
 TemporalMemory TemporalMemory::to(Backend* b) const
 {
 	TemporalMemory tm = *this;
 	tm.connections_ = connections_.to(b);
-	tm.permances_ = permances_.to(b);
+	tm.permanences_ = permanences_.to(b);
 
 	return tm;
 }

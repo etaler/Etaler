@@ -33,7 +33,7 @@ struct TemporalMemory
 
 	StateDict states() const
 	{
-		return {{"input_shape", input_shape_}, {"connections", connections_} , {"permances", permances_}
+		return {{"input_shape", input_shape_}, {"connections", connections_} , {"permanences", permanences_}
 			, {"permance_inc", permance_inc_}, {"permance_dec", permance_dec_}
 			, {"connected_permance", connected_permance_}, {"active_threshold", (int)active_threshold_}};
 	}
@@ -48,7 +48,7 @@ struct TemporalMemory
 	float permance_inc_ = 0.1;
 	float permance_dec_ = 0.1;
 	Tensor connections_;
-	Tensor permances_;
+	Tensor permanences_;
 };
 
 }
