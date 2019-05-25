@@ -35,7 +35,7 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 	for(intmax_t i=0;i<output_shape.volume();i++) {
 		std::shuffle(all_input_cell.begin(), all_input_cell.end(), rng);
 		std::sort(all_input_cell.begin(), all_input_cell.begin()+potential_pool_size);
-		std::normal_distribution<float> dist(connected_permance_, 1);
+		std::normal_distribution<float> dist(connected_permanence_, 1);
 
 		for(size_t j=0;j<potential_pool_size;j++) {
 			connections[i*potential_pool_size+j] = all_input_cell[j];
@@ -79,20 +79,20 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, size_t kernel_size, size_
 		Shape loc = foldIndex(i, output_shape);
 		for(size_t j=0;j<output_shape.size();j++)
 			write_loc.push_back(loc[j]);
-		
+
 		svector<Range> read_loc(loc.size());
 		for(size_t j=0;j<loc.size();j++) {
 			intmax_t pos = loc[j]*stride;
 			read_loc[j] = range(pos, pos+kernel_size);
 		}
-		
+
 		std::vector<int> conns = indices.view(read_loc).toHost<int>();
 		assert(conns.size() >= potential_pool_size);
 		std::shuffle(conns.begin(), conns.end(), rng);
 		std::sort(conns.begin(), conns.begin()+potential_pool_size);
-		
+
 		std::vector<float> permanences(potential_pool_size);
-		std::normal_distribution<float> dist(connected_permance_, 1);
+		std::normal_distribution<float> dist(connected_permanence_, 1);
 		std::generate(permanences.begin(), permanences.end(), [&](){return std::max(std::min(dist(rng), 1.f), 0.f);});
 
 		connections_.view(write_loc) = Tensor({(intmax_t)potential_pool_size}, conns.data());
@@ -105,7 +105,7 @@ Tensor SpatialPooler::compute(const Tensor& x) const
 	et_assert(x.shape() == input_shape_);
 
 	Tensor activity = cellActivity(x, connections_, permanences_
-		, connected_permance_, active_threshold_, false);
+		, connected_permanence_, active_threshold_, false);
 
 	if(boost_factor_ != 0)
 		activity = boost(activity, average_activity_, global_density_, boost_factor_);
@@ -119,7 +119,7 @@ void SpatialPooler::learn(const Tensor& x, const Tensor& y)
 {
 	et_assert(x.shape() == input_shape_);
 	et_assert(y.shape() == input_shape_);
-	learnCorrilation(x, y, connections_, permanences_, permance_inc_, permance_dec_);
+	learnCorrilation(x, y, connections_, permanences_, permanence_inc_, permanence_dec_);
 
 	if(boost_factor_ != 0)
 		average_activity_ = average_activity_*0.9f + y * 0.1f;
@@ -127,9 +127,9 @@ void SpatialPooler::learn(const Tensor& x, const Tensor& y)
 
 void SpatialPooler::loadState(const StateDict& states)
 {
-	permance_inc_ = std::any_cast<float>(states.at("permance_inc"));
-	permance_dec_ = std::any_cast<float>(states.at("permance_dec"));
-	connected_permance_ = std::any_cast<float>(states.at("connected_permance"));
+	permanence_inc_ = std::any_cast<float>(states.at("permanence_inc"));
+	permanence_dec_ = std::any_cast<float>(states.at("permanence_dec"));
+	connected_permanence_ = std::any_cast<float>(states.at("connected_permanence"));
 	active_threshold_ = std::any_cast<int>(states.at("active_threshold"));
 	global_density_ = std::any_cast<float>(states.at("global_density"));
 	input_shape_ = std::any_cast<Shape>(states.at("input_shape"));
