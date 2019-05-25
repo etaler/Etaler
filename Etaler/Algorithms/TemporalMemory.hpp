@@ -12,6 +12,7 @@ namespace et
 
 struct TemporalMemory
 {
+	TemporalMemory() = default;
 	TemporalMemory(const Shape& input_shape, size_t cells_per_column, size_t max_synapses_per_cell=64, Backend* backend=defaultBackend());
 	std::pair<Tensor, Tensor> compute(const Tensor& x, const Tensor& last_state);
 	void learn(const Tensor& active_cells, const Tensor& last_active);
