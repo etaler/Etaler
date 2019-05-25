@@ -56,7 +56,7 @@ std::string str(T&& s)
 
 OpenCLBackend::OpenCLBackend()
 	: OpenCLBackend(0, 0)
-{	
+{
 }
 
 OpenCLBackend::OpenCLBackend(size_t platform_id, size_t device_id)
@@ -285,12 +285,12 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 	auto program_name = "overlapScore"+hash;
 
 	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("overlapScore.cl", program_name, {"overlapScore"}, false, args);
+		kernel_manager_.compileFromFile("cellActivity.cl", program_name, {"cellActivity"}, false, args);
 	else if(x->size() < localMemorySize()*8-8 && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("overlapScore_compressed_local.cl", program_name, {"overlapScore"}, false, args);
+		kernel_manager_.compileFromFile("cellActivity_compressed_local.cl", program_name, {"cellActivity"}, false, args);
 	else
-		kernel_manager_.compileFromFile("overlapScore_global.cl", program_name, {"overlapScore"}, false, args);
-	cl::Kernel k = kernel_manager_.kernel(program_name, "overlapScore");
+		kernel_manager_.compileFromFile("cellActivity_global.cl", program_name, {"cellActivity"}, false, args);
+	cl::Kernel k = kernel_manager_.kernel(program_name, "cellActivity");
 
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
 	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(connections->buffer())->buffer());
