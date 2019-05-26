@@ -65,7 +65,7 @@ int main()
 				z1.push_back(z_row);
 			}		
 
-			plt::plot_scatter(x1,y1,z1);;
+			plt::plot_surface(x1,y1,z1);;
 			plt::show();
 		}
 		
