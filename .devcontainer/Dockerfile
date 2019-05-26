@@ -10,7 +10,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get update && DEBIAN_FRONTEND=noninteract
 WORKDIR /home/
 # catch2 testing framwork
 RUN mkdir /usr/include/catch2 &&  wget https://github.com/catchorg/Catch2/releases/download/v2.7.2/catch.hpp -P /usr/include/catch2
-RUN wget  https://raw.githubusercontent.com/lava/matplotlib-cpp/master/matplotlibcpp.h -P /usr/include/
+RUN wget  https://raw.githubusercontent.com/alior101/matplotlib-cpp/master/matplotlibcpp.h -P /usr/include/
 
 # etaler files fetched from repo (
 # we write some small random num in order to prevent the cahce from kicking in and not download a fresh copy
