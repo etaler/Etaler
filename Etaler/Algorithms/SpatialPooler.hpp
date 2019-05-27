@@ -47,6 +47,9 @@ struct SpatialPooler
 	void setBoostingFactor(float f) { boost_factor_ = f; }
 	float boostFactor() { return boost_factor_; }
 
+	Tensor connections() const {return connections_;}
+	Tensor permanences() const {return permanences_;}
+
 	StateDict states() const
 	{
 		return {{"input_shape", input_shape_}, {"output_shape", output_shape_}, {"connections", connections_}

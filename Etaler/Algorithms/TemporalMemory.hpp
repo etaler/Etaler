@@ -31,6 +31,9 @@ struct TemporalMemory
 
 	size_t cellsPerColumn() const {return connections_.shape().back();}
 
+	Tensor connections() const {return connections_;}
+	Tensor permanences() const {return permanences_;}
+
 	StateDict states() const
 	{
 		return {{"input_shape", input_shape_}, {"connections", connections_} , {"permanences", permanences_}
