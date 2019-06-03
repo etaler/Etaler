@@ -1017,3 +1017,16 @@ std::shared_ptr<TensorImpl> OpenCLBackend::logical_or(const TensorImpl* x1, cons
 {
 	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1||x2)", DType::Bool);
 }
+
+std::shared_ptr<TensorImpl> OpenCLBackend::from(const TensorImpl* x)
+{
+	const void* ptr = x->data();
+	if(ptr != nullptr)
+		return createTensor(x->shape(), x->dtype(), ptr);
+
+	void* buffer = malloc(x->size()*dtypeToSize(x->dtype()));
+	x->backend()->copyToHost(x, buffer);
+	auto res = createTensor(x->shape(), x->dtype(), buffer);
+	free(buffer);
+	return res;
+}

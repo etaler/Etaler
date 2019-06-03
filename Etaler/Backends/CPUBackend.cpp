@@ -495,7 +495,7 @@ static std::shared_ptr<TensorImpl> binaryOp(const TensorImpl* src, const TensorI
 
 	dispatch(src->dtype(), [&](auto v){
 		using T = decltype(v);
-		
+
 		dispatch(src2->dtype(), [&](auto v){
 			using T2 = decltype(v);
 
@@ -702,4 +702,17 @@ std::shared_ptr<TensorImpl> CPUBackend::logical_and(const TensorImpl* x1, const 
 std::shared_ptr<TensorImpl> CPUBackend::logical_or(const TensorImpl* x1, const TensorImpl* x2)
 {
 	return binaryOp(x1, x2, [](auto a, auto b) {return a||b;});
+}
+
+std::shared_ptr<TensorImpl> CPUBackend::from(const TensorImpl* x)
+{
+	const void* ptr = x->data();
+	if(ptr != nullptr)
+		return createTensor(x->shape(), x->dtype(), ptr);
+
+	void* buffer = malloc(x->size()*dtypeToSize(x->dtype()));
+	x->backend()->copyToHost(x, buffer);
+	auto res = createTensor(x->shape(), x->dtype(), buffer);
+	free(buffer);
+	return res;
 }

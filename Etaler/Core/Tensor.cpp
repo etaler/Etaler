@@ -98,18 +98,9 @@ std::string et::to_string(const Tensor& t)
 
 Tensor Tensor::to(Backend* dest_backend) const
 {
-	//if(points_to<ViewTensor>(pimpl()))
-	//	return realize().to(dest_backend);
-	const void* ptr = data();
-	if(ptr != nullptr)
-		return dest_backend->createTensor(shape(), dtype(), ptr);
-
-	//Use the main memory if direct access not avliable
-	void* buffer = malloc(size()*dtypeToSize(dtype()));
-	backend()->copyToHost(pimpl(), buffer);
-	Tensor res = dest_backend->createTensor(shape(), dtype(), buffer);
-	free(buffer);
-	return res;
+	if(pimpl()->iscontiguous() == false)
+		return realize().to(dest_backend);
+	return dest_backend->from(pimpl());
 }
 
 bool Tensor::isSame(const Tensor& other) const

@@ -110,6 +110,7 @@ struct OpenCLBackend : public Backend
 	virtual void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm) override;
 	virtual void decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold) override;
+	virtual std::shared_ptr<TensorImpl> from(const TensorImpl* x) override;
 
 	virtual std::shared_ptr<TensorImpl> realize(const TensorImpl* x) override;
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) override;
