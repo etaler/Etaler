@@ -134,6 +134,8 @@ struct OpenCLBackend : public Backend
 
 	std::optional<cl::Buffer> toSparse(const TensorImpl* x);
 
+	inline cl::Context context() {return context_;}
+
 protected:
 
 	void init(cl::Context context, cl::Platform platform, cl::Device device);
