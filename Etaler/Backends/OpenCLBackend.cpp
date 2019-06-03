@@ -1017,3 +1017,26 @@ std::shared_ptr<TensorImpl> OpenCLBackend::logical_or(const TensorImpl* x1, cons
 {
 	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1||x2)", DType::Bool);
 }
+
+std::shared_ptr<TensorImpl> OpenCLBackend::from(const TensorImpl* x)
+{
+	const void* ptr = x->data();
+	if(ptr != nullptr)
+		return createTensor(x->shape(), x->dtype(), ptr);
+
+	OpenCLBackend* src_backend = dynamic_cast<OpenCLBackend*>(x->backend());
+	if(src_backend != nullptr && src_backend->context()() == context()()) {
+		auto buf = src_backend->copy(x);
+		auto& buffer = reinterpret_cast<OpenCLBuffer*>(buf->buffer().get())->buffer();
+		cl_int err = queue_.enqueueMigrateMemObjects({buffer}, CL_MIGRATE_MEM_OBJECT_HOST);
+		if(err != CL_SUCCESS)
+			throw EtError("OpenCL data migration failed. Error: " + std::to_string(err));
+		return createTensor(x->shape(), x->dtype(), buffer);
+	}
+
+	void* buffer = malloc(x->size()*dtypeToSize(x->dtype()));
+	x->backend()->copyToHost(x, buffer);
+	auto res = createTensor(x->shape(), x->dtype(), buffer);
+	free(buffer);
+	return res;
+}
