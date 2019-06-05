@@ -1,0 +1,22 @@
+# Visual Studio build notes
+
+## Pre-requisites
+
+- Install Visual Studio 2019
+- Install latest CMake (3.14.5, at time of writing)
+- Clone pcg-cpp into 3rdparty dir
+- Extract TBB into "\Program Files\Intel\TBB", and update PATH to include "C:\Program Files\Intel\TBB\bin\intel64\vc14"
+- Clone https://github.com/justusc/FindTBB to use with CMake to locate TBB
+- Clone Cereal into 3rdparty dir
+- Save Khronos cl.hpp to 3rdparty dir
+- Install an OpenCL SDK (e.g. NVidia CUDA SDK)
+- Setup TBB_ROOT_DIR and CUDA_PATH environment variables
+- Download standalone catch.hpp into tests dir
+
+## Suggestions
+
+- FindTBB as part of repo
+- FindOpenCL as part of repo
+- FindCatch2 as part of repo
+- Suggest/CMake download CL.hpp
+- Adopt PR with MSVC changes to code and CMake

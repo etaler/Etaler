@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
+SET(BUILD_SHARED_LIBS OFF)
+
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE "Release" CACHE STRING
 		"Choose the type of build, options are: Debug Release."
@@ -18,6 +20,7 @@ elseif("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang") #clang flags
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 else()
 	#Add support for MSVC and ICC if needed
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DNOMINMAX")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
