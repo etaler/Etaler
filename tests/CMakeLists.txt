@@ -1,4 +1,6 @@
 project(etaler_tests CXX)
+include_directories("${PROJECT_BINARY_DIR}/../Etaler")
+
 add_executable(etaler_tests common_tests.cpp main.cpp)
 target_link_libraries(etaler_tests Etaler)
 

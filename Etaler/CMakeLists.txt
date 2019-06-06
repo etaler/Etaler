@@ -1,85 +1,60 @@
 project(Etaler CXX)
 
+
 ############################################################################
 # Find Intel TBB include and libs
 
+set(TBB_DIR "$ENV{TBB_ROOT_DIR}/cmake")
+
 find_package(TBB REQUIRED)
-include_directories(${TBB_INCLUDE_DIRS})
+
+if(NOT ${TBB_FOUND})
+    message(FATAL_ERROR "Could not locate Intel TBB include & libs")
+else()
+    message(STATUS "Found existing Intel TBB targets ${TBB_IMPORTED_TARGETS}")
+endif()
+
 
 ############################################################################
 # Find OpenCL include and libs
 
-#find_package(OpenCL REQUIRED)
-#include_directories(${OpenCL_INCLUDE_DIRS})
+if(ETALER_ENABLE_OPENCL)
+    find_package(OpenCL REQUIRED)
 
-find_path(OPENCL_INCLUDE_DIRS 
-    NAMES OpenCL/cl.h CL/cl.h
-    HINTS
-        $ENV{AMDAPPSDKROOT}/include/
-        $ENV{INTELOCLSDKROOT}/include/
-        $ENV{CUDA_PATH}/include/
-        $ENV{OPENCL_ROOT}/include/
-    PATHS
-        /usr/include /usr/local/include/
-)
-
-if(BITNESS EQUAL 64)
-    find_library(OPENCL_LIBRARIES
-        NAMES OpenCL
-        HINTS
-            $ENV{AMDAPPSDKROOT}/lib
-            $ENV{INTELOCLSDKROOT}/lib
-            $ENV{CUDA_PATH}/lib
-            $ENV{OPENCL_ROOT}/lib
-        PATH_SUFFIXES x86_64 x64
-        PATHS /usr/lib64 /usr/lib /usr/local/lib
-    )
-elseif(BITNESS EQUAL 32)
-    find_library(OPENCL_LIBRARIES
-        NAMES OpenCL
-        HINTS
-            $ENV{AMDAPPSDKROOT}/lib
-            $ENV{INTELOCLSDKROOT}/lib
-            $ENV{CUDA_PATH}/lib
-            $ENV{OPENCL_ROOT}/lib
-        PATH_SUFFIXES x86 Win32
-        PATHS /usr/lib32 /usr/lib /usr/local/lib
-    )
+    if("${OpenCL_INCLUDE_DIR}" STREQUAL "" OR "${OpenCL_LIBRARY}" STREQUAL "")
+        message(FATAL_ERROR "Could not locate OpenCL include & libs")
+    else()
+        include_directories(${OpenCL_INCLUDE_DIRS})
+        message(STATUS "Found existing OpenCL in ${OpenCL_INCLUDE_DIR}")
+        message(STATUS "Found existing OpenCL lib ${OpenCL_LIBRARY}")
+    endif()
 endif()
 
-# Fall-back to find a POCL install
-if(OPENCL_LIBRARIES STREQUAL "")
-    find_library(OPENCL_LIBRARIES
-        NAMES pocl
-        HINTS $HOME/.local/pocl/lib /usr/lib64 /usr/lib /usr/local/lib
-    )
-endif()
 
-if(OPENCL_INCLUDE_DIRS STREQUAL "" OR OPENCL_LIBRARIES STREQUAL "")
-    message(FATAL_ERROR "Could not locate OpenCL include & libs")
-else()
-    message(STATUS "Found existing OpenCL in ${OPENCL_INCLUDE_DIRS}")
-    message(STATUS "Found existing OpenCL lib ${OPENCL_LIBRARIES}")
-endif()
+############################################################################
+# Setup the Etaler library building
 
-include_directories(${OPENCL_INCLUDE_DIRS})
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
-
-add_library(Etaler STATIC Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/Serialize.cpp Core/Tensor.cpp
+add_library(Etaler SHARED Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/Serialize.cpp Core/Tensor.cpp
 	Algorithms/SpatialPooler.cpp Algorithms/TemporalMemory.cpp Core/TypeHelpers.cpp)
-target_link_libraries(Etaler ${TBB_LIBRARIES})
+
+# Auto-generate the export header for shared library macros
+include(GenerateExportHeader)
+generate_export_header(Etaler)
+include_directories(${PROJECT_BINARY_DIR})
+
 target_include_directories(Etaler PRIVATE 3rdparty/pcg-cpp/include)
-target_include_directories(Etaler PRIVATE 3rdparty/tbb/include)
 target_include_directories(Etaler PRIVATE 3rdparty/cereal/include)
 target_include_directories(Etaler PRIVATE 3rdparty)
 
+target_link_libraries(Etaler ${TBB_IMPORTED_TARGETS})
 
 if(ETALER_ENABLE_OPENCL)
 	target_sources(Etaler PRIVATE Backends/OpenCLBackend.cpp)
 
-
 	if(NOT APPLE)
-		target_link_libraries(Etaler ${OPENCL_LIBRARIES})
+		target_link_libraries(Etaler ${OpenCL_LIBRARIES})
 	else()
 		target_link_libraries(Etaler "-framework OpenCL")
 	endif()
@@ -107,6 +82,8 @@ install(FILES ${CMAKE_SOURCE_DIR}/cmake/FindEtaler.cmake
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/Etaler
     DESTINATION include
     FILES_MATCHING PATTERN "*.hpp")
+
+install(FILES ${PROJECT_BINARY_DIR}/Etaler_export.h DESTINATION include)
 
 install(TARGETS Etaler
 	LIBRARY DESTINATION lib)

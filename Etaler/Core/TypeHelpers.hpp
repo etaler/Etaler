@@ -3,6 +3,8 @@
 #include <type_traits>
 #include <string>
 
+#include "Etaler_export.h"
+
 //A handy macro to call duplicated const version of the non const function.
 #define call_const(func) [&](){\
 	auto r = const_cast<const std::remove_reference<decltype(*this)>::type*>(this)->func();\
@@ -16,6 +18,6 @@
 namespace et
 {
 
-std::string demangle(const char* name);
+std::string ETALER_EXPORT demangle(const char* name);
 
 }

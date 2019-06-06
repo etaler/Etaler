@@ -19,4 +19,5 @@
 - FindOpenCL as part of repo
 - FindCatch2 as part of repo
 - Suggest/CMake download CL.hpp
+- Move Etaler\3rdparty directory to root dir (helps other projects/exe build and find things like CL.hpp)
 - Adopt PR with MSVC changes to code and CMake

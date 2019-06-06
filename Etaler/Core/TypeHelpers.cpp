@@ -1,4 +1,5 @@
 #include "TypeHelpers.hpp"
+
 using namespace et;
 
 #ifdef HAVE_CXA_DEMANGLE //Set by CMake if avaliable

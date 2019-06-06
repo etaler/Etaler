@@ -3,12 +3,14 @@
 #include <Etaler/Core/Tensor.hpp>
 ##include <Etaler/Core/Serialize.hpp>
 
+#include "Etaler_export.h"
+
 #include <vector>
 
 namespace et
 {
 
-struct SDRClassifer
+struct ETALER_EXPORT SDRClassifer
 {
 	SDRClassifer() = default;
 	SDRClassifer(Shape input_shape, size_t num_classes)

@@ -1,4 +1,6 @@
 project(example1 CXX)
+include_directories("${PROJECT_BINARY_DIR}/../Etaler")
+
 add_executable(example1 example1.cpp)
 target_link_libraries(example1 Etaler)
 
