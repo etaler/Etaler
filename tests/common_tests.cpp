@@ -9,6 +9,11 @@
 
 using namespace et;
 
+TEST_CASE("default backend sanity")
+{
+	REQUIRE(defaultBackend() != nullptr);
+}
+
 TEST_CASE("Testing Shape", "[Shape]")
 {
 	Shape s = {3,5};
