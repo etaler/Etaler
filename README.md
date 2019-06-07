@@ -75,8 +75,11 @@ For more information see [the documents](docs/)
 |-----------------|------|---------------------------|
 | Linux           |  Yes |  Yes                      |
 | OS X            |  Yes |  Yes                      |
+| Windows         |  Yes |  Yes                      |
 
-* Build with GCC and libstdc++ on OS X 10.11. Clang should work after OS X 10.14. See [BuildOnOSX.md](docs/BuildOnOSX.md)
+* Build with GCC and libstdc++ on OS X 10.11.
+* Clang should work after OS X 10.14. See [BuildOnOSX.md](docs/BuildOnOSX.md)
+* Build with Visual Studio 2019 on Windows. See [BuildOnMSVC.md](docs/BuildOnMSVC.md)
 
 ### Dependencies
 
@@ -91,6 +94,11 @@ For more information see [the documents](docs/)
 
 * Tests
   * [catch2](https://github.com/catchorg/Catch2)
+
+Notes:
+1. Make sure to setup a `TBBROOT` environment variable to point to the binary installation directory of TBB. And the TBB `tbbvars.sh` file has been modified correctly and run, before running `cmake`.
+1. `cereal` can be git cloned into the `Etaler/Etaler/3rdparty` directory.
+1. Only the [catch.hpp](https://github.com/catchorg/Catch2/releases/download/v2.8.0/catch.hpp) file is required from Catch2, and that file can be placed into the `Etaler/tests` directory.
 
 ### Building from source
 
@@ -127,7 +135,7 @@ See [CONTRIBUTION.md](docs/Contribution.md)
 
 ## Notes
 
-* NVIDIA's OpenCL implementation might not report error correctly. It can execute kernels with a invalid memory object without telling you and crash a random thing the next time. If you are encountering weird behaviors. Please try [POCL](http://portablecl.org/) with the CUDA backend or use a AMD card. However the OpenCL kernels haven't been optimized against vector processors like AMD's. They should work but you might experience performance drops doing so.
+* NVIDIA's OpenCL implementation might not report error correctly. It can execute kernels with a invalid memory object without telling you and crash a random thing the next time. If you are encountering weird behaviors. Please try [POCL](http://portablecl.org/) with the CUDA backend or use an AMD card. However the OpenCL kernels haven't been optimized against vector processors like AMD's. They should work but you might experience performance drops doing so.
 
 * Due to the nature of HTM. The OpenCL backend uses local memory extensively. And thus you will experience **lower than expected** performance **on processors that uses global memory to emulate local memory**. This includes but not limited to (and non of them are tested): ARM Mali GPUs, VideoCore IV GPU, any CPU.
 
@@ -138,6 +146,7 @@ See [CONTRIBUTION.md](docs/Contribution.md)
 * DSP/CPU/Xeon Phi based OpenCL should work out of the box. But we didn't test that.
 
 ## For NuPIC users
+
 Etaler tho provides basically the same feature, is very different from Numenta's [NuPIC](https://github.com/numenta/nupic). Some noticeable ones are:
 
 * Data Orientated Design instead of Object Orientated
@@ -146,6 +155,7 @@ Etaler tho provides basically the same feature, is very different from Numenta's
 * Swarming is not supported nor planned
 
 ## Testing
+
 If you have the tests builded. Run `tests/etaler_test`.
 
 We are still thinking about weather a CI is worth the trouble. C++ projects takes too long to build on most CIs so it drags the development speed.
