@@ -77,7 +77,7 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 			//Print the data recursivelly
 			val = prettyPrintTensor(os, arr+i*vol, shape, depth+1, maxDepth, maxLength, truncate);
 			if(i != size-1)
-				os << ", " << std::string(val, '\n') << std::string(maxDepth-val, ' ');
+				os << ", " << std::string(val, '\n') << (i==size-1 ? std::string("") : std::string(maxDepth-val, ' '));
 		}
 	}
 	else {
@@ -90,14 +90,14 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 		}
 
 		//seperator
-		os << truncate_symbol << '\n';
+		os << truncate_symbol << '\n' << std::string(shape.size(), ' ');
 
 		//The second half
 		for(intmax_t i=size-intmax_t(g_truncate_size);i<size;i++) {
 			//Print the data recursivelly
 			val = prettyPrintTensor(os, arr+i*vol, shape, depth+1, maxDepth, maxLength, truncate);
 			if(i != size-1)
-				os << ", " << std::string(val, '\n') << std::string(maxDepth-val, ' ');
+				os << ", " << std::string(val, '\n') << (i==size-1 ? std::string("") : std::string(maxDepth-val, ' '));
 		}
 	}
 	os << "}";
