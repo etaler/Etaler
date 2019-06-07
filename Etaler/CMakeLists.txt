@@ -4,7 +4,12 @@ project(Etaler CXX)
 ############################################################################
 # Find Intel TBB include and libs
 
-set(TBB_DIR "$ENV{TBB_ROOT_DIR}/cmake")
+# tbbvars.sh (part of binary installation of TBB) uses TBBROOT env var
+if(DEFINED ENV{TBBROOT})
+	set(TBB_DIR "$ENV{TBBROOT}/cmake")
+else()
+	set(TBB_DIR "$ENV{TBB_ROOT_DIR}/cmake")
+endif()
 
 find_package(TBB REQUIRED)
 
@@ -41,7 +46,7 @@ add_library(Etaler SHARED Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/S
 
 # Auto-generate the export header for shared library macros
 include(GenerateExportHeader)
-generate_export_header(Etaler)
+generate_export_header(Etaler EXPORT_FILE_NAME Etaler_export.h)
 include_directories(${PROJECT_BINARY_DIR})
 
 target_include_directories(Etaler PRIVATE 3rdparty/pcg-cpp/include)
