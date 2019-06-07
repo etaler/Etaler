@@ -7,7 +7,7 @@
 namespace et
 {
 
-extern Backend* g_default_backend;
+extern ETALER_EXPORT Backend* g_default_backend;
 extern std::shared_ptr<Backend> g_default_backend_hold;
 
 inline void setDefaultBackend(Backend* backend) {g_default_backend = backend;}

@@ -16,6 +16,8 @@
 #include <map>
 #include <optional>
 
+#include "Etaler_export.h"
+
 
 namespace et
 {
@@ -80,7 +82,7 @@ protected:
 	std::string readKernel(const std::string& name);
 };
 
-struct OpenCLBackend : public Backend
+struct ETALER_EXPORT OpenCLBackend : public Backend
 {
 	virtual ~OpenCLBackend() = default;
 	OpenCLBackend();

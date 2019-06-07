@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.0)
 
 SET(BUILD_SHARED_LIBS ON)
 
+if(BUILD_SHARED_LIBS AND MSVC)
+    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+endif()
+
 if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE "Release" CACHE STRING
 		"Choose the type of build, options are: Debug Release."
@@ -28,6 +32,42 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 option(ETALER_ENABLE_OPENCL "Enable the OpenCL backend" OFF)
 
 include_directories(.)
+include_directories(${PROJECT_BINARY_DIR}/Etaler)
+
+############################################################################
+# Find Intel TBB include and libs
+
+# tbbvars.sh (part of binary installation of TBB) uses TBBROOT env var
+if(DEFINED ENV{TBBROOT})
+	set(TBB_DIR "$ENV{TBBROOT}/cmake")
+else()
+	set(TBB_DIR "$ENV{TBB_ROOT_DIR}/cmake")
+endif()
+
+find_package(TBB REQUIRED)
+
+if(NOT ${TBB_FOUND})
+    message(FATAL_ERROR "Could not locate Intel TBB include & libs")
+else()
+    message(STATUS "Found existing Intel TBB targets ${TBB_IMPORTED_TARGETS}")
+endif()
+
+
+############################################################################
+# Find OpenCL include and libs
+
+if(ETALER_ENABLE_OPENCL)
+    find_package(OpenCL REQUIRED)
+
+    if("${OpenCL_INCLUDE_DIR}" STREQUAL "" OR "${OpenCL_LIBRARY}" STREQUAL "")
+        message(FATAL_ERROR "Could not locate OpenCL include & libs")
+    else()
+        include_directories(${OpenCL_INCLUDE_DIRS})
+        message(STATUS "Found existing OpenCL in ${OpenCL_INCLUDE_DIR}")
+        message(STATUS "Found existing OpenCL lib ${OpenCL_LIBRARY}")
+    endif()
+endif()
+
 
 #Buile Etlar itself
 add_subdirectory(Etaler)

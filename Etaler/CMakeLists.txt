@@ -2,41 +2,6 @@ project(Etaler CXX)
 
 
 ############################################################################
-# Find Intel TBB include and libs
-
-# tbbvars.sh (part of binary installation of TBB) uses TBBROOT env var
-if(DEFINED ENV{TBBROOT})
-	set(TBB_DIR "$ENV{TBBROOT}/cmake")
-else()
-	set(TBB_DIR "$ENV{TBB_ROOT_DIR}/cmake")
-endif()
-
-find_package(TBB REQUIRED)
-
-if(NOT ${TBB_FOUND})
-    message(FATAL_ERROR "Could not locate Intel TBB include & libs")
-else()
-    message(STATUS "Found existing Intel TBB targets ${TBB_IMPORTED_TARGETS}")
-endif()
-
-
-############################################################################
-# Find OpenCL include and libs
-
-if(ETALER_ENABLE_OPENCL)
-    find_package(OpenCL REQUIRED)
-
-    if("${OpenCL_INCLUDE_DIR}" STREQUAL "" OR "${OpenCL_LIBRARY}" STREQUAL "")
-        message(FATAL_ERROR "Could not locate OpenCL include & libs")
-    else()
-        include_directories(${OpenCL_INCLUDE_DIRS})
-        message(STATUS "Found existing OpenCL in ${OpenCL_INCLUDE_DIR}")
-        message(STATUS "Found existing OpenCL lib ${OpenCL_LIBRARY}")
-    endif()
-endif()
-
-
-############################################################################
 # Setup the Etaler library building
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
@@ -47,7 +12,6 @@ add_library(Etaler SHARED Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/S
 # Auto-generate the export header for shared library macros
 include(GenerateExportHeader)
 generate_export_header(Etaler EXPORT_FILE_NAME Etaler_export.h)
-include_directories(${PROJECT_BINARY_DIR})
 
 target_include_directories(Etaler PRIVATE 3rdparty/pcg-cpp/include)
 target_include_directories(Etaler PRIVATE 3rdparty/cereal/include)
