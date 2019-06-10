@@ -5,6 +5,8 @@
 using namespace et;
 using std::size_t; //Surpress VSCode warnings
 
+size_t line_limit = 80;
+
 template <typename T>
 static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, size_t depth, size_t maxDepth, size_t maxLength=0) noexcept
 {
