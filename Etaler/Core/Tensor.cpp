@@ -5,10 +5,11 @@
 using namespace et;
 using std::size_t; //Surpress VSCode warnings
 
-size_t line_limit = 80;
+size_t g_print_threshold = 1000;
+size_t g_truncate_size = 3;
 
 template <typename T>
-static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, size_t depth, size_t maxDepth, size_t maxLength=0) noexcept
+static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, size_t depth, size_t maxDepth, size_t maxLength=0, bool truncate=false) noexcept
 {
 	auto floatToStr = [](float val) {
 		std::stringstream ss;
@@ -18,20 +19,45 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 
 	//If at the first dimention
 	if(depth == 0) {
-		//Calculatet the max length of the line
+		//Calculatet the max character of printing a single element needs
 		for(int i=0;i<shape.volume();i++)
 			maxLength = std::max(maxLength, floatToStr(arr[i]).size());
 	}
+
+	std::string truncate_symbol = "....";
 
 	//If at the the last dimention, print the content of the tensor
 	if(shape.size() == 1) {
 		os << "{ ";
 		intmax_t size = shape[0];
+		intmax_t max_line_content = intmax_t((80-depth*2-4)/(maxLength+2));
 
-		for(intmax_t i=0;i<size;i++) {
-			std::string str = floatToStr(arr[i]);
-			size_t padding_len = maxLength - str.size();
-			os << str << std::string(padding_len, ' ') << (i==size-1 ? "" : ", ");
+		//Print the full content
+		if(size <= max_line_content || !truncate) {
+			for(intmax_t i=0;i<size;i++) {
+				std::string str = floatToStr(arr[i]);
+				size_t padding_len = maxLength - str.size();
+				os << str << std::string(padding_len, ' ') << (i==size-1 ? "" : ", ");
+			}
+		}
+		//Print the truncated version
+		else {
+			//The first half
+			for(intmax_t i=0;i<max_line_content/2;i++) {
+				std::string str = floatToStr(arr[i]);
+				size_t padding_len = maxLength - str.size();
+				os << str << std::string(padding_len, ' ') << ", ";
+			}
+
+			//Seperator
+			os << truncate_symbol << ", ";
+
+			//The second half
+			for(intmax_t i=size-max_line_content/2;i<size;i++) {
+				std::string str = floatToStr(arr[i]);
+				size_t padding_len = maxLength - str.size();
+				os << str << std::string(padding_len, ' ') << (i==size-1 ? "" : ", ");
+			}
 		}
 
 		os << "}";
@@ -43,14 +69,36 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 	intmax_t vol = shape.volume();
 
 	size_t val = 0;
-	//TODO: Print spaces to align the text
 	os << "{";
-	for(intmax_t i=0;i<size;i++) {
-		//Print the data recursivelly
-		val = prettyPrintTensor(os, arr+i*vol, shape, depth+1, maxDepth, maxLength);
-		if(i != size-1)
-			os << ", " << std::string(val, '\n') << std::string(maxDepth-val, ' ');
 
+	if(size < 2*intmax_t(g_truncate_size) || !truncate) {
+		//The full version
+		for(intmax_t i=0;i<size;i++) {
+			//Print the data recursivelly
+			val = prettyPrintTensor(os, arr+i*vol, shape, depth+1, maxDepth, maxLength, truncate);
+			if(i != size-1)
+				os << ", " << std::string(val, '\n') << (i==size-1 ? std::string("") : std::string(maxDepth-val, ' '));
+		}
+	}
+	else {
+		//The first half
+		for(intmax_t i=0;i<intmax_t(g_truncate_size);i++) {
+			//Print the data recursivelly
+			val = prettyPrintTensor(os, arr+i*vol, shape, depth+1, maxDepth, maxLength, truncate);
+			if(i != size-1)
+				os << ", " << std::string(val, '\n') << std::string(maxDepth-val, ' ');
+		}
+
+		//seperator
+		os << truncate_symbol << '\n' << std::string(maxDepth-val, ' ');
+
+		//The second half
+		for(intmax_t i=size-intmax_t(g_truncate_size);i<size;i++) {
+			//Print the data recursivelly
+			val = prettyPrintTensor(os, arr+i*vol, shape, depth+1, maxDepth, maxLength, truncate);
+			if(i != size-1)
+				os << ", " << std::string(val, '\n') << (i==size-1 ? std::string("") : std::string(maxDepth-val, ' '));
+		}
 	}
 	os << "}";
 
@@ -59,12 +107,13 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 
 static void printNDArray(std::ostream& os, const void* ptr, Shape shape, DType dtype)
 {
+	bool truncate = size_t(shape.volume()) > g_print_threshold;
 	if(dtype == DType::Float)
-		prettyPrintTensor(os, (float*)ptr, shape, 0, shape.size());
+		prettyPrintTensor(os, (float*)ptr, shape, 0, shape.size(), 0, truncate);
 	else if(dtype == DType::Int32)
-		prettyPrintTensor(os, (int32_t*)ptr, shape, 0, shape.size());
+		prettyPrintTensor(os, (int32_t*)ptr, shape, 0, shape.size(), 0, truncate);
 	else if(dtype == DType::Bool)
-		prettyPrintTensor(os, (bool*)ptr, shape, 0, shape.size());
+		prettyPrintTensor(os, (bool*)ptr, shape, 0, shape.size(), 0, truncate);
 	else
 		throw EtError("Printing tensor of this type is not supported.");
 }
@@ -82,11 +131,12 @@ std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 	if(ptr == nullptr) {
 		void* buffer = malloc(q.size()*dtypeToSize(q.dtype()));
 		q.backend()->copyToHost(q.pimpl(), buffer);
-		printNDArray(os, buffer, q.shape(), q.dtype());
+			printNDArray(os, buffer, q.shape(), q.dtype());
 		free(buffer);
 	}
-	else
-		printNDArray(os, ptr, q.shape(), q.dtype());
+	else {
+			printNDArray(os, ptr, q.shape(), q.dtype());
+	}
 
 	return os;
 }
