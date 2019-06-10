@@ -12,7 +12,9 @@ Tensor from_afarray(const af::array& arr, bool transpose=true)
 	et_assert(arr.type() == f32 || arr.type() == s32 || arr.type() == b8);
 
         auto a = arr;
-        if(transpose) //ArrayFire stores data in fortran order, we might want to transpose it to make it C order
+        //ArrayFire stores data in fortran order, we might want to transpose it to make it C order
+        //But also AF transposes 1D arrays into 2D matrices.
+        if(transpose && arr.dims().ndims() != 1)
                 a = af::transpose(arr);
 
         //Convert to et::Shape
@@ -59,7 +61,7 @@ af::array to_afarray(const Tensor& t, bool transpose=true)
         for(int i=0;i<4;i++)
                 dims[i] = 1;
         for(size_t i=0;i<t.dimentions();i++)
-                dims[4-t.dimentions()+i] = t.shape()[i];
+                dims[t.dimentions()-i] = t.shape()[i];
 
         af::dtype dtype = [](DType dtype) {
                 if(dtype == DType::Float)
