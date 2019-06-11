@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.0)
 SET(BUILD_SHARED_LIBS ON)
 
 if(BUILD_SHARED_LIBS AND MSVC)
-    set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+	set(CMAKE_WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
 endif()
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -24,7 +24,7 @@ elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang") #clang flags
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 else()
 	#Add support for MSVC and ICC if needed
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DNOMINMAX")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DNOMINMAX")
 endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
@@ -47,9 +47,9 @@ endif()
 find_package(TBB REQUIRED)
 
 if(NOT ${TBB_FOUND})
-    message(FATAL_ERROR "Could not locate Intel TBB include & libs")
+	message(FATAL_ERROR "Could not locate Intel TBB include & libs")
 else()
-    message(STATUS "Found existing Intel TBB targets ${TBB_IMPORTED_TARGETS}")
+	message(STATUS "Found existing Intel TBB targets ${TBB_IMPORTED_TARGETS}")
 endif()
 
 
@@ -57,15 +57,15 @@ endif()
 # Find OpenCL include and libs
 
 if(ETALER_ENABLE_OPENCL)
-    find_package(OpenCL REQUIRED)
+	find_package(OpenCL REQUIRED)
 
-    if("${OpenCL_INCLUDE_DIR}" STREQUAL "" OR "${OpenCL_LIBRARY}" STREQUAL "")
-        message(FATAL_ERROR "Could not locate OpenCL include & libs")
-    else()
-        include_directories(${OpenCL_INCLUDE_DIRS})
-        message(STATUS "Found existing OpenCL in ${OpenCL_INCLUDE_DIR}")
-        message(STATUS "Found existing OpenCL lib ${OpenCL_LIBRARY}")
-    endif()
+	if("${OpenCL_INCLUDE_DIR}" STREQUAL "" OR "${OpenCL_LIBRARY}" STREQUAL "")
+		message(FATAL_ERROR "Could not locate OpenCL include & libs")
+	else()
+		include_directories(${OpenCL_INCLUDE_DIRS})
+		message(STATUS "Found existing OpenCL in ${OpenCL_INCLUDE_DIR}")
+		message(STATUS "Found existing OpenCL lib ${OpenCL_LIBRARY}")
+	endif()
 endif()
 
 
