@@ -17,7 +17,11 @@ target_include_directories(Etaler PRIVATE 3rdparty/pcg-cpp/include)
 target_include_directories(Etaler PRIVATE 3rdparty/cereal/include)
 target_include_directories(Etaler PRIVATE 3rdparty)
 
-target_link_libraries(Etaler ${TBB_IMPORTED_TARGETS})
+if(${TBB_FOUND})
+	target_link_libraries(Etaler ${TBB_IMPORTED_TARGETS})
+else()
+	target_link_libraries(Etaler tbb)
+endif()
 
 if(ETALER_ENABLE_OPENCL)
 	target_sources(Etaler PRIVATE Backends/OpenCLBackend.cpp)

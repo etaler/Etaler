@@ -37,19 +37,32 @@ include_directories(${PROJECT_BINARY_DIR}/Etaler)
 ############################################################################
 # Find Intel TBB include and libs
 
-# tbbvars.sh (part of binary installation of TBB) uses TBBROOT env var
-if(DEFINED ENV{TBBROOT})
-	set(TBB_DIR "$ENV{TBBROOT}/cmake")
+# Is TBB already installed?
+include(CheckIncludeFileCXX)
+set(CMAKE_REQUIRED_INCLUDES ${CMAKE_INCLUDE_PATH})
+Check_Include_File_CXX("tbb/tbb.h" TBB_INCLUDE_FOUND)
+if(NOT TBB_INCLUDE_FOUND)
+	set(FIND_MODULE_TBB TRUE)
 else()
-	set(TBB_DIR "$ENV{TBB_ROOT_DIR}/cmake")
+	set(FIND_MODULE_TBB FALSE)
 endif()
 
-find_package(TBB REQUIRED)
+# No, so lets try and find a binary release install
+if(${FIND_MODULE_TBB})
+	# tbbvars.sh (part of binary installation of TBB) uses TBBROOT env var
+	if(DEFINED ENV{TBBROOT})
+		set(TBB_DIR "$ENV{TBBROOT}/cmake")
+	else()
+		set(TBB_DIR "$ENV{TBB_ROOT_DIR}/cmake")
+	endif()
 
-if(NOT ${TBB_FOUND})
-	message(FATAL_ERROR "Could not locate Intel TBB include & libs")
-else()
-	message(STATUS "Found existing Intel TBB targets ${TBB_IMPORTED_TARGETS}")
+	find_package(TBB)
+
+	if(NOT ${TBB_FOUND})
+		message(FATAL_ERROR "Could not locate Intel TBB include & libs")
+	else()
+		message(STATUS "Found existing Intel TBB")
+	endif()
 endif()
 
 
