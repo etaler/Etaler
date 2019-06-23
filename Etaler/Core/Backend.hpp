@@ -7,6 +7,8 @@
 #include "DType.hpp"
 #include "Error.hpp"
 
+#include "Etaler_export.h"
+
 using std::size_t;
 
 namespace et
@@ -15,7 +17,7 @@ namespace et
 struct TensorImpl;
 struct Backend;
 
-struct Backend : public std::enable_shared_from_this<Backend>
+struct ETALER_EXPORT Backend : public std::enable_shared_from_this<Backend>
 {
 	virtual ~Backend() = default;
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data = nullptr) {throw notImplemented("createTensor");};

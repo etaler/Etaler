@@ -1,9 +1,10 @@
 #include "TypeHelpers.hpp"
+
 using namespace et;
 
-#include <cxxabi.h>
-
 #ifdef HAVE_CXA_DEMANGLE //Set by CMake if avaliable
+
+#include <cxxabi.h>
 
 std::string et::demangle(const char* name) {
 
@@ -20,7 +21,11 @@ std::string et::demangle(const char* name) {
 
 #else
 
+#if _MSC_VER
+#pragma message ("warning: CXA_DEMANGLE API not avaliable. Type demangling is not enabled. (Worse exception messages)")
+#else
 #warning CXA_DEMANGLE API not avaliable. Type demangling is not enabled. (Worse exception messages)
+#endif
 
 std::string et::demangle(const char* name) {
 	return std::string(name);

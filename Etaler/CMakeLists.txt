@@ -1,16 +1,33 @@
 project(Etaler CXX)
 
+
+############################################################################
+# Setup the Etaler library building
+
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+
 add_library(Etaler SHARED Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/Serialize.cpp Core/Tensor.cpp
 	Algorithms/SpatialPooler.cpp Algorithms/TemporalMemory.cpp Core/TypeHelpers.cpp)
-target_link_libraries(Etaler tbb)
+
+# Auto-generate the export header for shared library macros
+include(GenerateExportHeader)
+generate_export_header(Etaler EXPORT_FILE_NAME Etaler_export.h)
+
 target_include_directories(Etaler PRIVATE 3rdparty/pcg-cpp/include)
+target_include_directories(Etaler PRIVATE 3rdparty/cereal/include)
+target_include_directories(Etaler PRIVATE 3rdparty)
+
+if(${TBB_FOUND})
+	target_link_libraries(Etaler ${TBB_IMPORTED_TARGETS})
+else()
+	target_link_libraries(Etaler tbb)
+endif()
 
 if(ETALER_ENABLE_OPENCL)
 	target_sources(Etaler PRIVATE Backends/OpenCLBackend.cpp)
 
-
 	if(NOT APPLE)
-		target_link_libraries(Etaler OpenCL)
+		target_link_libraries(Etaler ${OpenCL_LIBRARIES})
 	else()
 		target_link_libraries(Etaler "-framework OpenCL")
 	endif()
@@ -38,6 +55,8 @@ install(FILES ${CMAKE_SOURCE_DIR}/cmake/FindEtaler.cmake
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/Etaler
     DESTINATION include
     FILES_MATCHING PATTERN "*.hpp")
+
+install(FILES ${PROJECT_BINARY_DIR}/Etaler_export.h DESTINATION include)
 
 install(TARGETS Etaler
 	LIBRARY DESTINATION lib)

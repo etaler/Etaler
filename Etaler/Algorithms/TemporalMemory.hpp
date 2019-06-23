@@ -7,10 +7,12 @@
 #include "Etaler/Core/Serialize.hpp"
 #include "Etaler/Core/DefaultBackend.hpp"
 
+#include "Etaler_export.h"
+
 namespace et
 {
 
-struct TemporalMemory
+struct ETALER_EXPORT TemporalMemory
 {
 	TemporalMemory() = default;
 	TemporalMemory(const Shape& input_shape, size_t cells_per_column, size_t max_synapses_per_cell=64, Backend* backend=defaultBackend());

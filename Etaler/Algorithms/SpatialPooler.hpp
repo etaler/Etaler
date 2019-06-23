@@ -11,11 +11,13 @@
 #include "Etaler/Core/Serialize.hpp"
 #include "Etaler/Core/DefaultBackend.hpp"
 
+#include "Etaler_export.h"
+
 namespace et
 {
 
 //TODO: Add topoligy
-struct SpatialPooler
+struct ETALER_EXPORT SpatialPooler
 {
 	SpatialPooler() = default;
 	SpatialPooler(const Shape& input_shape, const Shape& output_shape, float potential_pool_pct=0.75, size_t seed=42

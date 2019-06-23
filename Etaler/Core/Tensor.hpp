@@ -10,15 +10,17 @@
 #include "Views.hpp"
 #include "TypeHelpers.hpp"
 
+#include "Etaler_export.h"
+
 namespace et
 {
 
 struct Tensor;
 
-std::ostream& operator<< (std::ostream& os, const Tensor& t);
+ETALER_EXPORT std::ostream& operator<< (std::ostream& os, const Tensor& t);
 std::string to_string(const Tensor& t);
 
-struct Tensor
+struct ETALER_EXPORT Tensor
 {
 	Tensor() = default;
 	Tensor(std::shared_ptr<TensorImpl> pimpl)
@@ -214,8 +216,8 @@ Tensor constant(const Shape& shape, T value, Backend* backend=defaultBackend())
 	return Tensor(shape, v.data(), backend);
 }
 
-Tensor zeros(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
-Tensor ones(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
+Tensor ETALER_EXPORT zeros(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
+Tensor ETALER_EXPORT ones(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
 
 inline Tensor realize(const Tensor& t)
 {
@@ -286,7 +288,7 @@ static void assign(Tensor& x, const Tensor& y)
 	x.assign(y);
 }
 
-Tensor sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown);
+Tensor ETALER_EXPORT sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown);
 std::pair<Tensor, Tensor> brodcast_tensors(const Tensor& a, const Tensor& b);
 
 static Tensor exp(const Tensor& x) { return x.exp(); }

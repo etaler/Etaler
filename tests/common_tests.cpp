@@ -1,4 +1,4 @@
-#include "catch2/catch.hpp"
+#include "catch.hpp"
 
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Encoders/Scalar.hpp>
@@ -6,6 +6,8 @@
 #include <Etaler/Encoders/GridCell1d.hpp>
 #include <Etaler/Encoders/GridCell2d.hpp>
 #include <Etaler/Core/Serialize.hpp>
+
+#include <numeric>
 
 using namespace et;
 

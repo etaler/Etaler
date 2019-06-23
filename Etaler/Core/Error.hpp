@@ -36,7 +36,7 @@ bool points_to(const T1 p)
 	else
 		return dynamic_cast<const T2*>(p.get()) != nullptr;
 }
-
+}
 
 //Replaces stupid C asserts
 #ifdef NDEBUG
@@ -45,4 +45,3 @@ bool points_to(const T1 p)
 	#include <assert.h>
 	#define ASSERT(x) assert(x)
 #endif
-}
