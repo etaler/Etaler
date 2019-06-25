@@ -274,7 +274,7 @@ TEST_CASE("Testing Encoders", "[Encoder]")
 
 		//GridCell encoders should have a very small amount of bits overlaping
 		t = encoder::gridCell2d({0.1, 0.3}, 16, 1);
-		q = encoder::gridCell2d({0.5, 0.2}, 16, 1);
+		q = encoder::gridCell2d({10, 30}, 16, 1);
 		CHECK((t&&q).sum().toHost<int>()[0] < 16*0.4);
 	}
 }
