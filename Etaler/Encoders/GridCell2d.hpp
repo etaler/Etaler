@@ -45,8 +45,7 @@ static std::vector<uint8_t> gcm2d(std::array<float, 2> p, float scale, float the
 	for(size_t i=0;i<res.size();i++) {
 
 		float x = i%axis_length[0] + 0.5;
-		float y = axis_length[1] - (i/axis_length[0] + 0.5); //Flip axis for math conventions
-
+		float y = axis_length[1] - ((float)i/axis_length[0] + 0.5); //Flip axis for math convention
 		float dx = px - x;
 		float dy = py - y;
 

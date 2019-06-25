@@ -256,6 +256,11 @@ TEST_CASE("Testing Encoders", "[Encoder]")
 		CHECK(q.size() == 16*16);
 		auto u = q.toHost<uint8_t>();
 		CHECK(std::accumulate(u.begin(), u.end(), 0) == 32);
+
+		//GridCell encoders should have a very small amount of bits overlaping
+		t = encoder::gridCell1d(0.1, 16, 1, 16);
+		q = encoder::gridCell1d(0.5, 16, 1, 16);
+		CHECK((t&&q).sum().toHost<int>()[0] < 16*0.4);
 	}
 
 	SECTION("GridCell2d Encoder") {
@@ -268,6 +273,11 @@ TEST_CASE("Testing Encoders", "[Encoder]")
 		CHECK(q.size() == 16*16);
 		auto u = q.toHost<uint8_t>();
 		CHECK(std::accumulate(u.begin(), u.end(), 0) == 32);
+
+		//GridCell encoders should have a very small amount of bits overlaping
+		t = encoder::gridCell2d({0.1, 0.3}, 16, 1);
+		q = encoder::gridCell2d({10, 30}, 16, 1);
+		CHECK((t&&q).sum().toHost<int>()[0] < 16*0.4);
 	}
 }
 
