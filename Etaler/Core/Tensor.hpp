@@ -21,6 +21,7 @@ std::string to_string(const Tensor& t);
 struct Tensor
 {
 	Tensor() = default;
+	Tensor(const Tensor&) = default;
 	Tensor(std::shared_ptr<TensorImpl> pimpl)
 		: pimpl_(std::move(pimpl)) {}
 	explicit Tensor(Shape s, DType dtype, Backend* backend=defaultBackend())
