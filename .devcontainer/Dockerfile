@@ -19,7 +19,7 @@ RUN chmod +x easy3d_script.sh
 RUN /home/easy3d_script.sh
 
 RUN echo "#!/bin/bash" > etaler_script.sh
-RUN echo "git clone  --recurse-submodules  https://github.com/etaler/Etaler.git" >> etaler_script.sh
+RUN echo "git clone  --recurse-submodules  https://github.com/alior101/Etaler.git" >> etaler_script.sh
 RUN echo "cd Etaler && mkdir build && cd build && cmake -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON  -DETALER_BUILD_TESTS=OFF .. && make" >> etaler_script.sh
 RUN chmod +x etaler_script.sh
 RUN /home/etaler_script.sh
