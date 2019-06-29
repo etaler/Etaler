@@ -3,7 +3,7 @@
 
 ---
 
-Etaler is a library for machine intelligence based on [HTM theory](https://numenta.org/resources/HTM_CorticalLearningAlgorithms.pdf). Providing two main features.
+Etaler is a library for machine intelligence based on [HTM theory](https://numenta.com/assets/pdf/biological-and-machine-intelligence/BAMI-Complete.pdf). Providing two main features.
 
 * HTM algorithms with modern API
 * A minimal cross-platform (CPU, GPU, etc..) Tensor implementation
@@ -57,7 +57,8 @@ Tensor t = encoder::scalar(0.1);
 //Transfer data to GPU
 Tensot q = t.to(gpu);
 
-SpatialPooler sp(/*Spatial Pooler params here*/, gpu.get());
+SpatialPooler sp = SpatialPooler(/*Spatial Pooler params here*/).to(gpu);
+//SpatialPooler sp(/*Spatial Pooler params here*/, gpu.get()); //Alternativelly
 Tensor r = sp.compute(q);
 ```
 
@@ -66,7 +67,7 @@ Saving layers
 save(sp.states(), "sp.cereal");
 ```
 
-For more infmation see [the documents](docs/)
+For more information see [the documents](docs/)
 
 ## Building and platform support
 
@@ -74,8 +75,11 @@ For more infmation see [the documents](docs/)
 |-----------------|------|---------------------------|
 | Linux           |  Yes |  Yes                      |
 | OS X            |  Yes |  Yes                      |
+| Windows         |  Yes |  Yes                      |
 
-* Build with GCC and libstdc++ on OS X 10.11. Clang should work after OS X 10.14. See [BuildOnOSX.md](docs/BuildOnOSX.md)
+* Build with GCC and libstdc++ on OS X 10.11.
+* Clang should work after OS X 10.14. See [BuildOnOSX.md](docs/BuildOnOSX.md)
+* Build with Visual Studio 2019 on Windows. See [BuildOnMSVC.md](docs/BuildOnMSVC.md)
 
 ### Dependencies
 
@@ -86,10 +90,15 @@ For more infmation see [the documents](docs/)
 
 * OpenCL Backend
   * OpenCL and OpenCL C++ wrapper
-  * OpenCL 1.2 capcble GPU
+  * OpenCL 1.2 capable GPU
 
 * Tests
   * [catch2](https://github.com/catchorg/Catch2)
+
+Notes:
+1. Make sure to setup a `TBBROOT` environment variable to point to the binary installation directory of TBB. And the TBB `tbbvars.sh` file has been modified correctly and run, before running `cmake`.
+1. `cereal` can be git cloned into the `Etaler/Etaler/3rdparty` directory.
+1. Only the [catch.hpp](https://github.com/catchorg/Catch2/releases/download/v2.8.0/catch.hpp) file is required from Catch2, and that file can be placed into the `Etaler/tests` directory.
 
 ### Building from source
 
@@ -126,7 +135,7 @@ Clone the repository. Then after fulfilling the dependencies. Execute `cmake` an
 ## LICENSE
 Etaler is licensed under BSD 3-Clause License. So use it freely!
 
-Be aware tha [Numenta](https://numenta.com/) holds the rights to HTM related patents. And only allows free (as "free beers" free) use of their patents for non-commercial purpose. If you are using Etaler commercially; please contact Numenta for licensing. <br>
+Be aware that [Numenta](https://numenta.com/) holds the rights to HTM related patents. And only allows free (as "free beers" free) use of their patents for non-commercial purpose. If you are using Etaler commercially; please contact Numenta for licensing. <br>
 (tl;dr Etaler is free for any purpose. But HTM is not for commercial use.)
 
 ## Contribution
@@ -136,17 +145,18 @@ See [CONTRIBUTION.md](docs/Contribution.md)
 
 ## Notes
 
-* NVIDIA's OpenCL implementation might not report error correctly. It can execute kernels with a invalid memory object without telling you and crash a random thing the next time. If you are encountering weird behaviours. Please try [POCL](http://portablecl.org/) with the CUDA backend or use a AMD card. However the OpenCL kernels haven't been optimized against vector processors like AMD's. They should work but you might experience performance drops doing so.
+* NVIDIA's OpenCL implementation might not report error correctly. It can execute kernels with a invalid memory object without telling you and crash a random thing the next time. If you are encountering weird behaviors. Please try [POCL](http://portablecl.org/) with the CUDA backend or use an AMD card. However the OpenCL kernels haven't been optimized against vector processors like AMD's. They should work but you might experience performance drops doing so.
 
 * Due to the nature of HTM. The OpenCL backend uses local memory extensively. And thus you will experience **lower than expected** performance **on processors that uses global memory to emulate local memory**. This includes but not limited to (and non of them are tested): ARM Mali GPUs, VideoCore IV GPU, any CPU.
 
-* By default Etaler saves to a portable binary file. If yout want to save your data as JSON, Etaler automatically saves as JSON when you specified a `.json` file extention. But note that JSON is fat compared to the binary format and grows fast. Make sure you know what you are doing.
+* By default Etaler saves to a portable binary file. If you want to save your data as JSON, Etaler automatically saves as JSON when you specified a `.json` file extension. But note that JSON is fat compared to the binary format and grows fast. Make sure you know what you are doing.
 
 * FPGA based OpenCL are not supported for now. FPGA platforms don't provide online (API callable) compilers that Etaler uses for code generation.
 
 * DSP/CPU/Xeon Phi based OpenCL should work out of the box. But we didn't test that.
 
 ## For NuPIC users
+
 Etaler tho provides basically the same feature, is very different from Numenta's [NuPIC](https://github.com/numenta/nupic). Some noticeable ones are:
 
 * Data Orientated Design instead of Object Orientated
@@ -155,45 +165,7 @@ Etaler tho provides basically the same feature, is very different from Numenta's
 * Swarming is not supported nor planned
 
 ## Testing
+
 If you have the tests builded. Run `tests/etaler_test`.
 
 We are still thinking about weather a CI is worth the trouble. C++ projects takes too long to build on most CIs so it drags the development speed.
-
-## Things to be done before release
-
-* [x] Implement SP
-* [x] Implement Encoders
-* [x] Implement TM
-* [x] Anomaly detector
-* [x] Classifier
-* [x] Serialization
-* [x] Tests
-
-## TODO
-
-* [ ] C++20 Modules when C++20 is released
-* [x] OpenCL support
-  * [x] Printable OpenCL Tensors
-  * [x] SP in OpenCL
-  * [x] TM in OpenCL
-  * [x] Pack OpenCL kernels for distribution
-* [ ] Python binding
-  * [ ] Numpy inter-op via xtensor
-* [ ] Windows support
-* [x] OS X support
-* [x] Backend to backend data transfer
-* [x] Parallel processing on CPU
-* [ ] Test on ARM64
-* [ ] Test on PPC64
-* [x] Load/run-able on ROOT and cling
-* [ ] As VC4CL is very experimental. - Running on the RPi GPU
-* [x] Make FindEraler.cmake
-* [ ] Altera AOCL support
-* [x] Serialize to...
-  * [x] Cereal
-  * [x] JSON (via cereal)
-* [x] SP Boosting support
-* [ ] Make the algorithms compliant to BAMI
-* [x] Basic Tensor indexing
-
-

@@ -55,6 +55,11 @@ std::string str(T&& s)
 }
 
 OpenCLBackend::OpenCLBackend()
+	: OpenCLBackend(0, 0)
+{
+}
+
+OpenCLBackend::OpenCLBackend(size_t platform_id, size_t device_id)
 {
 	std::vector<cl::Platform> platforms;
 	cl_int err = cl::Platform::get(&platforms);
@@ -62,34 +67,34 @@ OpenCLBackend::OpenCLBackend()
 		throw EtError("Failed to get OpenCL platforms. Error: " + std::to_string(err));
 	if(platforms.size() == 0)
 		throw EtError("No OpenCL platform found.");
-	auto& platform = platforms[0];
+	if(platforms.size() <= platform_id)
+		throw EtError("OpenCL platform " + std::to_string(platform_id) + " not found.");
+	auto& platform = platforms[platform_id];
 
 	std::vector<cl::Device> devices;
-	platform.getDevices(CL_DEVICE_TYPE_GPU, &devices);
+	platform.getDevices(CL_DEVICE_TYPE_ALL, &devices);
 	if(devices.size() == 0)
 		throw EtError("No OpenCL device found in platorm " + platform.getInfo<CL_PLATFORM_NAME>());
-	auto& device = devices[0];
+	if(devices.size() <= device_id)
+		throw EtError("OpenCL device " + std::to_string(device_id) + " in platform " + platform.getInfo<CL_PLATFORM_NAME>() + " not found.");
+	auto& device = devices[device_id];
 	if(device.getInfo<CL_DEVICE_COMPILER_AVAILABLE>() == CL_FALSE)
 		throw EtError("Compiler for " + device.getInfo<CL_DEVICE_NAME>() + " is not avliable. (Devices like Altera/Xilinx FPGAs not supported"
 			" in the OpenCL backend.)");
 
-	platform_ = platform;
-	device_ = device;
-	context_ = cl::Context(device, nullptr, nullptr, nullptr, &err);
+	cl::Context context = cl::Context(device, nullptr, nullptr, nullptr, &err);
 	if(err != CL_SUCCESS)
 		throw EtError("Failed to create OpenCL context. Error " + std::to_string(err));
 
-	//I trust these won't fail
-	queue_ = cl::CommandQueue(context_);
-	kernel_manager_ = KernelManager(device, context_);
-	kernel_manager_.compileKernel("kernel void __etaler_dummy__(global int* p){p[get_global_id(0)] = 0;}", "__etaler_dummy__", "__etaler_dummy__");
-
-	local_mem_size_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
-	local_mem_type_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>();
-	num_compute_units_ = device_.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+	init(context, platform, device);
 }
 
 OpenCLBackend::OpenCLBackend(cl::Context context, cl::Platform platform, cl::Device device)
+{
+	init(context, platform, device);
+}
+
+void OpenCLBackend::init(cl::Context context, cl::Platform platform, cl::Device device)
 {
 	context_ = std::move(context);
 	platform_ = std::move(platform);
@@ -97,7 +102,7 @@ OpenCLBackend::OpenCLBackend(cl::Context context, cl::Platform platform, cl::Dev
 
 	//I trust these won't fail
 	queue_ = cl::CommandQueue(context_);
-	kernel_manager_ = KernelManager(device, context_);
+	kernel_manager_ = KernelManager(device_, context_);
 	kernel_manager_.compileKernel("kernel void __etaler_dummy__(global int* p){p[get_global_id(0)] = 0;}", "__etaler_dummy__", "__etaler_dummy__");
 
 	local_mem_size_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
@@ -280,12 +285,12 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 	auto program_name = "overlapScore"+hash;
 
 	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("overlapScore.cl", program_name, {"overlapScore"}, false, args);
+		kernel_manager_.compileFromFile("cellActivity.cl", program_name, {"cellActivity"}, false, args);
 	else if(x->size() < localMemorySize()*8-8 && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("overlapScore_compressed_local.cl", program_name, {"overlapScore"}, false, args);
+		kernel_manager_.compileFromFile("cellActivity_compressed_local.cl", program_name, {"cellActivity"}, false, args);
 	else
-		kernel_manager_.compileFromFile("overlapScore_global.cl", program_name, {"overlapScore"}, false, args);
-	cl::Kernel k = kernel_manager_.kernel(program_name, "overlapScore");
+		kernel_manager_.compileFromFile("cellActivity_global.cl", program_name, {"cellActivity"}, false, args);
+	cl::Kernel k = kernel_manager_.kernel(program_name, "cellActivity");
 
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
 	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(connections->buffer())->buffer());
@@ -863,7 +868,7 @@ kernel void op(global T0* restrict x1, global T1* restrict x2, global ResType* r
 	for(int i=global_id;i<$SIZE;i+=global_size) {
 		int p1 = location_func0(i);
 		int p2 = location_func1(i);
-		y[i] = f(x1[1], x2[p2]);
+		y[i] = f(x1[p1], x2[p2]);
 	}
 }
 )";
@@ -1011,4 +1016,27 @@ std::shared_ptr<TensorImpl> OpenCLBackend::logical_and(const TensorImpl* x1, con
 std::shared_ptr<TensorImpl> OpenCLBackend::logical_or(const TensorImpl* x1, const TensorImpl* x2)
 {
 	return applyBinaryOp(x1, x2, "#define f(x1, x2) (x1||x2)", DType::Bool);
+}
+
+std::shared_ptr<TensorImpl> OpenCLBackend::from(const TensorImpl* x)
+{
+	const void* ptr = x->data();
+	if(ptr != nullptr)
+		return createTensor(x->shape(), x->dtype(), ptr);
+
+	OpenCLBackend* src_backend = dynamic_cast<OpenCLBackend*>(x->backend());
+	if(src_backend != nullptr && src_backend->context()() == context()()) {
+		auto buf = src_backend->copy(x);
+		auto& buffer = reinterpret_cast<OpenCLBuffer*>(buf->buffer().get())->buffer();
+		cl_int err = queue_.enqueueMigrateMemObjects({buffer}, CL_MIGRATE_MEM_OBJECT_HOST);
+		if(err != CL_SUCCESS)
+			throw EtError("OpenCL data migration failed. Error: " + std::to_string(err));
+		return createTensor(x->shape(), x->dtype(), buffer);
+	}
+
+	void* buffer = malloc(x->size()*dtypeToSize(x->dtype()));
+	x->backend()->copyToHost(x, buffer);
+	auto res = createTensor(x->shape(), x->dtype(), buffer);
+	free(buffer);
+	return res;
 }

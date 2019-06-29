@@ -7,11 +7,13 @@
 #include "SmallVector.hpp"
 #include "Error.hpp"
 
+#include "Etaler_export.h"
+
 namespace et
 {
 
 const constexpr unsigned shapeSmallVecSize = 4;
-class Shape : public svector<intmax_t, shapeSmallVecSize>
+class ETALER_EXPORT Shape : public svector<intmax_t, shapeSmallVecSize>
 {
 public:
 	const static intmax_t None = -1;

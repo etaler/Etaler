@@ -48,6 +48,6 @@ Using multiple backends should be easy. Just initalize multiple backends and ten
 
 From a technical point. Each backend implements it own XXXBuffer (ex. CPUBuffer) class, storing whatever is needed. When the backend being requested to create a tensor (the `createTensor` method called). The backend returns a shared_ptr pointing to XXXBuffer, which is then wrapped by a TensorImpl. When the reference counter drops to 0, the `releaseTensor` method is called automatically (Also all TensorImpl holds a shared_ptr to the backend, so you don't need to worry about the backend being destructed before all tensors being destructed).
 
-When creating a view. Like Numpy and PyTorch's implementation we modifies the offset and stride of the tensor. When asked to perform advanced indexing (not supported now), 
+When creating a view. Like Numpy and PyTorch's implementation we modifies the offset and stride of the tensor.
 
-I ended up with this design as it makes the most sense for seprating frontend and backend, and it allows the chaining of views. But it also complicates things that tensors needs to be `realize()`-ed before being usable for backends.
+But not all backend APIs support handling strides. (Espcally HTM algorithms and those modifies data in-place). If a strided Tensor is sent to a API that doesn't support strides. Backend aborts.

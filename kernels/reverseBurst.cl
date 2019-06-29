@@ -30,7 +30,7 @@ kernel void reverseBurst(global bool* x, int seed1, int seed2)
 		if(sum == CELLS_PER_COLUMN) {
 			for(int j=0;j<CELLS_PER_COLUMN;j++)
 				x[i*CELLS_PER_COLUMN+j] = 0;
-			rand_state = random(seed1, seed2);
+			rand_state = random(seed1, rand_state);
 			x[i*CELLS_PER_COLUMN+(rand_state%CELLS_PER_COLUMN)] = 1;
 		}
 	}

@@ -1,6 +1,9 @@
 #pragma once
 
 #include <type_traits>
+#include <string>
+
+#include "Etaler_export.h"
 
 //A handy macro to call duplicated const version of the non const function.
 #define call_const(func) [&](){\
@@ -11,3 +14,10 @@
 	else \
 		return r;\
 }()
+
+namespace et
+{
+
+std::string ETALER_EXPORT demangle(const char* name);
+
+}

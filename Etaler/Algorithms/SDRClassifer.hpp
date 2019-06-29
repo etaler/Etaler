@@ -1,13 +1,16 @@
 #pragma once
 
 #include <Etaler/Core/Tensor.hpp>
+##include <Etaler/Core/Serialize.hpp>
+
+#include "Etaler_export.h"
 
 #include <vector>
 
 namespace et
 {
 
-struct SDRClassifer
+struct ETALER_EXPORT SDRClassifer
 {
 	SDRClassifer() = default;
 	SDRClassifer(Shape input_shape, size_t num_classes)
@@ -57,7 +60,19 @@ struct SDRClassifer
 		c.references_ = references_.to(b);
 	}
 
+	StateDict states()
+	{
+		StateDict dict;
+		dict["references"] = references_;
+		dict["num_patterns"] = num_patterns_;
+		return dict;
+	}
 
+	void loadState(const StateDict& states)
+	{
+		references_ = std::any_cast<Tensor>(states.at("references"));
+		num_patterns_ = std::any_cast<std::vector<int>>(states.at("num_patterns"));
+	}
 
 	Shape input_shape_;
 	std::vector<Tensor> references_;

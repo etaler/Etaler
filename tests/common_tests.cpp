@@ -1,13 +1,20 @@
-#include "catch2/catch.hpp"
+#include "catch.hpp"
 
-#include <Etaler/Backends/CPUBackend.hpp>
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Encoders/Scalar.hpp>
 #include <Etaler/Encoders/Category.hpp>
 #include <Etaler/Encoders/GridCell1d.hpp>
+#include <Etaler/Encoders/GridCell2d.hpp>
 #include <Etaler/Core/Serialize.hpp>
 
+#include <numeric>
+
 using namespace et;
+
+TEST_CASE("default backend sanity")
+{
+	REQUIRE(defaultBackend() != nullptr);
+}
 
 TEST_CASE("Testing Shape", "[Shape]")
 {
@@ -69,6 +76,12 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		Tensor r = Tensor({4}, c);
 		CHECK(r.dtype() == DType::Bool);
 		CHECK(r.shape() == Shape({4}));
+	}
+
+	SECTION("Empty Tensor") {
+		CHECK(Tensor().has_value() == false);
+		int n = 1;
+		CHECK(Tensor({1}, &n).has_value() == true);
 	}
 
 	SECTION("Create Tensor from scalar") {
@@ -227,6 +240,10 @@ TEST_CASE("Testing Encoders", "[Encoder]")
 		for(size_t i=0;i<t.size();i++)
 			overlap += v[i] && u[i];
 		CHECK(overlap == 0);
+
+		auto categories = decoder::category(t, num_categories);
+		CHECK(categories.size() == 1);
+		CHECK(categories[0] == 0);
 	}
 
 	SECTION("GridCell1d Encoder") {
@@ -239,6 +256,28 @@ TEST_CASE("Testing Encoders", "[Encoder]")
 		CHECK(q.size() == 16*16);
 		auto u = q.toHost<uint8_t>();
 		CHECK(std::accumulate(u.begin(), u.end(), 0) == 32);
+
+		//GridCell encoders should have a very small amount of bits overlaping
+		t = encoder::gridCell1d(0.1, 16, 1, 16);
+		q = encoder::gridCell1d(0.5, 16, 1, 16);
+		CHECK((t&&q).sum().toHost<int>()[0] < 16*0.4);
+	}
+
+	SECTION("GridCell2d Encoder") {
+		Tensor t = encoder::gridCell2d({0.1, 0.1}, 16, 1, {4,4});
+		CHECK(t.size() == 16*4*4);
+		auto v = t.toHost<uint8_t>();
+		CHECK(std::accumulate(v.begin(), v.end(), 0) == 16);
+
+		Tensor q = encoder::gridCell2d({0.1, 0.1}, 16, 2, {4,4});
+		CHECK(q.size() == 16*16);
+		auto u = q.toHost<uint8_t>();
+		CHECK(std::accumulate(u.begin(), u.end(), 0) == 32);
+
+		//GridCell encoders should have a very small amount of bits overlaping
+		t = encoder::gridCell2d({0.1, 0.3}, 16, 1);
+		q = encoder::gridCell2d({10, 30}, 16, 1);
+		CHECK((t&&q).sum().toHost<int>()[0] < 16*0.4);
 	}
 }
 
@@ -411,6 +450,17 @@ TEST_CASE("StateDict", "[StateDict]")
 
 TEST_CASE("Tensor operations")
 {
+	SECTION("cast") {
+		int arr[] = {0, 768, 200, 40};
+		Tensor t = Tensor({4}, arr);
+		Tensor q = t.cast(DType::Bool);
+
+		uint8_t pred[] = {0, 1, 1, 1};
+		Tensor p = Tensor({4}, pred);
+		CHECK(q.shape() == Shape({4}));
+		CHECK(q.isSame(p));
+	}
+
 	SECTION("Unary operation") {
 		int arr[] = {0,1,2,3};
 		Tensor a = Tensor({4}, arr);
@@ -488,36 +538,31 @@ TEST_CASE("Tensor operations")
 TEST_CASE("brodcast")
 {
 	Tensor a, b;
-	SECTION("no brodcast")
-	{
+	SECTION("no brodcast") {
 		a = ones({4});
 		b = ones({4});
 		CHECK((a+b).shape() == Shape({4}));
 	}
 
-	SECTION("simple brodcast")
-	{
+	SECTION("simple brodcast") {
 		a = ones({2, 4});
 		b = ones({4});
 		CHECK((a+b).shape() == Shape({2, 4}));
 	}
 
-	SECTION("brodcast from {1}")
-	{
+	SECTION("brodcast from {1}") {
 		a = ones({2, 4});
 		b = ones({1});
 		CHECK((a+b).shape() == Shape({2, 4}));
 	}
 
-	SECTION("brodcast with a 1 axis")
-	{
+	SECTION("brodcast with a 1 axis") {
 		a = ones({2, 1, 4});
 		b = ones({2, 5, 4});
 		CHECK((a+b).shape() == Shape({2, 5, 4}));
 	}
 
-	SECTION("bad brodcasting")
-	{
+	SECTION("bad brodcasting") {
 		a = ones({2, 4});
 		b = ones({7});
 		CHECK_THROWS(a+b);

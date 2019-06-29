@@ -7,6 +7,8 @@
 #include "DType.hpp"
 #include "Error.hpp"
 
+#include "Etaler_export.h"
+
 using std::size_t;
 
 namespace et
@@ -15,7 +17,7 @@ namespace et
 struct TensorImpl;
 struct Backend;
 
-struct Backend : public std::enable_shared_from_this<Backend>
+struct ETALER_EXPORT Backend : public std::enable_shared_from_this<Backend>
 {
 	virtual ~Backend() = default;
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data = nullptr) {throw notImplemented("createTensor");};
@@ -37,6 +39,7 @@ struct Backend : public std::enable_shared_from_this<Backend>
 	virtual void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm) {throw notImplemented("growSynapses");}
 	virtual void decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold) {throw notImplemented("decaySynapses");}
+	virtual std::shared_ptr<TensorImpl> from(const TensorImpl* x) {throw notImplemented("from");}
 
 	virtual std::shared_ptr<TensorImpl> realize(const TensorImpl* x) {throw notImplemented("realize");}
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) {throw notImplemented("assign");}

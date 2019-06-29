@@ -10,17 +10,20 @@
 #include "Views.hpp"
 #include "TypeHelpers.hpp"
 
+#include "Etaler_export.h"
+
 namespace et
 {
 
 struct Tensor;
 
-std::ostream& operator<< (std::ostream& os, const Tensor& t);
+ETALER_EXPORT std::ostream& operator<< (std::ostream& os, const Tensor& t);
 std::string to_string(const Tensor& t);
 
-struct Tensor
+struct ETALER_EXPORT Tensor
 {
 	Tensor() = default;
+	Tensor(const Tensor&) = default;
 	Tensor(std::shared_ptr<TensorImpl> pimpl)
 		: pimpl_(std::move(pimpl)) {}
 	explicit Tensor(Shape s, DType dtype, Backend* backend=defaultBackend())
@@ -68,10 +71,12 @@ struct Tensor
 	{
 		static_assert(std::is_same_v<T, bool> == false && "You should NOT use coptToHost<bool> as std::vector<bool> is a "
 								"specillation. Use copyToHost<uint8_t> instead.");
-		if(pimpl()->iscontiguous() == false)
+		if(pimpl()->isplain() == false)
 			return realize().toHost<T>();
-		if(dtype() != typeToDType<T>())
-			throw EtError("toHost() failed. Requested type and dtype mismatch");
+		if(dtype() != typeToDType<T>()) {
+			throw EtError("toHost() failed. Requested type and dtype mismatch. " + demangle(typeid(T).name())
+				+ " requested but " + to_ctype_string(dtype()) + "is stored.");
+		}
 		std::vector<T> res(size());
 		backend()->copyToHost(pimpl(), res.data());
 		return res;
@@ -115,6 +120,8 @@ struct Tensor
 	//Assigning and realizing
 	void assign(const Tensor& source)
 	{
+		if(pimpl() == source.pimpl())
+			return;
 		backend()->assign(pimpl(), source.pimpl());
 	}
 
@@ -210,8 +217,8 @@ Tensor constant(const Shape& shape, T value, Backend* backend=defaultBackend())
 	return Tensor(shape, v.data(), backend);
 }
 
-Tensor zeros(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
-Tensor ones(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
+Tensor ETALER_EXPORT zeros(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
+Tensor ETALER_EXPORT ones(const Shape& shape, DType dtype=DType::Int32, Backend* backend=defaultBackend());
 
 inline Tensor realize(const Tensor& t)
 {
@@ -282,7 +289,7 @@ static void assign(Tensor& x, const Tensor& y)
 	x.assign(y);
 }
 
-Tensor sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown);
+Tensor ETALER_EXPORT sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown);
 std::pair<Tensor, Tensor> brodcast_tensors(const Tensor& a, const Tensor& b);
 
 static Tensor exp(const Tensor& x) { return x.exp(); }

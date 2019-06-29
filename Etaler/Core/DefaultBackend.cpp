@@ -6,7 +6,7 @@
 namespace et
 {
 std::shared_ptr<Backend> g_default_backend_hold;
-Backend* g_default_backend;
+Backend* g_default_backend = nullptr;
 }
 
 using namespace et;

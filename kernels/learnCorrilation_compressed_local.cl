@@ -22,7 +22,7 @@ kernel void learnCorrilation(global bool* restrict x, global bool* restrict y
 	, global int* restrict synapses, global float* restrict permeances
 	, float permeance_inc, float permeance_dec)
 {
-	local char xl[INPUT_SIZE];
+	local char xl[INPUT_SIZE/8+1];
 	size_t id = get_local_id(0);
 	size_t size = get_local_size(0);
 
@@ -30,6 +30,14 @@ kernel void learnCorrilation(global bool* restrict x, global bool* restrict y
 		unsigned char res = 0;
 		#pragma unroll
 		for(int j=0;j<8;j++)
+			res |= x[i*8+j] << j;
+		xl[i] = res;
+	}
+
+	if(id == 0 && INPUT_SIZE%8 != 0) {
+		int i=INPUT_SIZE/8;
+		unsigned char res = 0;
+		for(int j=0;j<8 && i*8+j < INPUT_SIZE;j++)
 			res |= x[i*8+j] << j;
 		xl[i] = res;
 	}
