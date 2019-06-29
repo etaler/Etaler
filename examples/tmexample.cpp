@@ -7,8 +7,6 @@ using namespace et;
 
 #include <iostream>
 #include <numeric>
-#include "matplotlibcpp.h"
-namespace plt = matplotlibcpp;
 
 inline std::string to_string(std::vector<size_t> v)
 {
@@ -49,7 +47,7 @@ int main()
 		std::cout << "input, prediction of next = " << categoery
 			<< ", " << to_string(pred_category);
 		std::cout << '\n';
-	
+	/* 
 		if (i==0)
 		{
 			std::vector<std::vector<double>> x1, y1, z1;
@@ -70,4 +68,5 @@ int main()
 		}
 		
 	}
+	*/
 }
