@@ -67,6 +67,6 @@ int main()
 			plt::show();
 		}
 		
-	}
 	*/
+	}
 }
