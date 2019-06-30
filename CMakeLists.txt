@@ -62,6 +62,7 @@ if(${FIND_MODULE_TBB})
 		message(FATAL_ERROR "Could not locate Intel TBB include & libs")
 	else()
 		message(STATUS "Found existing Intel TBB")
+		set(TBB_IMPORTED_TARGETS ${TBB_LIBRARIES})
 	endif()
 endif()
 
