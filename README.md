@@ -123,14 +123,7 @@ Some cmake options are available:
 | ETALER_BUILD_TESTS    |  Build the tests           |  ON      |
 
 ### Building in Docker/VSC
-```shell
-cd docker
-./build.sh
-./run.sh
-```
-
-
-Clone the repository. Then after fulfilling the dependencies. Execute `cmake` and then run whatever build system you're using.
+Open the folder in VSC with remote docker extension ( ext install ms-vscode-remote.remote-containers ) - the docker image and container will start automatically. If CMake Tools extension are also installed, the building will be done automaticaly also. Otherwhise, do the regular cmake procedure inside Etaler dir.
 
 ## LICENSE
 Etaler is licensed under BSD 3-Clause License. So use it freely!
