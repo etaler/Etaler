@@ -1,6 +1,7 @@
 [submodule "Etaler/3rdparty/pcg-cpp"]
 	path = Etaler/3rdparty/pcg-cpp
 	url = https://github.com/imneme/pcg-cpp
-[submodule "3rd_parties/Easy3D"]
-	path = 3rd_parties/Easy3D
+[submodule "Etaler/3rdparty/Easy3D"]
+	path = Etaler/3rdparty/Easy3D
 	url = https://github.com/LiangliangNan/Easy3D.git
+	branch = master
