@@ -1,4 +1,4 @@
-#include "catch.hpp"
+#include <catch2/catch.hpp>
 
 #include <Etaler/Etaler.hpp>
 #include <Etaler/Encoders/Scalar.hpp>
