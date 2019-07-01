@@ -1,7 +1,5 @@
 #pragma once
 
-#pragma once
-
 #include <vector>
 #include <array>
 #include <cmath>
