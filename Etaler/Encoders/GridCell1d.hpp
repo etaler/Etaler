@@ -16,10 +16,10 @@ namespace encoder
 {
 
 //This implementation is slower the one in tiny-htm. But is more accurate
-static std::vector<uint8_t> gcm1d(float v, float scale, size_t active_cells, size_t num_cells)
+static std::vector<uint8_t> gcm1d(float v, float scale, float bias, size_t active_cells, size_t num_cells)
 {
 	std::vector<uint8_t> res(num_cells);
-	float loc = v*scale;
+	float loc = v*scale+bias;
 
 	std::vector<std::pair<size_t, float>> cell_distances;
 	cell_distances.reserve(res.size());
@@ -51,9 +51,10 @@ static Tensor gridCell1d(float v, size_t num_gcm=16, size_t active_cells_per_gcm
 	std::vector<uint8_t> encoding(num_gcm*length_per_gcm);
 	pcg32 rng(seed);
 	std::uniform_real_distribution<float> scale_dist(scale_range[0], scale_range[1]);
+	std::uniform_real_distribution<float> bias_dist(0, length_per_gcm);
 
 	for(size_t i=0;i<num_gcm;i++) {
-		auto gcm_res = gcm1d(v, scale_dist(rng), active_cells_per_gcm, length_per_gcm);
+		auto gcm_res = gcm1d(v, scale_dist(rng), bias_dist(rng), active_cells_per_gcm, length_per_gcm);
 		std::copy(gcm_res.begin(), gcm_res.end(), encoding.begin()+i*length_per_gcm);
 	}
 
