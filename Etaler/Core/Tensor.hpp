@@ -48,7 +48,7 @@ struct ETALER_EXPORT Tensor
 	void* data() {return call_const(data);}
 	const void* data() const {return pimpl_->data();}
 	DType dtype() const {return pimpl_->dtype();}
-	Shape shape() const {return pimpl_->shape();}
+	Shape shape() const {if(pimpl_) return pimpl_->shape(); else return Shape();}
 	size_t size() const {return pimpl_->size();}
 	size_t dimentions() const {return pimpl_->dimentions();}
 	void resize(Shape s) {pimpl()->resize(s);}
