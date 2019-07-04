@@ -1,5 +1,4 @@
-
-# Etaler
+![logo](./docs/images/logov1.png)
 
 ---
 
@@ -21,14 +20,17 @@ You can now explore HTM with modern, easy to use API and enjoy the performance b
 ## More about Etaler
 
 ### A GPU ready HTM library
+
 Unlike most previous HTM implementations, Etaler is designed from the ground up to work with GPUs and allows almost seamless data transfer between CPU and GPUs.
 
 Etaler provides HTM algorithms and a minimal Tensor implementation that operates on both CPU and GPU. You can choose what works best for you and switch between them with ease.
 
 ### Total front-end /back-end separation
+
 Etaler is written in a way that the front-end businesses (Tensor operation calls, HTM APIs, layer save/load) are totally separated from the backend, where all the computation and memory management happens. This allows Etaler to be easily expanded and optimized. Have multiple GPUs? Just spawn multiple GPU backends! Thou shell not need any black-magic.
 
 ### Why the name?
+
 Etaler is named after the inverse of the word "relate" for no specific reason.
 
 ## Examples
@@ -36,6 +38,7 @@ Etaler is named after the inverse of the word "relate" for no specific reason.
 See the `examples` folder for more information. For a quick feel on how Etaler works.
 
 Creating and printing a tensor
+
 ```C++
 float arr[] = {1, 2, 3, 4};
 Tensor t = Tensor(/*shape=*/{4}
@@ -45,11 +48,13 @@ std::cout << t << std::endl;
 ```
 
 Encode a scalar
+
 ```C++
 Tensor t = encoder::scalar(0.1);
 ```
 
 Using the GPU
+
 ```C++
 auto gpu = std::make_shared<OpenCLBackend>();
 Tensor t = encoder::scalar(0.1);
@@ -63,6 +68,7 @@ Tensor r = sp.compute(q);
 ```
 
 Saving layers
+
 ```C++
 save(sp.states(), "sp.cereal");
 ```
@@ -71,11 +77,11 @@ For more information see [the documents](docs/)
 
 ## Building and platform support
 
-| OS/Backend      |  CPU |  OpenCL                   |
-|-----------------|------|---------------------------|
-| Linux           |  Yes |  Yes                      |
-| OS X            |  Yes |  Yes                      |
-| Windows         |  Yes |  Yes                      |
+| OS/Backend | CPU | OpenCL |
+| ---------- | --- | ------ |
+| Linux      | Yes | Yes    |
+| OS X       | Yes | Yes    |
+| Windows    | Yes | Yes    |
 
 * Build with GCC and libstdc++ on OS X 10.11.
 * Clang should work after OS X 10.14. See [BuildOnOSX.md](docs/BuildOnOSX.md)
@@ -84,21 +90,25 @@ For more information see [the documents](docs/)
 ### Dependencies
 
 * Required
+  
   * C++17 capable compiler
   * [Intel TBB](https://github.com/01org/tbb)
   * [cereal](https://github.com/USCiLab/cereal)
 
 * OpenCL Backend
+  
   * OpenCL and OpenCL C++ wrapper
   * OpenCL 1.2 capable GPU
 
 * Tests
+  
   * [catch2](https://github.com/catchorg/Catch2)
 
 Notes:
+
 1. Make sure to setup a `TBBROOT` environment variable to point to the binary installation directory of TBB. And the TBB `tbbvars.sh` file has been modified correctly and run, before running `cmake`.
-1. `cereal` can be git cloned into the `Etaler/Etaler/3rdparty` directory.
-1. Only the [catch.hpp](https://github.com/catchorg/Catch2/releases/download/v2.8.0/catch.hpp) file is required from Catch2, and that file can be placed into the `Etaler/tests` directory.
+2. `cereal` can be git cloned into the `Etaler/Etaler/3rdparty` directory.
+3. Only the [catch.hpp](https://github.com/catchorg/Catch2/releases/download/v2.8.0/catch.hpp) file is required from Catch2, and that file can be placed into the `Etaler/tests` directory.
 
 ### Building from source
 
@@ -115,20 +125,22 @@ make -j8
 
 Some cmake options are available:
 
-| option                |  description               |  default |
-|-----------------------|----------------------------|----------|
-| CMAKE_BUILD_TYPE      |  Debug or Release build    |  Release |
-| ETALER_ENABLE_OPENCL  |  Enable the OpenCL backend |  OFF     |
-| ETALER_BUILD_EXAMPLES |  Build the examples        |  ON      |
-| ETALER_BUILD_TESTS    |  Build the tests           |  ON      |
+| option                | description               | default |
+| --------------------- | ------------------------- | ------- |
+| CMAKE_BUILD_TYPE      | Debug or Release build    | Release |
+| ETALER_ENABLE_OPENCL  | Enable the OpenCL backend | OFF     |
+| ETALER_BUILD_EXAMPLES | Build the examples        | ON      |
+| ETALER_BUILD_TESTS    | Build the tests           | ON      |
 
 ## LICENSE
+
 Etaler is licensed under BSD 3-Clause License. So use it freely!
 
 Be aware that [Numenta](https://numenta.com/) holds the rights to HTM related patents. And only allows free (as "free beers" free) use of their patents for non-commercial purpose. If you are using Etaler commercially; please contact Numenta for licensing. <br>
 (tl;dr Etaler is free for any purpose. But HTM is not for commercial use.)
 
 ## Contribution
+
 HTM Theory is in it's young age and as we are growing. We'd like to get contributions from you to accelerate the development of Etaler! Just fork, make changes and launch a PR!
 
 See [CONTRIBUTION.md](docs/Contribution.md)
