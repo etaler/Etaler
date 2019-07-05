@@ -469,17 +469,12 @@ static std::shared_ptr<TensorImpl> uniaryOp(const TensorImpl* src, Op op)
 			auto ptr = getPtrToValue<T>(i, src);
 			auto res = op(*ptr);
 			using ResType = decltype(res);
-			if(i == 0) {
-				if constexpr(std::is_same<ResType, double>::value == false)
-					dest = src->backend()->createTensor(src->shape(), typeToDType<ResType>());
-				else
-					dest = src->backend()->createTensor(src->shape(), typeToDType<float>());
-			}
+			//We don't have support to double percition now. Cast it to float
+			using StoreType = typename std::conditional<std::is_same<ResType, double>::value, float, ResType>::type;
+			if(i == 0)
+				dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
 
-			if constexpr(std::is_same<ResType, double>::value == false)
-				((ResType*)dest->data())[i] = res;
-			else
-				((float*)dest->data())[i] = res;
+			reinterpret_cast<StoreType*>(dest->data())[i] = res;
 		}
 	});
 
@@ -504,17 +499,12 @@ static std::shared_ptr<TensorImpl> binaryOp(const TensorImpl* src, const TensorI
 				auto ptr2 = getPtrToValue<T2>(i, src2);
 				auto res = op(*ptr, *ptr2);
 				using ResType = decltype(res);
-				if(i == 0) {
-					if constexpr(std::is_same<ResType, double>::value == false)
-						dest = src->backend()->createTensor(src->shape(), typeToDType<ResType>());
-					else
-						dest = src->backend()->createTensor(src->shape(), typeToDType<float>());
-				}
+				//We don't have support to double percition now. Cast it to float
+				using StoreType = typename std::conditional<std::is_same<ResType, double>::value, float, ResType>::type;
+				if(i == 0)
+					dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
 
-				if constexpr(std::is_same<ResType, double>::value == false)
-					((ResType*)dest->data())[i] = res;
-				else
-					((float*)dest->data())[i] = res;
+				reinterpret_cast<StoreType*>(dest->data())[i] = res;
 			}
 		});
 	});

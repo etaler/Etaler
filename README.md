@@ -1,4 +1,6 @@
-![logo](./docs/images/logov1.png)
+<div align="center">
+  <img src="https://raw.githubusercontent.com/etaler/Etaler/master/docs/images/logov1.png"><br><br>
+</div>
 
 ---
 
