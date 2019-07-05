@@ -39,7 +39,7 @@ static std::vector<uint8_t> gcm1d(float v, float scale, float bias, size_t activ
 		float dist = std::fmod(loc, num_cells);
 		if(dist < 0)
 			dist += num_cells;
-		size_t index = (size_t)dist + (std::fmod(dist, 1) > 0.5f ? 1 : 0);
+		size_t index = ((size_t)dist + (std::fmod(dist, 1) > 0.5f ? 1 : 0))%num_cells;
 		res[index] = 1;
 	}
 	return res;
