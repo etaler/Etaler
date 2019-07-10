@@ -263,9 +263,9 @@ void KernelManager::addSearchPath(const std::string& path)
 std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections,
 	const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
-	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
-	et_assert(points_to<const OpenCLBuffer>(connections->buffer()));
-	et_assert(points_to<const OpenCLBuffer>(permeances->buffer()));
+	et_assert(x->backend() == this);
+	et_assert(connections->backend() == this);
+	et_assert(permeances->backend() == this);
 	et_assert(x->iscontiguous());
 	et_assert(connections->iscontiguous());
 	et_assert(permeances->iscontiguous());
@@ -311,7 +311,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 
 std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
-	et_assert(points_to<OpenCLBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->iscontiguous());
 
 	et_assert(x->dtype() == DType::Int32);
@@ -346,7 +346,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x,
 
 std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toType)
 {
-	et_assert(points_to<OpenCLBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->iscontiguous());
 	auto args = "-DInType="+to_ctype_string(x->dtype())+" -DOutType="+to_ctype_string(toType);
 	auto hash = hash_string(args);
@@ -387,10 +387,10 @@ std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
 	TensorImpl* permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse)
 {
-	et_assert(points_to<OpenCLBuffer>(x->buffer()));
-	et_assert(points_to<OpenCLBuffer>(connections->buffer()));
-	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
-	et_assert(points_to<OpenCLBuffer>(learn->buffer()));
+	et_assert(x->backend() == this);
+	et_assert(connections->backend() == this);
+	et_assert(permeances->backend() == this);
+	et_assert(learn->backend() == this);
 
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(x->shape() == learn->shape());
@@ -430,8 +430,8 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(points_to<OpenCLBuffer>(connections->buffer()));
-	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
+	et_assert(connections->backend() == this);
+	et_assert(permeances->backend() == this);
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 	et_assert(connections->iscontiguous());
@@ -461,8 +461,8 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
-	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
-	et_assert(points_to<const OpenCLBuffer>(s->buffer()));
+	et_assert(x->backend() == this);
+	et_assert(s->backend() == this);
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(s->dtype() == DType::Bool);
 	et_assert(x->iscontiguous());
@@ -493,7 +493,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const Tens
 
 std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 {
-	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(x->iscontiguous());
 
@@ -523,10 +523,10 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm)
 {
-	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
-	et_assert(points_to<const OpenCLBuffer>(y->buffer()));
-	et_assert(points_to<OpenCLBuffer>(connections->buffer()));
-	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
+	et_assert(x->backend() == this);
+	et_assert(y->backend() == this);
+	et_assert(connections->backend() == this);
+	et_assert(permeances->backend() == this);
 	et_assert(x->iscontiguous());
 	et_assert(y->iscontiguous());
 	et_assert(connections->iscontiguous());
@@ -582,7 +582,7 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 
 std::optional<cl::Buffer> OpenCLBackend::toSparse(const TensorImpl* x)
 {
-	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(x->iscontiguous());
 
@@ -705,7 +705,7 @@ kernel void copy(global Type* restrict x, global Type* restrict y)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 {
-	et_assert(points_to<const OpenCLBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	if(x->iscontiguous() == true)
 		return copy(x);
 
@@ -735,7 +735,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 {
 	et_assert(points_to<OpenCLBuffer>(dest->buffer()));
-	et_assert(points_to<const OpenCLBuffer>(src->buffer()));
+	et_assert(src->backend() == this);
 
 	if(dest->shape() != src->shape())
 	throw EtError("Shape mismatch in tensor assignment. Shape "
