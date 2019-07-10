@@ -165,3 +165,14 @@ inline Shape foldIndex(size_t index, const ShapeType& shape)
 }
 
 }
+
+//Print Shape at the prompt
+namespace cling
+{
+
+inline std::string printValue(const et::Shape* value)
+{
+	return et::to_string(*value);
+}
+
+}
