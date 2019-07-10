@@ -309,3 +309,19 @@ static Tensor logical_and(const Tensor& x1, const Tensor& x2) { return x1.logica
 static Tensor logical_or(const Tensor& x1, const Tensor& x2) { return x1.logical_or(x2); }
 
 }
+
+#include <sstream>
+
+namespace cling
+{
+
+//FIXME: For some weard reson, I can't just return et::to_string(*value) and this function have to be inlined.
+//Otherwise cling crashes.
+inline std::string printValue(const et::Tensor* value)
+{
+	std::stringstream ss;
+	ss << *value;
+	return ss.str();
+}
+
+}
