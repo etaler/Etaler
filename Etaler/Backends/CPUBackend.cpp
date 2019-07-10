@@ -286,8 +286,8 @@ void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
-	et_assert(points_to<const CPUBuffer>(x->buffer()));
-	et_assert(points_to<const CPUBuffer>(s->buffer()));
+	et_assert(x->backend() == this);
+	et_assert(s->backend() == this);
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(s->dtype() == DType::Bool);
 	et_assert(x->iscontiguous());
@@ -319,7 +319,7 @@ std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorI
 
 std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 {
-	et_assert(points_to<const CPUBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(x->iscontiguous());
 
@@ -348,8 +348,8 @@ std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 	, TensorImpl* permeances, float initial_perm)
 {
-	et_assert(points_to<const CPUBuffer>(x->buffer()));
-	et_assert(points_to<const CPUBuffer>(y->buffer()));
+	et_assert(x->backend() == this);
+	et_assert(y->backend() == this);
 	et_assert(points_to<CPUBuffer>(connections->buffer()));
 	et_assert(points_to<CPUBuffer>(permeances->buffer()));
 	et_assert(x->iscontiguous());
