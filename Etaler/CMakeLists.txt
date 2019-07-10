@@ -37,7 +37,7 @@ if(ETALER_ENABLE_OPENCL)
 		DESTINATION share/Etaler
 		FILES_MATCHING PATTERN "*.cl")
 
-	message("Etaler: OpenCL backend enabled.")
+	message(STATUS "Etaler: OpenCL backend enabled.")
 endif()
 
 if(APPLE AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
