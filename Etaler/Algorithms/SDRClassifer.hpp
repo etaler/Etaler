@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Etaler/Core/Tensor.hpp>
-##include <Etaler/Core/Serialize.hpp>
+#include <Etaler/Core/Serialize.hpp>
 
 #include "Etaler_export.h"
 
