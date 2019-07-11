@@ -20,8 +20,10 @@ xt::xarray<T> to_xarray(const Tensor& t)
 {
 	auto shape = t.shape();
 	std::vector<size_t> s(shape.begin(), shape.end());
-	auto vec = t.toHost<T>();
-	return xt::adapt(vec.data(), s);
+	//Handle the case of bool
+	using DataType = std::conditional<std::is_same<T, bool>, uint8_t, T>::type;
+	auto vec = t.toHost<DataType>();
+	return xt::adapt((const T*)vec.data(), s);
 }
 
 }
