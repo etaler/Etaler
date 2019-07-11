@@ -6,6 +6,7 @@
 #include <Etaler/Encoders/GridCell1d.hpp>
 #include <Etaler/Encoders/GridCell2d.hpp>
 #include <Etaler/Core/Serialize.hpp>
+#include <Etaler/Algorithms/SDRClassifer.hpp>
 
 #include <numeric>
 
@@ -567,6 +568,19 @@ TEST_CASE("brodcast")
 		b = ones({7});
 		CHECK_THROWS(a+b);
 	}
+}
+
+TEST_CASE("SDRClassifer")
+{
+	size_t num_bits = 8;
+	size_t num_category = 6;
+	SDRClassifer classifer({(intmax_t)(num_bits*num_category)}, num_category);
+
+	for(size_t i=0;i<num_category;i++)
+		CHECK_NOTHROW(classifer.addPattern(encoder::category(i, num_category, num_bits), i));
+	
+	for(size_t i=0;i<num_category;i++)
+		CHECK(classifer.compute(encoder::category(i, num_category, num_bits),0) == i);
 }
 
 // TEST_CASE("Serealize")
