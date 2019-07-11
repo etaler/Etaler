@@ -54,21 +54,13 @@ struct ETALER_EXPORT SDRClassifer
 		num_patterns_ = std::any_cast<std::vector<int>>(states.at("num_patterns"));
 	}
 
-	SDRClassifer to(Backend* b)
+	SDRClassifer to(Backend* b) const
 	{
 		SDRClassifer c = *this;
 		assert(c.references_.size() == references_.size());
 		for(size_t i=0;i<references_.size();i++)
 			c.references_[i] = references_[i].to(b);
 		return c;
-	}
-
-	StateDict states()
-	{
-		StateDict dict;
-		dict["references"] = references_;
-		dict["num_patterns"] = num_patterns_;
-		return dict;
 	}
 
 	Shape input_shape_;
