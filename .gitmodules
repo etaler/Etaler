@@ -5,3 +5,6 @@
 	path = Etaler/3rdparty/Easy3D
 	url = https://github.com/LiangliangNan/Easy3D.git
 	branch = master
+[submodule "Etaler/3rdparty/LayersVisualizer/Easy3D"]
+	path = Etaler/3rdparty/LayersVisualizer/Easy3D
+	url = https://github.com/LiangliangNan/Easy3D.git
