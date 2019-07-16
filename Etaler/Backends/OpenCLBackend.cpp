@@ -372,7 +372,7 @@ void OpenCLBackend::sync() const
 
 std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 {
-	et_assert(points_to<OpenCLBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->iscontiguous());
 	size_t buf_size = x->size()*dtypeToSize(x->dtype());
 	cl::Buffer buf = allocBuffer(buf_size);
@@ -734,7 +734,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 
 void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 {
-	et_assert(points_to<OpenCLBuffer>(dest->buffer()));
+	et_assert(dest->backend() == this);
 	et_assert(src->backend() == this);
 
 	if(dest->shape() != src->shape())
@@ -764,7 +764,7 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
-	et_assert(points_to<OpenCLBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->size() % chunk_size == 0);
 	et_assert(x->iscontiguous());
 
@@ -809,8 +809,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(points_to<OpenCLBuffer>(connections->buffer()));
-	et_assert(points_to<OpenCLBuffer>(permeances->buffer()));
+	et_assert(connections->backend() == this);
+	et_assert(permeances->backend() == this);
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 	et_assert(connections->iscontiguous());
@@ -880,7 +880,7 @@ kernel void op(global T0* restrict x1, global T1* restrict x2, global ResType* r
 
 std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std::string f, DType resType)
 {
-	et_assert(points_to<OpenCLBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 
 	std::string args = "-DT0="+to_ctype_string(x->dtype())+" -DResType="+to_ctype_string(resType);
 	std::string program_name = f+hash_string(args)+std::to_string(x->offset())+to_string(x->shape())+to_string(x->stride());
@@ -906,8 +906,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std
 
 std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, const TensorImpl* x2, std::string f, DType resType)
 {
-	et_assert(points_to<OpenCLBuffer>(x1->buffer()));
-	et_assert(points_to<OpenCLBuffer>(x2->buffer()));
+	et_assert(x1->backend() == this);
+	et_assert(x2->backend() == this);
 	et_assert(x1->shape() == x2->shape());
 
 	auto to_str = [](auto x){

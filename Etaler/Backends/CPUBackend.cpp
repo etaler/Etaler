@@ -58,9 +58,9 @@ std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const 
 	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
 	//Checks the input are sane
-	et_assert(points_to<CPUBuffer>(x->buffer()));
-	et_assert(points_to<CPUBuffer>(connections->buffer()));
-	et_assert(points_to<CPUBuffer>(permeances->buffer()));
+	et_assert(x->backend() == this);
+	et_assert(connections->backend() == this);
+	et_assert(permeances->backend() == this);
 	et_assert(x->iscontiguous());
 	et_assert(connections->iscontiguous());
 	et_assert(permeances->iscontiguous());
@@ -118,10 +118,10 @@ std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const 
 void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections, TensorImpl* permeances
 	, float perm_inc, float perm_dec, bool has_unconnected_synapse)
 {
-	et_assert(points_to<CPUBuffer>(x->buffer()));
-	et_assert(points_to<CPUBuffer>(connections->buffer()));
-	et_assert(points_to<CPUBuffer>(permeances->buffer()));
-	et_assert(points_to<CPUBuffer>(learn->buffer()));
+	et_assert(x->backend() == this);
+	et_assert(connections->backend() == this);
+	et_assert(permeances->backend() == this);
+	et_assert(learn->backend() == this);
 	et_assert(x->iscontiguous());
 	et_assert(learn->iscontiguous());
 	et_assert(connections->iscontiguous());
@@ -166,7 +166,7 @@ void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, 
 
 std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
-	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->iscontiguous());
 
 	et_assert(x->dtype() == DType::Int32);
@@ -216,7 +216,7 @@ static std::vector<To> castData(const From* ptr, size_t n)
 
 std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 {
-	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->iscontiguous());
 	const CPUBuffer* p = dynamic_cast<const CPUBuffer*>(x->buffer().get());
 	const CPUBuffer& t = *p;
@@ -248,7 +248,7 @@ void CPUBackend::copyToHost(const TensorImpl* t, void* ptr)
 
 std::shared_ptr<TensorImpl> CPUBackend::copy(const TensorImpl* x)
 {
-	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->iscontiguous());
 	return createTensor(x->shape(), x->dtype(), x->data());
 }
@@ -256,8 +256,8 @@ std::shared_ptr<TensorImpl> CPUBackend::copy(const TensorImpl* x)
 void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(points_to<CPUBuffer>(connections->buffer()));
-	et_assert(points_to<CPUBuffer>(permeances->buffer()));
+	et_assert(connections->backend() == this);
+	et_assert(permeances->backend() == this);
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 	et_assert(connections->iscontiguous());
@@ -350,8 +350,8 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 {
 	et_assert(x->backend() == this);
 	et_assert(y->backend() == this);
-	et_assert(points_to<CPUBuffer>(connections->buffer()));
-	et_assert(points_to<CPUBuffer>(permeances->buffer()));
+	et_assert(connections->backend() == this);
+	et_assert(permeances->backend() == this);
 	et_assert(x->iscontiguous());
 	et_assert(y->iscontiguous());
 	et_assert(connections->iscontiguous());
@@ -515,7 +515,7 @@ static std::shared_ptr<TensorImpl> binaryOp(const TensorImpl* src, const TensorI
 
 std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 {
-	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->data() != nullptr);
 	auto res = createTensor(x->shape(), x->dtype());
 
@@ -532,8 +532,8 @@ std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 
 void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 {
-	et_assert(points_to<CPUBuffer>(dest->buffer()));
-	et_assert(points_to<CPUBuffer>(src->buffer()));
+	et_assert(dest->backend() == this);
+	et_assert(src->backend() == this);
 
 	if(dest->shape() != src->shape())
 		throw EtError("Shape mismatch in tensor assignment. Shape "
@@ -556,7 +556,7 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
-	et_assert(points_to<CPUBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->size() % chunk_size == 0);
 	et_assert(x->iscontiguous());
 
@@ -594,8 +594,8 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 void CPUBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(points_to<CPUBuffer>(connections->buffer()));
-	et_assert(points_to<CPUBuffer>(permeances->buffer()));
+	et_assert(connections->backend() == this);
+	et_assert(permeances->backend() == this);
 	et_assert(connections->dtype() == DType::Int32);
 	et_assert(permeances->dtype() == DType::Float);
 	et_assert(permeances->iscontiguous());
