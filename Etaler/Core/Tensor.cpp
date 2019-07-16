@@ -295,14 +295,13 @@ inline bool brodcastable(Shape a, Shape b)
 
 inline Shape brodcast_result_shape(Shape a, Shape b)
 {
-	Shape s;
-
 	size_t max = std::max(a.size(), b.size());
 	a = leftpad(a, max);
 	b = leftpad(b, max);
 	assert(a.size() == b.size());
 	assert(a.size() == max);
 
+	Shape s;
 	for(size_t i=0;i<max;i++)
 		s.push_back(std::max(a[i], b[i]));
 	return s;

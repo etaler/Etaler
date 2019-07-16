@@ -48,7 +48,7 @@ struct ETALER_EXPORT Tensor
 	void* data() {return call_const(data);}
 	const void* data() const {return pimpl_->data();}
 	DType dtype() const {return pimpl_->dtype();}
-	Shape shape() const {return pimpl_->shape();}
+	Shape shape() const {if(pimpl_) return pimpl_->shape(); else return Shape();}
 	size_t size() const {return pimpl_->size();}
 	size_t dimentions() const {return pimpl_->dimentions();}
 	void resize(Shape s) {pimpl()->resize(s);}
@@ -307,5 +307,21 @@ static Tensor greater(const Tensor& x1, const Tensor& x2) { return x1.greater(x2
 static Tensor lesser(const Tensor& x1, const Tensor& x2) { return x1.lesser(x2); }
 static Tensor logical_and(const Tensor& x1, const Tensor& x2) { return x1.logical_and(x2); }
 static Tensor logical_or(const Tensor& x1, const Tensor& x2) { return x1.logical_or(x2); }
+
+}
+
+#include <sstream>
+
+namespace cling
+{
+
+//FIXME: For some weard reson, I can't just return et::to_string(*value) and this function have to be inlined.
+//Otherwise cling crashes.
+inline std::string printValue(const et::Tensor* value)
+{
+	std::stringstream ss;
+	ss << *value;
+	return ss.str();
+}
 
 }

@@ -286,8 +286,8 @@ void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
-	et_assert(points_to<const CPUBuffer>(x->buffer()));
-	et_assert(points_to<const CPUBuffer>(s->buffer()));
+	et_assert(x->backend() == this);
+	et_assert(s->backend() == this);
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(s->dtype() == DType::Bool);
 	et_assert(x->iscontiguous());
@@ -319,7 +319,7 @@ std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorI
 
 std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 {
-	et_assert(points_to<const CPUBuffer>(x->buffer()));
+	et_assert(x->backend() == this);
 	et_assert(x->dtype() == DType::Bool);
 	et_assert(x->iscontiguous());
 
@@ -348,8 +348,8 @@ std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 	, TensorImpl* permeances, float initial_perm)
 {
-	et_assert(points_to<const CPUBuffer>(x->buffer()));
-	et_assert(points_to<const CPUBuffer>(y->buffer()));
+	et_assert(x->backend() == this);
+	et_assert(y->backend() == this);
 	et_assert(points_to<CPUBuffer>(connections->buffer()));
 	et_assert(points_to<CPUBuffer>(permeances->buffer()));
 	et_assert(x->iscontiguous());
@@ -469,17 +469,12 @@ static std::shared_ptr<TensorImpl> uniaryOp(const TensorImpl* src, Op op)
 			auto ptr = getPtrToValue<T>(i, src);
 			auto res = op(*ptr);
 			using ResType = decltype(res);
-			if(i == 0) {
-				if constexpr(std::is_same<ResType, double>::value == false)
-					dest = src->backend()->createTensor(src->shape(), typeToDType<ResType>());
-				else
-					dest = src->backend()->createTensor(src->shape(), typeToDType<float>());
-			}
+			//We don't have support to double percition now. Cast it to float
+			using StoreType = typename std::conditional<std::is_same<ResType, double>::value, float, ResType>::type;
+			if(i == 0)
+				dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
 
-			if constexpr(std::is_same<ResType, double>::value == false)
-				((ResType*)dest->data())[i] = res;
-			else
-				((float*)dest->data())[i] = res;
+			reinterpret_cast<StoreType*>(dest->data())[i] = res;
 		}
 	});
 
@@ -504,17 +499,12 @@ static std::shared_ptr<TensorImpl> binaryOp(const TensorImpl* src, const TensorI
 				auto ptr2 = getPtrToValue<T2>(i, src2);
 				auto res = op(*ptr, *ptr2);
 				using ResType = decltype(res);
-				if(i == 0) {
-					if constexpr(std::is_same<ResType, double>::value == false)
-						dest = src->backend()->createTensor(src->shape(), typeToDType<ResType>());
-					else
-						dest = src->backend()->createTensor(src->shape(), typeToDType<float>());
-				}
+				//We don't have support to double percition now. Cast it to float
+				using StoreType = typename std::conditional<std::is_same<ResType, double>::value, float, ResType>::type;
+				if(i == 0)
+					dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
 
-				if constexpr(std::is_same<ResType, double>::value == false)
-					((ResType*)dest->data())[i] = res;
-				else
-					((float*)dest->data())[i] = res;
+				reinterpret_cast<StoreType*>(dest->data())[i] = res;
 			}
 		});
 	});

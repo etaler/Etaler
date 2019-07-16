@@ -49,6 +49,7 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 	Shape s = output_shape + potential_pool_size;
 	connections_ = Tensor(s, connections.data(), b);
 	permanences_ = Tensor(s, permanences.data(), b);
+	average_activity_ = constant(output_shape, global_density);
 }
 
 SpatialPooler::SpatialPooler(const Shape& input_shape, size_t kernel_size, size_t stride, float potential_pool_pct, size_t seed
@@ -98,6 +99,7 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, size_t kernel_size, size_
 		connections_.view(write_loc) = Tensor({(intmax_t)potential_pool_size}, conns.data());
 		permanences_.view(write_loc) = Tensor({(intmax_t)potential_pool_size}, permanences.data());
 	}
+	average_activity_ = constant(output_shape, global_density);
 }
 
 Tensor SpatialPooler::compute(const Tensor& x) const

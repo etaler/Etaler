@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Etaler/Core/Tensor.hpp>
-##include <Etaler/Core/Serialize.hpp>
+#include <Etaler/Core/Serialize.hpp>
 
 #include "Etaler_export.h"
 
@@ -39,7 +39,7 @@ struct ETALER_EXPORT SDRClassifer
 			if(overlaps > best_match)
 				std::tie(best_match_id, best_match) = std::pair(i, overlaps);
 		}
-		return best_match;
+		return best_match_id;
 	}
 
 	StateDict states() const
@@ -49,29 +49,18 @@ struct ETALER_EXPORT SDRClassifer
 
 	void loadState(const StateDict& states)
 	{
-		input_shape_ = std::any_cast<Shape>(states["input_shape"]);
-		references_ = std::any_cast<Tensor>(states["references"]);
-		num_patterns_ = std::any_cast<std::vector<int>>(states["num_patterns"]);
+		input_shape_ = std::any_cast<Shape>(states.at("input_shape"));
+		references_ = std::any_cast<std::vector<Tensor>>(states.at("references"));
+		num_patterns_ = std::any_cast<std::vector<int>>(states.at("num_patterns"));
 	}
 
-	SDRClassifer to(Backend* b)
+	SDRClassifer to(Backend* b) const
 	{
 		SDRClassifer c = *this;
-		c.references_ = references_.to(b);
-	}
-
-	StateDict states()
-	{
-		StateDict dict;
-		dict["references"] = references_;
-		dict["num_patterns"] = num_patterns_;
-		return dict;
-	}
-
-	void loadState(const StateDict& states)
-	{
-		references_ = std::any_cast<Tensor>(states.at("references"));
-		num_patterns_ = std::any_cast<std::vector<int>>(states.at("num_patterns"));
+		assert(c.references_.size() == references_.size());
+		for(size_t i=0;i<references_.size();i++)
+			c.references_[i] = references_[i].to(b);
+		return c;
 	}
 
 	Shape input_shape_;
