@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 3.1)
+
+get_filename_component(PROJECT_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
+project(${PROJECT_NAME})
+
+
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -fPIC -g")
+
+set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall")
+#set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -Wall")
+set(CMAKE_CONFIGURATION_TYPES "Debug" CACHE STRING "" FORCE)
+
+add_library(${PROJECT_NAME} STATIC src/glew.c)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES FOLDER "3rd_party")
+
+target_include_directories(${PROJECT_NAME} PUBLIC ${EASY3D_glew_INCLUDE_DIR})
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC GLEW_STATIC GLEW_NO_GLU)
+
+find_package(OpenGL REQUIRED)
+target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARIES})
+
+
+if (MSVC)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE
+        _CRT_SECURE_NO_WARNINGS
+        _CRT_SECURE_NO_DEPRECATE
+        )
+endif()
