@@ -63,6 +63,13 @@ struct ETALER_EXPORT SDRClassifer
 		return c;
 	}
 
+	SDRClassifer copy() const
+	{
+		if(references_.size() == 0)
+			return *this;
+		return to(references_[0].backend());	
+	}
+
 	Shape input_shape_;
 	std::vector<Tensor> references_;
 	std::vector<int> num_patterns_;
