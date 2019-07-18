@@ -8,3 +8,6 @@
 [submodule "Etaler/3rdparty/LayersVisualizer/Easy3D"]
 	path = Etaler/3rdparty/LayersVisualizer/Easy3D
 	url = https://github.com/LiangliangNan/Easy3D.git
+[submodule "examples/visualize/LayersVisualizer"]
+	path = examples/visualize/LayersVisualizer
+	url = https://github.com/alior101/LayersVisualizer.git
