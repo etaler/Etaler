@@ -21,15 +21,15 @@ target_link_libraries(tmexample Etaler)
 
 
 project(tm_visualize CXX)
-link_directories(${CMAKE_SOURCE_DIR}/Etaler/3rdparty/LayersVisualizer/build/)
-link_directories(${CMAKE_SOURCE_DIR}/Etaler/3rdparty/LayersVisualizer/Easy3D/build/lib)
-include_directories( ${CMAKE_SOURCE_DIR}/Etaler/3rdparty/LayersVisualizer/)
-include_directories( ${CMAKE_SOURCE_DIR}/Etaler/3rdparty/LayersVisualizer/Easy3D)
-include_directories( ${CMAKE_SOURCE_DIR}/Etaler/3rdparty/LayersVisualizer/imgui)
-add_subdirectory(${CMAKE_SOURCE_DIR}/Etaler/3rdparty/LayersVisualizer ${CMAKE_SOURCE_DIR}/Etaler/3rdparty/LayersVisualizer/build/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/visualize/LayersVisualizer/build/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/visualize//LayersVisualizer/Easy3D/build/lib)
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/visualize/LayersVisualizer/)
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/visualize/LayersVisualizer/Easy3D)
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/visualize/LayersVisualizer/imgui)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/visualize/LayersVisualizer ${CMAKE_CURRENT_SOURCE_DIR}/visualize/LayersVisualizer/build/)
 find_package(OpenGL REQUIRED)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -pthread -g")
-add_executable(tm_visualize tm_visualize.cpp) 
+add_executable(tm_visualize visualize/tm_visualize.cpp) 
 target_link_libraries(tm_visualize ${OPENGL_LIBRARIES} Etaler LayersVisualizer glew core viewer glfw rply tinyfiledialogs util LAStools fileio dl glew glfw  ${OPENGL_LIBRARIES} X11 ) 
 
 
