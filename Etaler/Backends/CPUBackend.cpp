@@ -1,6 +1,7 @@
 #include "CPUBackend.hpp"
 #include "Etaler/Core/Views.hpp"
 #include "Etaler/Core/Random.hpp"
+#include "Etaler/Core/TypeList.hpp"
 
 #include <numeric>
 #include <cmath>
@@ -440,19 +441,19 @@ const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 	return ((const T*)t->data())+offset;
 }
 
-template <typename Func>
-void dispatch(DType dtype, Func f)
+template <typename Func, typename TypeList = type_list_t<int32_t, float, bool, half>>
+inline void dispatch(DType dtype, Func f)
 {
-	if(dtype == DType::Int32)
-		f(int32_t{});
-	else if(dtype == DType::Float)
-		f(float{});
-	else if(dtype == DType::Bool)
-		f(bool{});
-	else if(dtype == DType::Half)
-		f(half{});
+	if constexpr(std::is_same_v<TypeList, null_t> == false) {
+		using T = typename TypeList::head;
+		if(typeToDType<T>() == dtype) {
+			f(T());
+			return;
+		}
+		dispatch<Func, typename TypeList::tail>(dtype, f);
+	}
 	else
-		throw EtError("Cannot dispatch such dtype");
+		throw EtError("Cannot dispatch such dtype ID: " + (int)dtype + to_ctype_string(dtype));
 }
 
 template <typename T2, typename T1>
