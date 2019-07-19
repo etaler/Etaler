@@ -17,6 +17,25 @@ TEST_CASE("default backend sanity")
 	REQUIRE(defaultBackend() != nullptr);
 }
 
+TEST_CASE("Type system")
+{
+	SECTION("Type sizes") {
+		REQUIRE(dtypeToSize(DType::Bool) == 1);
+		REQUIRE(dtypeToSize(DType::Int32) == 4);
+		REQUIRE(dtypeToSize(DType::Float) == 4);
+		REQUIRE(dtypeToSize(DType::Half) == 2);
+	}
+
+	SECTION("type to dtype") {
+		REQUIRE(typeToDType<int32_t>() == DType::Int32);
+		REQUIRE(typeToDType<float>() == DType::Float);
+		REQUIRE(typeToDType<bool>() == DType::Bool);
+		REQUIRE(typeToDType<half>() == DType::Half);
+	}
+
+	//TODO: Add type check for tensor operations
+}
+
 TEST_CASE("Testing Shape", "[Shape]")
 {
 	Shape s = {3,5};
