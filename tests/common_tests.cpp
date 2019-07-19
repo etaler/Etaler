@@ -17,25 +17,6 @@ TEST_CASE("default backend sanity")
 	REQUIRE(defaultBackend() != nullptr);
 }
 
-TEST_CASE("Type system")
-{
-	SECTION("Type sizes") {
-		REQUIRE(dtypeToSize(DType::Bool) == 1);
-		REQUIRE(dtypeToSize(DType::Int32) == 4);
-		REQUIRE(dtypeToSize(DType::Float) == 4);
-		REQUIRE(dtypeToSize(DType::Half) == 2);
-	}
-
-	SECTION("type to dtype") {
-		REQUIRE(typeToDType<int32_t>() == DType::Int32);
-		REQUIRE(typeToDType<float>() == DType::Float);
-		REQUIRE(typeToDType<bool>() == DType::Bool);
-		REQUIRE(typeToDType<half>() == DType::Half);
-	}
-
-	//TODO: Add type check for tensor operations
-}
-
 TEST_CASE("Testing Shape", "[Shape]")
 {
 	Shape s = {3,5};
@@ -600,6 +581,32 @@ TEST_CASE("SDRClassifer")
 	
 	for(size_t i=0;i<num_category;i++)
 		CHECK(classifer.compute(encoder::category(i, num_category, num_bits),0) == i);
+}
+
+TEST_CASE("Type system")
+{
+	SECTION("Type sizes") {
+		REQUIRE(dtypeToSize(DType::Bool) == 1);
+		REQUIRE(dtypeToSize(DType::Int32) == 4);
+		REQUIRE(dtypeToSize(DType::Float) == 4);
+		REQUIRE(dtypeToSize(DType::Half) == 2);
+	}
+
+	SECTION("type to dtype") {
+		REQUIRE(typeToDType<int32_t>() == DType::Int32);
+		REQUIRE(typeToDType<float>() == DType::Float);
+		REQUIRE(typeToDType<bool>() == DType::Bool);
+		REQUIRE(typeToDType<half>() == DType::Half);
+	}
+
+	SECTION("type of Tensor operatoins") {
+		SECTION("exp") {
+			CHECK(exp(ones({1}, DType::Bool)).dtype() == DType::Float);
+			CHECK(exp(ones({1}, DType::Int32)).dtype() == DType::Float);
+			CHECK(exp(ones({1}, DType::Float)).dtype() == DType::Float);
+			CHECK(exp(ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+	}
 }
 
 // TEST_CASE("Serealize")
