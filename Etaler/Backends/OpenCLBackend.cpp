@@ -851,7 +851,11 @@ kernel void op(global T0* restrict x, global ResType* restrict y)
 
 )";
 
-	std::string res = f + "\n" + jitStridedView(x, 0) + "\n" + kernel;
+	std::string extention_decl;
+	if(x->dtype() == DType::Half)
+		extention_decl = "#pragma OPENCL EXTENSION cl_khr_fp16 : enable";
+
+	std::string res = extention_decl + "\n" + f + "\n" + jitStridedView(x, 0) + "\n" + kernel;
 	replaceAll(res, "$SIZE", std::to_string(x->size()));
 	return res;
 }
@@ -872,7 +876,11 @@ kernel void op(global T0* restrict x1, global T1* restrict x2, global ResType* r
 }
 )";
 
-	std::string res = f + "\n" + jitStridedView(x1, 0) + "\n"  + jitStridedView(x2, 1) + "\n" + kernel;
+	std::string extention_decl;
+	if(x1->dtype() == DType::Half || x2->dtype() == DType::Half)
+		extention_decl = "#pragma OPENCL EXTENSION cl_khr_fp16 : enable";
+
+	std::string res = extention_decl + "\n" + f + "\n" + jitStridedView(x1, 0) + "\n"  + jitStridedView(x2, 1) + "\n" + kernel;
 	replaceAll(res, "$SIZE", std::to_string(x1->size()));
 	return res;
 }
@@ -938,22 +946,26 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, c
 
 std::shared_ptr<TensorImpl> OpenCLBackend::exp(const TensorImpl* x)
 {
-	return applyUnaryOp(x, "#define f(x) (exp((float)x))", DType::Float);
+	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
+	return applyUnaryOp(x, "#define f(x) (exp((float)x))", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::negate(const TensorImpl* x)
 {
-	return applyUnaryOp(x, "#define f(x) (-x)", x->dtype()==DType::Float? DType::Float : DType::Int32);
+	DType result_type = x->dtype() == DType::Bool ? DType::Int32 : x->dtype();
+	return applyUnaryOp(x, "#define f(x) (-x)", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::inverse(const TensorImpl* x)
 {
-	return applyUnaryOp(x, "#define f(x) (1.0f/(float)x)", DType::Float);
+	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
+	return applyUnaryOp(x, "#define f(x) (1.0f/(float)x)", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::log(const TensorImpl* x)
 {
-	return applyUnaryOp(x, "#define f(x) (log((float)x))", DType::Float);
+	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
+	return applyUnaryOp(x, "#define f(x) (log((float)x))", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::logical_not(const TensorImpl* x)
