@@ -104,11 +104,14 @@ void OpenCLBackend::init(cl::Context context, cl::Platform platform, cl::Device 
 	std::string device_name = device_.getInfo<CL_DEVICE_NAME>();
 	et_assert(isExtentionSupported("cl_khr_local_int32_base_atomics"), "cl_khr_local_int32_base_atomics is not supported by " + device_name);
 	et_assert(isExtentionSupported("cl_khr_local_int32_extended_atomics"), "cl_khr_local_int32_extended_atomics is not supported by " + device_name);
+
+	have_fp16_ = isExtentionSupported("cl_khr_fp16");
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DType dtype, const void* data)
 {
 	et_assert(dtype != DType::Unknown);
+	et_assert(dtype != DType::Half || have_fp16_ == true, "Creating half(fp16) tensor but device have no fp16 capablity.");
 	size_t buf_size = shape.volume()*dtypeToSize(dtype);
 	cl::Buffer buf = allocBuffer(buf_size);
 

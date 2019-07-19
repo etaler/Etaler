@@ -187,6 +187,7 @@ protected:
 	cl_uint num_compute_units_;
 
 	std::vector<std::string> supported_extentions_;
+	bool have_fp16_ = false;
 };
 
 }
