@@ -449,8 +449,10 @@ void dispatch(DType dtype, Func f)
 		f(float{});
 	else if(dtype == DType::Bool)
 		f(bool{});
+	else if(dtype == DType::Half)
+		f(half{});
 	else
-		throw EtError("Cannot realize such dtype");
+		throw EtError("Cannot dispatch such dtype");
 }
 
 template <typename T2, typename T1>
