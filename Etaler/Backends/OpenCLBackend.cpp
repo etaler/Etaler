@@ -2,6 +2,7 @@
 
 #include "Etaler/Core/Random.hpp"
 #include "Etaler/Core/Views.hpp"
+#include "Etaler/Core/String.hpp"
 
 #include <map>
 #include <sstream>
@@ -108,6 +109,19 @@ void OpenCLBackend::init(cl::Context context, cl::Platform platform, cl::Device 
 	local_mem_size_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_SIZE>();
 	local_mem_type_ = device_.getInfo<CL_DEVICE_LOCAL_MEM_TYPE>();
 	num_compute_units_ = device_.getInfo<CL_DEVICE_MAX_COMPUTE_UNITS>();
+
+	cl_int err = 0;
+	//Get the list of extention suuported
+	std::string extentions = device_.getInfo<CL_DEVICE_EXTENSIONS>(&err);
+	if(err != CL_SUCCESS)
+		throw EtError("Failed to aquire supported OpenCL extention on device " +
+			device_.getInfo<CL_DEVICE_NAME>() + ". Error " + std::to_string(err));
+	supported_extentions_ = split(extentions, ' ');
+
+	//Make sureextentions used by Etaler is avaliable
+	std::string device_name = device_.getInfo<CL_DEVICE_NAME>();
+	et_assert(isExtentionSupported("cl_khr_local_int32_base_atomics"), "cl_khr_local_int32_base_atomics is not supported by " + device_name);
+	et_assert(isExtentionSupported("cl_khr_local_int32_extended_atomics"), "cl_khr_local_int32_extended_atomics is not supported by " + device_name);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DType dtype, const void* data)
