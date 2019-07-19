@@ -138,6 +138,12 @@ struct ETALER_EXPORT OpenCLBackend : public Backend
 
 	inline cl::Context context() {return context_;}
 
+	inline bool isExtentionSupported(std::string ext)
+	{
+		return (std::find(supported_extentions_.begin(), supported_extentions_.end(), ext)
+			!= supported_extentions_.end());
+	}
+
 protected:
 
 	void init(cl::Context context, cl::Platform platform, cl::Device device);
@@ -179,6 +185,8 @@ protected:
 	cl_device_local_mem_type local_mem_type_;
 	cl_ulong local_mem_size_;
 	cl_uint num_compute_units_;
+
+	std::vector<std::string> supported_extentions_;
 };
 
 }
