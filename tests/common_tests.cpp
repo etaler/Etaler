@@ -653,6 +653,64 @@ TEST_CASE("Type system")
 			if(support_fp16)
 				CHECK(ones({1}, DType::Half).sum().dtype() == DType::Half);
 		}
+
+		auto solve_binary_op_type = [](DType self, DType other)->DType {
+			// Implement a C++ like type promotion rule
+			if(other == DType::Float || self == DType::Float)
+					return DType::Float;
+				else if(other == DType::Half || self == DType::Half)
+					return DType::Half;
+				return DType::Int32; //Even bool is promoted to int in operation
+		};
+
+		std::vector<DType> types = {DType::Int32, DType::Bool, DType::Float, DType::Half};
+		SECTION("add") {
+			for(auto t1 : types) {
+				for(auto t2 : types) {
+					if((t1 == DType::Half || t2 == DType::Half) && support_fp16 == false)
+						continue;
+					Tensor t = ones({1}, t1);
+					Tensor q = ones({1}, t2);
+					CHECK((t+q).dtype() == solve_binary_op_type(t1, t2));
+				}
+			}
+		}
+
+		SECTION("subtract") {
+			for(auto t1 : types) {
+				for(auto t2 : types) {
+					if((t1 == DType::Half || t2 == DType::Half) && support_fp16 == false)
+						continue;
+					Tensor t = ones({1}, t1);
+					Tensor q = ones({1}, t2);
+					CHECK((t-q).dtype() == solve_binary_op_type(t1, t2));
+				}
+			}
+		}
+
+		SECTION("mul") {
+			for(auto t1 : types) {
+				for(auto t2 : types) {
+					if((t1 == DType::Half || t2 == DType::Half) && support_fp16 == false)
+						continue;
+					Tensor t = ones({1}, t1);
+					Tensor q = ones({1}, t2);
+					CHECK((t*q).dtype() == solve_binary_op_type(t1, t2));
+				}
+			}
+		}
+
+		SECTION("div") {
+			for(auto t1 : types) {
+				for(auto t2 : types) {
+					if((t1 == DType::Half || t2 == DType::Half) && support_fp16 == false)
+						continue;
+					Tensor t = ones({1}, t1);
+					Tensor q = ones({1}, t2);
+					CHECK((t/q).dtype() == solve_binary_op_type(t1, t2));
+				}
+			}
+		}
 	}
 }
 
