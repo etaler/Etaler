@@ -604,7 +604,36 @@ TEST_CASE("Type system")
 			CHECK(exp(ones({1}, DType::Bool)).dtype() == DType::Float);
 			CHECK(exp(ones({1}, DType::Int32)).dtype() == DType::Float);
 			CHECK(exp(ones({1}, DType::Float)).dtype() == DType::Float);
-			CHECK(exp(ones({1}, DType::Half)).dtype() == DType::Half);
+			//Disabled for now due to some GPU not supporting FP16
+			// CHECK(exp(ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+
+		SECTION("negation") {
+			CHECK((-ones({1}, DType::Bool)).dtype() == DType::Int32);
+			CHECK((-ones({1}, DType::Int32)).dtype() == DType::Int32);
+			CHECK((-ones({1}, DType::Float)).dtype() == DType::Float);
+			// CHECK((-ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+
+		SECTION("inverse") {
+			CHECK(inverse(ones({1}, DType::Bool)).dtype() == DType::Float);
+			CHECK(inverse(ones({1}, DType::Int32)).dtype() == DType::Float);
+			CHECK(inverse(ones({1}, DType::Float)).dtype() == DType::Float);
+			// CHECK(inverse(ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+
+		SECTION("log") {
+			CHECK(log(ones({1}, DType::Bool)).dtype() == DType::Float);
+			CHECK(log(ones({1}, DType::Int32)).dtype() == DType::Float);
+			CHECK(log(ones({1}, DType::Float)).dtype() == DType::Float);
+			// CHECK(log(ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+
+		SECTION("logical_not") {
+			CHECK(logical_not(ones({1}, DType::Bool)).dtype() == DType::Bool);
+			CHECK(logical_not(ones({1}, DType::Int32)).dtype() == DType::Bool);
+			CHECK(logical_not(ones({1}, DType::Float)).dtype() == DType::Bool);
+			// CHECK(logical_not(ones({1}, DType::Half)).dtype() == DType::Bool);
 		}
 	}
 }

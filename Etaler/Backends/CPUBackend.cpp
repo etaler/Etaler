@@ -473,8 +473,9 @@ static std::shared_ptr<TensorImpl> uniaryOp(const TensorImpl* src, Op op)
 			auto res = op(*ptr);
 			using ResType = decltype(res);
 			//We don't have support to double percition now. Cast it to float
-			using StoreType = typename std::conditional_t<std::is_same_v<T, half>, half
-				, typename std::conditional_t<std::is_same_v<ResType, double>, float, ResType>>;
+			using StoreType = typename std::conditional_t<std::is_same_v<ResType, bool>, bool
+				, typename std::conditional_t<std::is_same_v<T, half>, half
+				, typename std::conditional_t<std::is_same_v<ResType, double>, float, ResType>>>;
 			if(i == 0)
 				dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
 

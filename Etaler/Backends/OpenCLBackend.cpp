@@ -111,7 +111,6 @@ void OpenCLBackend::init(cl::Context context, cl::Platform platform, cl::Device 
 std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DType dtype, const void* data)
 {
 	et_assert(dtype != DType::Unknown);
-	et_assert(dtype != DType::Half || have_fp16_ == true, "Creating half(fp16) tensor but device have no fp16 capablity.");
 	size_t buf_size = shape.volume()*dtypeToSize(dtype);
 	cl::Buffer buf = allocBuffer(buf_size);
 
@@ -131,6 +130,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DTyp
 
 std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DType dtype, cl::Buffer buf)
 {
+	if(dtype == DType::Half && have_fp16_ == false)
+		throw EtError("Creating half(fp16) tensor but device have no fp16 capablity.");
 	auto ptr = std::shared_ptr<OpenCLBuffer>(new OpenCLBuffer(shape, dtype, buf, shared_from_this()), [this](OpenCLBuffer* ptr){releaseTensor(ptr);});
 	return std::make_shared<TensorImpl>(ptr, shape, shapeToStride(shape));
 }
