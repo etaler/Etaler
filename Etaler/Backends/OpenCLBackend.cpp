@@ -983,6 +983,8 @@ static DType solveBinaryOpDType(DType t1, DType t2)
 {
 	if(t1 == DType::Float || t2 == DType::Float)
 		return DType::Float;
+	else if(t1 == DType::Half || t2 == DType::Half)
+		return DType::Half;
 	return DType::Int32;
 }
 
