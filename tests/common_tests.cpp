@@ -586,17 +586,17 @@ TEST_CASE("SDRClassifer")
 TEST_CASE("Type system")
 {
 	SECTION("Type sizes") {
-		REQUIRE(dtypeToSize(DType::Bool) == 1);
-		REQUIRE(dtypeToSize(DType::Int32) == 4);
-		REQUIRE(dtypeToSize(DType::Float) == 4);
-		REQUIRE(dtypeToSize(DType::Half) == 2);
+		STATIC_REQUIRE(dtypeToSize(DType::Bool) == 1);
+		STATIC_REQUIRE(dtypeToSize(DType::Int32) == 4);
+		STATIC_REQUIRE(dtypeToSize(DType::Float) == 4);
+		STATIC_REQUIRE(dtypeToSize(DType::Half) == 2);
 	}
 
 	SECTION("type to dtype") {
-		REQUIRE(typeToDType<int32_t>() == DType::Int32);
-		REQUIRE(typeToDType<float>() == DType::Float);
-		REQUIRE(typeToDType<bool>() == DType::Bool);
-		REQUIRE(typeToDType<half>() == DType::Half);
+		STATIC_REQUIRE(typeToDType<int32_t>() == DType::Int32);
+		STATIC_REQUIRE(typeToDType<float>() == DType::Float);
+		STATIC_REQUIRE(typeToDType<bool>() == DType::Bool);
+		STATIC_REQUIRE(typeToDType<half>() == DType::Half);
 	}
 
 	SECTION("type of Tensor operatoins") {
