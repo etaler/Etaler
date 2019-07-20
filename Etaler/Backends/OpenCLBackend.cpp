@@ -775,6 +775,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 			DType dtype = x->dtype();
 			if(dtype == DType::Bool || dtype == DType::Int32)
 				return DType::Int32;
+			else if(dtype == DType::Half)
+				return DType::Half;
 			else
 				return DType::Float;
 		}();
@@ -783,6 +785,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 	DType intermid_type = [](DType in, DType out) {
 		if(in == DType::Float)
 			return DType::Float;
+		if(out == DType::Half)
+			return DType::Half;
 		return DType::Int32;
 	}(x->dtype(), result_dtype);
 

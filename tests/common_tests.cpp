@@ -645,6 +645,14 @@ TEST_CASE("Type system")
 			if(support_fp16)
 				CHECK(logical_not(ones({1}, DType::Half)).dtype() == DType::Bool);
 		}
+
+		SECTION("sum") {
+			CHECK(ones({1}, DType::Bool).sum().dtype() == DType::Int32);
+			CHECK(ones({1}, DType::Int32).sum().dtype() == DType::Int32);
+			CHECK(ones({1}, DType::Float).sum().dtype() == DType::Float);
+			if(support_fp16)
+				CHECK(ones({1}, DType::Half).sum().dtype() == DType::Half);
+		}
 	}
 }
 

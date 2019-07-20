@@ -572,6 +572,8 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 			DType dtype = x->dtype();
 			if(dtype == DType::Bool || dtype == DType::Int32)
 				return DType::Int32;
+			else if(dtype == DType::Half)
+				return DType::Half;
 			else
 				return DType::Float;
 		}();
