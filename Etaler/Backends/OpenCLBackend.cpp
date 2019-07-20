@@ -164,6 +164,7 @@ std::string OpenCLBackend::deviceInfo() const
 	res += "Local memory size: " + std::to_string(localMemorySize()/1024) + " KB\n";
 	res += "Local memory type: " + local_type[localMemoryType()] + "\n";
 	res += "Prefered work group size: " + std::to_string(kernel_manager_.kernel("__etaler_dummy__").getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_)) + "\n";
+	res += "Half percision: " + std::string(isExtentionSupported("cl_khr_fp16") ? "Yes" : "No");
 	return res;
 }
 

@@ -138,7 +138,7 @@ struct ETALER_EXPORT OpenCLBackend : public Backend
 
 	inline cl::Context context() {return context_;}
 
-	inline bool isExtentionSupported(std::string ext)
+	inline bool isExtentionSupported(std::string ext) const
 	{
 		return (std::find(supported_extentions_.begin(), supported_extentions_.end(), ext)
 			!= supported_extentions_.end());
