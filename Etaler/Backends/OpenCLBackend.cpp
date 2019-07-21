@@ -349,7 +349,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toTyp
 {
 	et_assert(x->backend() == this);
 	et_assert(x->iscontiguous());
-	auto args = "-DInType="+to_ctype_string(x->dtype())+" -DOutType="+to_ctype_string(toType);
+	auto args = "-DInType="+to_ctype_string(x->dtype())+" -DOutType="+to_ctype_string(toType)
+		+ (x->dtype() == DType::Half || toType == DType::Half ? " -DHalfSupport" : "");
 	auto hash = hash_string(args);
 	auto program_name = "cast"+hash;
 	kernel_manager_.compileFromFile("cast.cl", program_name, {"cast"}, false, args);

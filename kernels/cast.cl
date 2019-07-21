@@ -6,6 +6,10 @@
 	#error OutType not defined
 #endif
 
+#ifdef HalfSupport
+        #pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#endif
+
 //InType: Input Type
 //OutType: OutputType
 //global_size: arbitrary
