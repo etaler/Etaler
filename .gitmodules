@@ -11,3 +11,6 @@
 [submodule "examples/visualize/LayersVisualizer"]
 	path = examples/visualize/LayersVisualizer
 	url = https://github.com/alior101/LayersVisualizer.git
+[submodule "examples/visualize/resource"]
+	path = examples/visualize/resource
+	url = git@github.com:alior101/resource.git
