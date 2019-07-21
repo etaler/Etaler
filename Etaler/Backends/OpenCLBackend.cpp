@@ -790,7 +790,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 		return DType::Int32;
 	}(x->dtype(), result_dtype);
 
-	std::string args = "-DInType=" + to_ctype_string(x->dtype()) + " -DOutType=" + to_ctype_string(result_dtype) + " -DIntermidType=" + to_ctype_string(intermid_type);
+	std::string args = "-DInType=" + to_ctype_string(x->dtype()) + " -DOutType=" + to_ctype_string(result_dtype) + " -DIntermidType=" + to_ctype_string(intermid_type)
+		+ (intermid_type==DType::Half? " -DIntermidIsHalf" : "");
 	std::string program_name = "sum" + hash_string(args);
 	kernel_manager_.compileFromFile("sum.cl", program_name, {"sum"}, false, args);
 
