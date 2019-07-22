@@ -1,4 +1,5 @@
 #pragma once
+#include <cassert>
 
 #include "Shape.hpp"
 #include "DType.hpp"
@@ -52,4 +53,51 @@ protected:
 	size_t offset_;
 };
 
+struct IsContingous {};
+
+template <typename T>
+bool checkProperty(const TensorImpl* x, const T& value)
+{
+	if constexpr(std::is_base_of_v<Backend, std::remove_pointer_t<std::decay_t<T>>>)
+		return x->backend() == value;
+	else if constexpr(std::is_same_v<T, DType>)
+		return x->dtype() == value;
+	else if constexpr(std::is_same_v<T, IsContingous>)
+		return x->iscontiguous();
+	else
+		et_assert(false, "a non-supported value is passed into checkProperty");
+	return false;
 }
+
+template <typename T>
+void requireProperty(const TensorImpl* x, const T value, const std::string& line, const std::string& v_name)
+{
+	if(checkProperty(x, value) == true)
+		return;
+	
+	//Otherwise assertion failed
+	const std::string msg = line + " Tensor property requirment not match. Expecting " + v_name;
+	if constexpr(std::is_same_v<std::decay_t<T>, Backend*>)
+		throw EtError(msg + ".backend() == " + value->name());
+	else if constexpr(std::is_same_v<T, DType>)
+		throw EtError(msg + ".dtype() == " + to_ctype_string(value));
+	else if constexpr(std::is_same_v<T, IsContingous>)
+		throw EtError(msg + ".iscontiguous() == true");
+}
+
+template <typename ... Args>
+bool checkProperties(const TensorImpl* x, Args... args)
+{
+	return (checkProperty(x, args) && ...);
+}
+
+template <typename ... Args>
+void requirePropertiesInternal(const TensorImpl* x, const std::string& line, const std::string& v_name, Args... args)
+{
+	(requireProperty(x, args, line, v_name), ...);
+}
+
+}
+
+#define requireProperties(x, ...) requirePropertiesInternal(x, std::string(__FILE__)+":"+std::to_string(__LINE__)\
+	+":"+std::string(__func__)+"():", #x, __VA_ARGS__)

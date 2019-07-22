@@ -59,16 +59,9 @@ std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const 
 	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
 	//Checks the input are sane
-	et_assert(x->backend() == this);
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(x->iscontiguous());
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
-
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, DType::Float, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(connections->dimentions() >= 2);
 
@@ -119,21 +112,13 @@ std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const 
 void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections, TensorImpl* permeances
 	, float perm_inc, float perm_dec, bool has_unconnected_synapse)
 {
-	et_assert(x->backend() == this);
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(learn->backend() == this);
-	et_assert(x->iscontiguous());
-	et_assert(learn->iscontiguous());
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(learn, this, DType::Bool, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, DType::Float, IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(x->shape() == learn->shape());
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(learn->dtype() == DType::Bool);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
 
 	const bool* input = (const bool*)x->data();
 	const bool* learning = (const bool*)learn->data();
@@ -167,10 +152,7 @@ void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, 
 
 std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->iscontiguous());
-
-	et_assert(x->dtype() == DType::Int32);
+	requireProperties(x, this, DType::Int32, IsContingous());
 
 	auto y = createTensor(x->shape(), DType::Bool);
 
@@ -217,8 +199,7 @@ static std::vector<To> castData(const From* ptr, size_t n)
 
 std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->iscontiguous());
+	requireProperties(x, this, IsContingous());
 	const CPUBuffer* p = dynamic_cast<const CPUBuffer*>(x->buffer().get());
 	const CPUBuffer& t = *p;
 	return run<std::shared_ptr<TensorImpl>>(t, [&x, toType, this](const auto* ptr){
@@ -242,27 +223,21 @@ std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 
 void CPUBackend::copyToHost(const TensorImpl* t, void* ptr)
 {
-	et_assert(points_to<CPUBuffer>(t->buffer().get()));
-	et_assert(t->iscontiguous());
+	requireProperties(t, this, IsContingous());
 	memcpy(ptr, t->data(), t->size()*dtypeToSize(t->dtype()));
 }
 
 std::shared_ptr<TensorImpl> CPUBackend::copy(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->iscontiguous());
+	requireProperties(x, this, IsContingous());
 	return createTensor(x->shape(), x->dtype(), x->data());
 }
 
 void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, DType::Float, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
 
 	size_t max_synapse_per_cell = connections->shape().back();
 	size_t num_cells = connections->size()/max_synapse_per_cell;
@@ -287,12 +262,8 @@ void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
-	et_assert(x->backend() == this);
-	et_assert(s->backend() == this);
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(s->dtype() == DType::Bool);
-	et_assert(x->iscontiguous());
-	et_assert(s->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(s, this, DType::Bool, IsContingous());
 
 	Shape shape = s->shape();
 	shape.pop_back();
@@ -320,9 +291,7 @@ std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorI
 
 std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(x->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
 
 	size_t cells_per_column = x->shape().back();
 	size_t num_columns = x->size()/cells_per_column;
@@ -349,19 +318,10 @@ std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 	, TensorImpl* permeances, float initial_perm)
 {
-	et_assert(x->backend() == this);
-	et_assert(y->backend() == this);
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(x->iscontiguous());
-	et_assert(y->iscontiguous());
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
-
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(y->dtype() == DType::Bool);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(y, this, DType::Bool, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, DType::Float, IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
 	Shape s = connections->shape();
@@ -520,7 +480,7 @@ static std::shared_ptr<TensorImpl> binaryOp(const TensorImpl* src, const TensorI
 
 std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
+	requireProperties(x, this);
 	et_assert(x->data() != nullptr);
 	auto res = createTensor(x->shape(), x->dtype());
 
@@ -537,8 +497,8 @@ std::shared_ptr<TensorImpl> CPUBackend::realize(const TensorImpl* x)
 
 void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 {
-	et_assert(dest->backend() == this);
-	et_assert(src->backend() == this);
+	requireProperties(dest, this);
+	requireProperties(src, this);
 
 	if(dest->shape() != src->shape())
 		throw EtError("Shape mismatch in tensor assignment. Shape "
@@ -561,9 +521,8 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
-	et_assert(x->backend() == this);
+	requireProperties(x, this, IsContingous());
 	et_assert(x->size() % chunk_size == 0);
-	et_assert(x->iscontiguous());
 
 	DType result_dtype = dtype;
 
@@ -600,13 +559,9 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 
 void CPUBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, DType::Float, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
-	et_assert(permeances->iscontiguous());
-	et_assert(connections->iscontiguous());
 
 	float* perms = (float*)permeances->data();
 	uint32_t* conns = (uint32_t*)connections->data();

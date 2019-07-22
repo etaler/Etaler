@@ -264,16 +264,9 @@ void KernelManager::addSearchPath(const std::string& path)
 std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections,
 	const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
-	et_assert(x->backend() == this);
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(x->iscontiguous());
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
-
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, DType::Float, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(connections->dimentions() >= 2);
 
@@ -312,10 +305,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 
 std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->iscontiguous());
-
-	et_assert(x->dtype() == DType::Int32);
+	requireProperties(x, this, DType::Int32, IsContingous());
 
 	auto y = createTensor(x->shape(), DType::Bool);
 
@@ -347,8 +337,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x,
 
 std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toType)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->iscontiguous());
+	requireProperties(x, this, IsContingous());
 	auto args = "-DInType="+to_ctype_string(x->dtype())+" -DOutType="+to_ctype_string(toType)
 		+ (x->dtype() == DType::Half || toType == DType::Half ? " -DHalfSupport" : "");
 	auto hash = hash_string(args);
@@ -374,8 +363,7 @@ void OpenCLBackend::sync() const
 
 std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->iscontiguous());
+	requireProperties(x, this, IsContingous());
 	size_t buf_size = x->size()*dtypeToSize(x->dtype());
 	cl::Buffer buf = allocBuffer(buf_size);
 	const cl::Buffer& src = std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer();
@@ -389,17 +377,13 @@ std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
 	TensorImpl* permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse)
 {
-	et_assert(x->backend() == this);
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(learn->backend() == this);
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(learn, this, DType::Bool, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, DType::Float, IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(x->shape() == learn->shape());
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(learn->dtype() == DType::Bool);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
 
 	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE="+str(!has_unconnected_synapse)
 		+" -DOUTPUT_SIZE="+str(learn->size());
@@ -431,13 +415,9 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 
 void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, DType::Float, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
 
 	auto args = "-DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back());
 	auto program_name = "sortSynapse"+hash_string(args);
@@ -463,12 +443,8 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
-	et_assert(x->backend() == this);
-	et_assert(s->backend() == this);
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(s->dtype() == DType::Bool);
-	et_assert(x->iscontiguous());
-	et_assert(s->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(s, this, DType::Bool, IsContingous());
 
 	Shape shape = s->shape();
 	shape.pop_back();
@@ -495,9 +471,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const Tens
 
 std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(x->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
 
 	size_t cells_per_column = x->shape().back();
 	size_t num_columns = x->size()/cells_per_column;
@@ -525,21 +499,11 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm)
 {
-	et_assert(x->backend() == this);
-	et_assert(y->backend() == this);
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(x->iscontiguous());
-	et_assert(y->iscontiguous());
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(y, this, DType::Bool, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, DType::Float, IsContingous());
 
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(y->dtype() == DType::Bool);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
-
-	et_assert(x->shape() == y->shape());
 	et_assert(connections->shape() == permeances->shape());
 	Shape s = connections->shape();
 	s.pop_back();
@@ -584,9 +548,7 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 
 std::optional<cl::Buffer> OpenCLBackend::toSparse(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(x->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
 
 	auto args = "-DINPUT_SIZE="+str(x->size());
 	auto program_name = "toSparse"+hash_string(args);
@@ -707,7 +669,7 @@ kernel void copy(global Type* restrict x, global Type* restrict y)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
+	requireProperties(x, this);
 	if(x->iscontiguous() == true)
 		return copy(x);
 
@@ -736,8 +698,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 
 void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 {
-	et_assert(dest->backend() == this);
-	et_assert(src->backend() == this);
+	requireProperties(dest, this);
+	requireProperties(src, this);
 
 	if(dest->shape() != src->shape())
 	throw EtError("Shape mismatch in tensor assignment. Shape "
@@ -766,9 +728,8 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
-	et_assert(x->backend() == this);
+	requireProperties(x, this, IsContingous());
 	et_assert(x->size() % chunk_size == 0);
-	et_assert(x->iscontiguous());
 
 	DType result_dtype = dtype;
 	if(dtype == DType::Unknown) {
@@ -815,13 +776,9 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 
 void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, DType::Float, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
 
 	size_t max_synapses_per_cell = connections->shape().back();
 	size_t input_cell_count = connections->size()/max_synapses_per_cell;
@@ -895,7 +852,7 @@ kernel void op(global T0* restrict x1, global T1* restrict x2, global ResType* r
 
 std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std::string f, DType resType)
 {
-	et_assert(x->backend() == this);
+	requireProperties(x, this);
 
 	std::string args = "-DT0="+to_ctype_string(x->dtype())+" -DResType="+to_ctype_string(resType);
 	std::string program_name = f+hash_string(args)+std::to_string(x->offset())+to_string(x->shape())+to_string(x->stride());
@@ -921,8 +878,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std
 
 std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, const TensorImpl* x2, std::string f, DType resType)
 {
-	et_assert(x1->backend() == this);
-	et_assert(x2->backend() == this);
+	requireProperties(x1, this);
+	requireProperties(x2, this);
 	et_assert(x1->shape() == x2->shape());
 
 	auto to_str = [](auto x){
