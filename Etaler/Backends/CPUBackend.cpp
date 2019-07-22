@@ -55,24 +55,43 @@ void* CPUBuffer::data() const
 	return std::visit([](const auto& v){return (void*)v;}, storage_);
 }
 
-std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances
-	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
+template <typename TypeList = type_list_t<int32_t, float, bool, half>, typename Func = void>
+inline void dispatch(DType dtype, Func f)
+{
+	static_assert(std::is_same_v<Func, void> == false); //void is just a dummy value
+	if constexpr(std::is_same_v<TypeList, null_t> == false) {
+		using T = typename TypeList::head;
+		if(typeToDType<T>() == dtype) {
+			f(T());
+			return;
+		}
+		dispatch<typename TypeList::tail, Func>(dtype, f);
+	}
+	else
+		throw EtError("Cannot dispatch such dtype: " + to_ctype_string(dtype));
+}
+
+namespace et::detail
+{
+template <typename PermType>
+static std::shared_ptr<TensorImpl> cellActivity(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances
+	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse, CPUBackend* backend)
 {
 	//Checks the input are sane
-	requireProperties(x, this, DType::Bool, IsContingous());
-	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, DType::Float, IsContingous());
+	requireProperties(x, backend, DType::Bool, IsContingous());
+	requireProperties(connections, backend, DType::Int32, IsContingous());
+	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(connections->dimentions() >= 2);
 
 	Shape s = connections->shape();
 	s.pop_back();
-	auto y = createTensor(s, DType::Int32);
+	auto y = backend->createTensor(s, DType::Int32);
 
 
 	const bool* input = (const bool*)x->data();
 	const int32_t* synapses = (const int32_t*)connections->data();
-	const float* synapse_strengths = (float*)permeances->data();
+	const PermType* synapse_strengths = (PermType*)permeances->data();
 	int32_t* result = (int32_t*)y->data();
 
 	size_t max_connections_per_cell = connections->shape().back();
@@ -95,7 +114,7 @@ std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const 
 				if(input[target] == false)
 					continue;
 
-				float strength = synapse_strengths[index];
+				PermType strength = synapse_strengths[index];
 				if(strength > connected_permeance)
 					sum += 1;
 			}
@@ -109,13 +128,14 @@ std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const 
 	return y;
 }
 
-void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections, TensorImpl* permeances
-	, float perm_inc, float perm_dec, bool has_unconnected_synapse)
+template <typename PermType>
+void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections, TensorImpl* permeances
+	, float perm_inc, float perm_dec, bool has_unconnected_synapse, CPUBackend* backend)
 {
-	requireProperties(x, this, DType::Bool, IsContingous());
-	requireProperties(learn, this, DType::Bool, IsContingous());
-	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, DType::Float, IsContingous());
+	requireProperties(x, backend, DType::Bool, IsContingous());
+	requireProperties(learn, backend, DType::Bool, IsContingous());
+	requireProperties(connections, backend, DType::Int32, IsContingous());
+	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(x->shape() == learn->shape());
@@ -123,7 +143,7 @@ void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, 
 	const bool* input = (const bool*)x->data();
 	const bool* learning = (const bool*)learn->data();
 	const int32_t* synapses = (const int32_t*)connections->data();
-	float* synapse_strengths = (float*)permeances->data();
+	PermType* synapse_strengths = (PermType*)permeances->data();
 
 	size_t max_connections_per_cell = connections->shape().back();
 	size_t num_cells = connections->size()/max_connections_per_cell;
@@ -139,14 +159,33 @@ void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, 
 				break;
 			ASSERT((size_t)connection < num_cells);
 
-			float& perm = synapse_strengths[idx];
+			PermType& perm = synapse_strengths[idx];
 			if(input[connection] == true)
 				perm += perm_inc;
 			else
 				perm -= perm_dec;
 
-			perm = std::max(std::min(perm, 1.f), 0.f);
+			perm = std::max(std::min(perm, PermType(1)), PermType(0));
 		}
+	});
+}
+}
+
+std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances
+	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
+{
+	std::shared_ptr<TensorImpl> res;
+	dispatch<type_list_t<float, half>>(permeances->dtype(), [&](auto v){
+		res = detail::cellActivity<decltype(v)>(x, connections, permeances, connected_permeance, active_threshold, has_unconnected_synapse, this);
+	});
+	return res;
+}
+
+void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections, TensorImpl* permeances
+	, float perm_inc, float perm_dec, bool has_unconnected_synapse)
+{
+	dispatch<type_list_t<float, half>>(permeances->dtype(), [&](auto v){
+		detail::learnCorrilation<decltype(v)>(x, learn, connections, permeances, perm_inc, perm_dec, has_unconnected_synapse, this);
 	});
 }
 
@@ -187,6 +226,8 @@ static Ret run(const CPUBuffer& t, Op op)
 		return op((int32_t*)t.data());
 	else if(t.dtype() == DType::Float)
 		return op((float*)t.data());
+	else if(t.dtype() == DType::Half)
+		return op((half*)t.data());
 	else
 		throw EtError("Cannot cast");
 }
@@ -214,6 +255,10 @@ std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 		}
 		else if(toType == DType::Float){
 			auto casted_data = castData<float>(ptr, x->size());
+			return createTensor(x->shape(), toType, casted_data.data());
+		}
+		else if(toType == DType::Half){
+			auto casted_data = castData<half>(ptr, x->size());
 			return createTensor(x->shape(), toType, casted_data.data());
 		}
 		else
@@ -399,21 +444,6 @@ const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 	s = Shape(t->stride().size()-s.size(), 0) + s;
 	size_t offset = t->offset() + unfold(s, t->stride());
 	return ((const T*)t->data())+offset;
-}
-
-template <typename Func, typename TypeList = type_list_t<int32_t, float, bool, half>>
-inline void dispatch(DType dtype, Func f)
-{
-	if constexpr(std::is_same_v<TypeList, null_t> == false) {
-		using T = typename TypeList::head;
-		if(typeToDType<T>() == dtype) {
-			f(T());
-			return;
-		}
-		dispatch<Func, typename TypeList::tail>(dtype, f);
-	}
-	else
-		throw EtError("Cannot dispatch such dtype ID: " + (int)dtype + to_ctype_string(dtype));
 }
 
 template <typename T2, typename T1>
