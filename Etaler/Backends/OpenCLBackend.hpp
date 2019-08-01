@@ -52,9 +52,9 @@ struct KernelManager
 	void compileKernel(const std::vector<std::string>& srcs, const std::string& program_name, const std::vector<std::string>& kernel_names
 		, bool force_override=false, const std::string& flags="");
 	void compileFromFile(const std::string& paths, const std::string& program_name, const std::vector<std::string>& kernel_names
-		, bool force_override=false, const std::string& flags="");
+		, bool force_override=false, const std::string& flags="", const std::string& prepend="");
 	void compileFromFile(const std::vector<std::string>& paths, const std::string& program_name, const std::vector<std::string>& kernel_names
-		, bool force_override=false, const std::string& flags="");
+		, bool force_override=false, const std::string& flags="", const std::string& prepend="");
 	inline bool exists(const std::string& program_name, const std::string& kernel_name)
 	{
 		auto it = apps_.find(program_name);
@@ -138,7 +138,7 @@ struct ETALER_EXPORT OpenCLBackend : public Backend
 
 	inline cl::Context context() {return context_;}
 
-	inline bool isExtentionSupported(std::string ext)
+	inline bool isExtentionSupported(std::string ext) const
 	{
 		return (std::find(supported_extentions_.begin(), supported_extentions_.end(), ext)
 			!= supported_extentions_.end());
@@ -187,6 +187,7 @@ protected:
 	cl_uint num_compute_units_;
 
 	std::vector<std::string> supported_extentions_;
+	bool have_fp16_ = false;
 };
 
 }

@@ -104,6 +104,8 @@ void OpenCLBackend::init(cl::Context context, cl::Platform platform, cl::Device 
 	std::string device_name = device_.getInfo<CL_DEVICE_NAME>();
 	et_assert(isExtentionSupported("cl_khr_local_int32_base_atomics"), "cl_khr_local_int32_base_atomics is not supported by " + device_name);
 	et_assert(isExtentionSupported("cl_khr_local_int32_extended_atomics"), "cl_khr_local_int32_extended_atomics is not supported by " + device_name);
+
+	have_fp16_ = isExtentionSupported("cl_khr_fp16");
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DType dtype, const void* data)
@@ -128,6 +130,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DTyp
 
 std::shared_ptr<TensorImpl> OpenCLBackend::createTensor(const Shape& shape, DType dtype, cl::Buffer buf)
 {
+	if(dtype == DType::Half && have_fp16_ == false)
+		throw EtError("Creating half(fp16) tensor but device have no fp16 capablity.");
 	auto ptr = std::shared_ptr<OpenCLBuffer>(new OpenCLBuffer(shape, dtype, buf, shared_from_this()), [this](OpenCLBuffer* ptr){releaseTensor(ptr);});
 	return std::make_shared<TensorImpl>(ptr, shape, shapeToStride(shape));
 }
@@ -161,6 +165,7 @@ std::string OpenCLBackend::deviceInfo() const
 	res += "Local memory size: " + std::to_string(localMemorySize()/1024) + " KB\n";
 	res += "Local memory type: " + local_type[localMemoryType()] + "\n";
 	res += "Prefered work group size: " + std::to_string(kernel_manager_.kernel("__etaler_dummy__").getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device_)) + "\n";
+	res += "Half percision: " + std::string(isExtentionSupported("cl_khr_fp16") ? "Yes" : "No");
 	return res;
 }
 
@@ -219,17 +224,17 @@ void KernelManager::compileKernel(const std::vector<std::string>& srcs, const st
 }
 
 void KernelManager::compileFromFile(const std::string& path, const std::string& program_name, const std::vector<std::string>& kernel_names
-	, bool force_override, const std::string& flags)
+	, bool force_override, const std::string& flags, const std::string& prepend)
 {
-	compileFromFile(std::vector<std::string>{path}, program_name, kernel_names, force_override, flags);
+	compileFromFile(std::vector<std::string>{path}, program_name, kernel_names, force_override, flags, prepend);
 }
 
 void KernelManager::compileFromFile(const std::vector<std::string>& paths, const std::string& program_name, const std::vector<std::string>& kernel_names
-	, bool force_override, const std::string& flags)
+	, bool force_override, const std::string& flags, const std::string& prepend)
 {
 	std::vector<std::string> sources;
 	for(const auto& path : paths)
-		sources.emplace_back(readKernel(path));
+		sources.emplace_back(prepend + (prepend!=""?"\n":"") + readKernel(path));
 	compileKernel(sources, program_name, kernel_names, force_override, flags);
 }
 
@@ -259,16 +264,9 @@ void KernelManager::addSearchPath(const std::string& path)
 std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections,
 	const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
-	et_assert(x->backend() == this);
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(x->iscontiguous());
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
-
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(connections->dimentions() >= 2);
 
@@ -276,16 +274,18 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 	s.pop_back();
 	auto y = createTensor(s, DType::Int32);
 
-	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE=" + str(!has_unconnected_synapse);
-	auto hash = hash_string(args);
+	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE=" + str(!has_unconnected_synapse)
+		+ " -DPERM_TYPE="+to_ctype_string(permeances->dtype());
+	auto prepend = (permeances->dtype()==DType::Half?"#pragma OPENCL EXTENSION cl_khr_fp16 : enable":"");
+	auto hash = hash_string(args + prepend);
 	auto program_name = "overlapScore"+hash;
 
 	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("cellActivity.cl", program_name, {"cellActivity"}, false, args);
+		kernel_manager_.compileFromFile("cellActivity.cl", program_name, {"cellActivity"}, false, args, prepend);
 	else if(x->size() < localMemorySize()*8-8 && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("cellActivity_compressed_local.cl", program_name, {"cellActivity"}, false, args);
+		kernel_manager_.compileFromFile("cellActivity_compressed_local.cl", program_name, {"cellActivity"}, false, args, prepend);
 	else
-		kernel_manager_.compileFromFile("cellActivity_global.cl", program_name, {"cellActivity"}, false, args);
+		kernel_manager_.compileFromFile("cellActivity_global.cl", program_name, {"cellActivity"}, false, args, prepend);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "cellActivity");
 
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
@@ -307,10 +307,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 
 std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->iscontiguous());
-
-	et_assert(x->dtype() == DType::Int32);
+	requireProperties(x, this, DType::Int32, IsContingous());
 
 	auto y = createTensor(x->shape(), DType::Bool);
 
@@ -342,9 +339,9 @@ std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x,
 
 std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toType)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->iscontiguous());
-	auto args = "-DInType="+to_ctype_string(x->dtype())+" -DOutType="+to_ctype_string(toType);
+	requireProperties(x, this, IsContingous());
+	auto args = "-DInType="+to_ctype_string(x->dtype())+" -DOutType="+to_ctype_string(toType)
+		+ (x->dtype() == DType::Half || toType == DType::Half ? " -DHalfSupport" : "");
 	auto hash = hash_string(args);
 	auto program_name = "cast"+hash;
 	kernel_manager_.compileFromFile("cast.cl", program_name, {"cast"}, false, args);
@@ -368,8 +365,7 @@ void OpenCLBackend::sync() const
 
 std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->iscontiguous());
+	requireProperties(x, this, IsContingous());
 	size_t buf_size = x->size()*dtypeToSize(x->dtype());
 	cl::Buffer buf = allocBuffer(buf_size);
 	const cl::Buffer& src = std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer();
@@ -383,29 +379,26 @@ std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
 	TensorImpl* permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse)
 {
-	et_assert(x->backend() == this);
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(learn->backend() == this);
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(learn, this, DType::Bool, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(x->shape() == learn->shape());
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(learn->dtype() == DType::Bool);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
 
 	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE="+str(!has_unconnected_synapse)
-		+" -DOUTPUT_SIZE="+str(learn->size());
-	auto hash = hash_string(args);
+		+" -DOUTPUT_SIZE="+str(learn->size()) + " -DPERM_TYPE="+to_ctype_string(permeances->dtype());
+	auto prepend = (permeances->dtype()==DType::Half?"#pragma OPENCL EXTENSION cl_khr_fp16 : enable":"");
+	auto hash = hash_string(args+prepend);
 	auto program_name = "learnCorrilation"+hash;
 
 	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args);
+		kernel_manager_.compileFromFile("learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args, prepend);
 	else if(x->size() < localMemorySize()*8-8 && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("learnCorrilation_compressed_local.cl", program_name, {"learnCorrilation"}, false, args);
+		kernel_manager_.compileFromFile("learnCorrilation_compressed_local.cl", program_name, {"learnCorrilation"}, false, args, prepend);
 	else
-		kernel_manager_.compileFromFile("learnCorrilation_global.cl", program_name, {"learnCorrilation"}, false, args);
+		kernel_manager_.compileFromFile("learnCorrilation_global.cl", program_name, {"learnCorrilation"}, false, args, prepend);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "learnCorrilation");
 
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
@@ -425,17 +418,14 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 
 void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
 
-	auto args = "-DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back());
-	auto program_name = "sortSynapse"+hash_string(args);
-	kernel_manager_.compileFromFile("sort.cl", program_name, {"sortSynapse"}, false, args);
+	auto args = "-DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back()) + " -DPERM_TYPE="+to_ctype_string(permeances->dtype());
+	auto prepend = (permeances->dtype()==DType::Half?"#pragma OPENCL EXTENSION cl_khr_fp16 : enable":"");
+	auto program_name = "sortSynapse"+hash_string(args+prepend);
+	kernel_manager_.compileFromFile("sort.cl", program_name, {"sortSynapse"}, false, args, prepend);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "sortSynapse");
 
 	int num_cells = connections->size()/connections->shape().back();
@@ -457,12 +447,8 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
-	et_assert(x->backend() == this);
-	et_assert(s->backend() == this);
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(s->dtype() == DType::Bool);
-	et_assert(x->iscontiguous());
-	et_assert(s->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(s, this, DType::Bool, IsContingous());
 
 	Shape shape = s->shape();
 	shape.pop_back();
@@ -489,9 +475,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const Tens
 
 std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(x->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
 
 	size_t cells_per_column = x->shape().back();
 	size_t num_columns = x->size()/cells_per_column;
@@ -519,21 +503,11 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm)
 {
-	et_assert(x->backend() == this);
-	et_assert(y->backend() == this);
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(x->iscontiguous());
-	et_assert(y->iscontiguous());
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(y, this, DType::Bool, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsContingous());
 
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(y->dtype() == DType::Bool);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
-
-	et_assert(x->shape() == y->shape());
 	et_assert(connections->shape() == permeances->shape());
 	Shape s = connections->shape();
 	s.pop_back();
@@ -542,9 +516,11 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 	size_t max_synapses_per_cell = connections->shape().back();
 	size_t input_cell_count = x->size();
 
-	auto args = "-DNUM_CELLS="+str(y->size())+" -DNUM_INPUT_BITS="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell);
-	auto program_name = "growSynapses"+hash_string(args);
-	kernel_manager_.compileFromFile("growSynapses.cl", program_name, {"growSynapses"}, false, args);
+	auto args = "-DNUM_CELLS="+str(y->size())+" -DNUM_INPUT_BITS="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell)
+		+" -DPERM_TYPE="+to_ctype_string(permeances->dtype());
+	auto prepend = (permeances->dtype()==DType::Half?"#pragma OPENCL EXTENSION cl_khr_fp16 : enable":"");
+	auto program_name = "growSynapses"+hash_string(args+prepend);
+	kernel_manager_.compileFromFile("growSynapses.cl", program_name, {"growSynapses"}, false, args, prepend);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "growSynapses");
 
 	size_t local_size = 32;
@@ -578,9 +554,7 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 
 std::optional<cl::Buffer> OpenCLBackend::toSparse(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
-	et_assert(x->dtype() == DType::Bool);
-	et_assert(x->iscontiguous());
+	requireProperties(x, this, DType::Bool, IsContingous());
 
 	auto args = "-DINPUT_SIZE="+str(x->size());
 	auto program_name = "toSparse"+hash_string(args);
@@ -701,7 +675,7 @@ kernel void copy(global Type* restrict x, global Type* restrict y)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 {
-	et_assert(x->backend() == this);
+	requireProperties(x, this);
 	if(x->iscontiguous() == true)
 		return copy(x);
 
@@ -730,8 +704,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 
 void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 {
-	et_assert(dest->backend() == this);
-	et_assert(src->backend() == this);
+	requireProperties(dest, this);
+	requireProperties(src, this);
 
 	if(dest->shape() != src->shape())
 	throw EtError("Shape mismatch in tensor assignment. Shape "
@@ -760,9 +734,8 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
-	et_assert(x->backend() == this);
+	requireProperties(x, this, IsContingous());
 	et_assert(x->size() % chunk_size == 0);
-	et_assert(x->iscontiguous());
 
 	DType result_dtype = dtype;
 	if(dtype == DType::Unknown) {
@@ -770,6 +743,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 			DType dtype = x->dtype();
 			if(dtype == DType::Bool || dtype == DType::Int32)
 				return DType::Int32;
+			else if(dtype == DType::Half)
+				return DType::Half;
 			else
 				return DType::Float;
 		}();
@@ -778,10 +753,13 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 	DType intermid_type = [](DType in, DType out) {
 		if(in == DType::Float)
 			return DType::Float;
+		if(out == DType::Half)
+			return DType::Half;
 		return DType::Int32;
 	}(x->dtype(), result_dtype);
 
-	std::string args = "-DInType=" + to_ctype_string(x->dtype()) + " -DOutType=" + to_ctype_string(result_dtype) + " -DIntermidType=" + to_ctype_string(intermid_type);
+	std::string args = "-DInType=" + to_ctype_string(x->dtype()) + " -DOutType=" + to_ctype_string(result_dtype) + " -DIntermidType=" + to_ctype_string(intermid_type)
+		+ (intermid_type==DType::Half? " -DIntermidIsHalf" : "");
 	std::string program_name = "sum" + hash_string(args);
 	kernel_manager_.compileFromFile("sum.cl", program_name, {"sum"}, false, args);
 
@@ -804,20 +782,17 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 
 void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
+	requireProperties(connections, this, DType::Int32, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(connections->backend() == this);
-	et_assert(permeances->backend() == this);
-	et_assert(connections->dtype() == DType::Int32);
-	et_assert(permeances->dtype() == DType::Float);
-	et_assert(connections->iscontiguous());
-	et_assert(permeances->iscontiguous());
 
 	size_t max_synapses_per_cell = connections->shape().back();
 	size_t input_cell_count = connections->size()/max_synapses_per_cell;
 
-	auto args = "-DNUM_CELLS="+str(input_cell_count) + " -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell);
-	std::string program_name = "sum" + hash_string(args);
-	kernel_manager_.compileFromFile("decaySynapses.cl", program_name, {"decaySynapses"}, false, args);
+	auto args = "-DNUM_CELLS="+str(input_cell_count) + " -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell) + " -DPERM_TYPE="+to_ctype_string(permeances->dtype());
+	auto prepend = (permeances->dtype()==DType::Half?"#pragma OPENCL EXTENSION cl_khr_fp16 : enable":"");
+	std::string program_name = "sum" + hash_string(args+prepend);
+	kernel_manager_.compileFromFile("decaySynapses.cl", program_name, {"decaySynapses"}, false, args, prepend);
 
 	cl::Kernel k = kernel_manager_.kernel(program_name, "decaySynapses");
 
@@ -848,7 +823,11 @@ kernel void op(global T0* restrict x, global ResType* restrict y)
 
 )";
 
-	std::string res = f + "\n" + jitStridedView(x, 0) + "\n" + kernel;
+	std::string extention_decl;
+	if(x->dtype() == DType::Half)
+		extention_decl = "#pragma OPENCL EXTENSION cl_khr_fp16 : enable";
+
+	std::string res = extention_decl + "\n" + f + "\n" + jitStridedView(x, 0) + "\n" + kernel;
 	replaceAll(res, "$SIZE", std::to_string(x->size()));
 	return res;
 }
@@ -869,14 +848,18 @@ kernel void op(global T0* restrict x1, global T1* restrict x2, global ResType* r
 }
 )";
 
-	std::string res = f + "\n" + jitStridedView(x1, 0) + "\n"  + jitStridedView(x2, 1) + "\n" + kernel;
+	std::string extention_decl;
+	if(x1->dtype() == DType::Half || x2->dtype() == DType::Half)
+		extention_decl = "#pragma OPENCL EXTENSION cl_khr_fp16 : enable";
+
+	std::string res = extention_decl + "\n" + f + "\n" + jitStridedView(x1, 0) + "\n"  + jitStridedView(x2, 1) + "\n" + kernel;
 	replaceAll(res, "$SIZE", std::to_string(x1->size()));
 	return res;
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std::string f, DType resType)
 {
-	et_assert(x->backend() == this);
+	requireProperties(x, this);
 
 	std::string args = "-DT0="+to_ctype_string(x->dtype())+" -DResType="+to_ctype_string(resType);
 	std::string program_name = f+hash_string(args)+std::to_string(x->offset())+to_string(x->shape())+to_string(x->stride());
@@ -902,8 +885,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std
 
 std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, const TensorImpl* x2, std::string f, DType resType)
 {
-	et_assert(x1->backend() == this);
-	et_assert(x2->backend() == this);
+	requireProperties(x1, this);
+	requireProperties(x2, this);
 	et_assert(x1->shape() == x2->shape());
 
 	auto to_str = [](auto x){
@@ -935,22 +918,26 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, c
 
 std::shared_ptr<TensorImpl> OpenCLBackend::exp(const TensorImpl* x)
 {
-	return applyUnaryOp(x, "#define f(x) (exp((float)x))", DType::Float);
+	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
+	return applyUnaryOp(x, "#define f(x) (exp((float)x))", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::negate(const TensorImpl* x)
 {
-	return applyUnaryOp(x, "#define f(x) (-x)", x->dtype()==DType::Float? DType::Float : DType::Int32);
+	DType result_type = x->dtype() == DType::Bool ? DType::Int32 : x->dtype();
+	return applyUnaryOp(x, "#define f(x) (-x)", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::inverse(const TensorImpl* x)
 {
-	return applyUnaryOp(x, "#define f(x) (1.0f/(float)x)", DType::Float);
+	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
+	return applyUnaryOp(x, "#define f(x) (1.0f/(float)x)", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::log(const TensorImpl* x)
 {
-	return applyUnaryOp(x, "#define f(x) (log((float)x))", DType::Float);
+	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
+	return applyUnaryOp(x, "#define f(x) (log((float)x))", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::logical_not(const TensorImpl* x)
@@ -962,6 +949,8 @@ static DType solveBinaryOpDType(DType t1, DType t2)
 {
 	if(t1 == DType::Float || t2 == DType::Float)
 		return DType::Float;
+	else if(t1 == DType::Half || t2 == DType::Half)
+		return DType::Half;
 	return DType::Int32;
 }
 

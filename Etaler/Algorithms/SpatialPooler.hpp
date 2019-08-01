@@ -71,7 +71,7 @@ struct ETALER_EXPORT SpatialPooler
 	{
 		return to(connections_.backend());
 	}
-protected:
+//protected:
 	float permanence_inc_ = 0.1;
 	float permanence_dec_ = 0.1;
 	float connected_permanence_ = 0.21;

@@ -1,4 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
+project(Etaler)
+
 
 SET(BUILD_SHARED_LIBS ON)
 

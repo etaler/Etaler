@@ -10,6 +10,10 @@
 	#error "MAX_SYNAPSE_PER_CELL is not defined"
 #endif
 
+#ifndef PERM_TYPE
+	#error "PERM_TYPE not defined"
+#endif
+
 //NOTE: The old version of this kernel might perform better with more cells
 
 //global_size: Arbitrary
@@ -20,7 +24,7 @@
 //x: The input SDR **IN SPARSE FORMAT**
 //aux: temporary buffer for storage, must be size of NUM_INPUT_BITS*global_size[0]
 kernel void growSynapses(global int* restrict x, global bool* restrict y, global int* restrict connections
-	, global float* restrict permeances, float initial_perm, int num_input_on_bits, global bool* restrict aux)
+	, global PERM_TYPE* restrict permeances, float initial_perm, int num_input_on_bits, global bool* restrict aux)
 {
 	int global_size = get_global_size(0);
 	int global_id = get_global_id(0);

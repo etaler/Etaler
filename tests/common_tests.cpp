@@ -140,6 +140,17 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(q.isSame(r));
 	}
 
+	SECTION("Property Check") {
+		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), DType::Int32));
+		CHECK_THROWS(requireProperties(ones(Shape{1}, DType::Float).pimpl(), DType::Int32));
+		CHECK_THROWS(requireProperties(ones(Shape{1}, DType::Float).pimpl(), IsDType{DType::Int32, DType::Bool}));
+
+		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), defaultBackend()));
+
+		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), IsContingous()));
+		CHECK_THROWS(requireProperties(ones(Shape{4,4}, DType::Int32).view({range(2), range(2)}).pimpl(), IsContingous()));
+	}
+
 	SECTION("Views") {
 		std::vector<int> data(16);
 		for(size_t i=0;i<data.size();i++)
@@ -581,6 +592,137 @@ TEST_CASE("SDRClassifer")
 	
 	for(size_t i=0;i<num_category;i++)
 		CHECK(classifer.compute(encoder::category(i, num_category, num_bits),0) == i);
+}
+
+TEST_CASE("Type system")
+{
+	SECTION("Type sizes") {
+		STATIC_REQUIRE(dtypeToSize(DType::Bool) == 1);
+		STATIC_REQUIRE(dtypeToSize(DType::Int32) == 4);
+		STATIC_REQUIRE(dtypeToSize(DType::Float) == 4);
+		STATIC_REQUIRE(dtypeToSize(DType::Half) == 2);
+	}
+
+	SECTION("type to dtype") {
+		STATIC_REQUIRE(typeToDType<int32_t>() == DType::Int32);
+		STATIC_REQUIRE(typeToDType<float>() == DType::Float);
+		STATIC_REQUIRE(typeToDType<bool>() == DType::Bool);
+		STATIC_REQUIRE(typeToDType<half>() == DType::Half);
+	}
+
+	SECTION("type of Tensor operatoins") {
+		bool support_fp16 = [&](){
+			try {ones({1}, DType::Half);}
+			catch(const EtError&) {return false;}
+			return true;
+		}();
+
+		SECTION("exp") {
+			CHECK(exp(ones({1}, DType::Bool)).dtype() == DType::Float);
+			CHECK(exp(ones({1}, DType::Int32)).dtype() == DType::Float);
+			CHECK(exp(ones({1}, DType::Float)).dtype() == DType::Float);
+			if(support_fp16)
+				CHECK(exp(ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+
+		SECTION("negation") {
+			CHECK((-ones({1}, DType::Bool)).dtype() == DType::Int32);
+			CHECK((-ones({1}, DType::Int32)).dtype() == DType::Int32);
+			CHECK((-ones({1}, DType::Float)).dtype() == DType::Float);
+			if(support_fp16)
+				CHECK((-ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+
+		SECTION("inverse") {
+			CHECK(inverse(ones({1}, DType::Bool)).dtype() == DType::Float);
+			CHECK(inverse(ones({1}, DType::Int32)).dtype() == DType::Float);
+			CHECK(inverse(ones({1}, DType::Float)).dtype() == DType::Float);
+			if(support_fp16)
+				CHECK(inverse(ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+
+		SECTION("log") {
+			CHECK(log(ones({1}, DType::Bool)).dtype() == DType::Float);
+			CHECK(log(ones({1}, DType::Int32)).dtype() == DType::Float);
+			CHECK(log(ones({1}, DType::Float)).dtype() == DType::Float);
+			if(support_fp16)
+				CHECK(log(ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+
+		SECTION("logical_not") {
+			CHECK(logical_not(ones({1}, DType::Bool)).dtype() == DType::Bool);
+			CHECK(logical_not(ones({1}, DType::Int32)).dtype() == DType::Bool);
+			CHECK(logical_not(ones({1}, DType::Float)).dtype() == DType::Bool);
+			if(support_fp16)
+				CHECK(logical_not(ones({1}, DType::Half)).dtype() == DType::Bool);
+		}
+
+		SECTION("sum") {
+			CHECK(ones({1}, DType::Bool).sum().dtype() == DType::Int32);
+			CHECK(ones({1}, DType::Int32).sum().dtype() == DType::Int32);
+			CHECK(ones({1}, DType::Float).sum().dtype() == DType::Float);
+			if(support_fp16)
+				CHECK(ones({1}, DType::Half).sum().dtype() == DType::Half);
+		}
+
+		auto solve_binary_op_type = [](DType self, DType other)->DType {
+			// Implement a C++ like type promotion rule
+			if(other == DType::Float || self == DType::Float)
+					return DType::Float;
+				else if(other == DType::Half || self == DType::Half)
+					return DType::Half;
+				return DType::Int32; //Even bool is promoted to int in operation
+		};
+
+		std::vector<DType> types = {DType::Int32, DType::Bool, DType::Float, DType::Half};
+		SECTION("add") {
+			for(auto t1 : types) {
+				for(auto t2 : types) {
+					if((t1 == DType::Half || t2 == DType::Half) && support_fp16 == false)
+						continue;
+					Tensor t = ones({1}, t1);
+					Tensor q = ones({1}, t2);
+					CHECK((t+q).dtype() == solve_binary_op_type(t1, t2));
+				}
+			}
+		}
+
+		SECTION("subtract") {
+			for(auto t1 : types) {
+				for(auto t2 : types) {
+					if((t1 == DType::Half || t2 == DType::Half) && support_fp16 == false)
+						continue;
+					Tensor t = ones({1}, t1);
+					Tensor q = ones({1}, t2);
+					CHECK((t-q).dtype() == solve_binary_op_type(t1, t2));
+				}
+			}
+		}
+
+		SECTION("mul") {
+			for(auto t1 : types) {
+				for(auto t2 : types) {
+					if((t1 == DType::Half || t2 == DType::Half) && support_fp16 == false)
+						continue;
+					Tensor t = ones({1}, t1);
+					Tensor q = ones({1}, t2);
+					CHECK((t*q).dtype() == solve_binary_op_type(t1, t2));
+				}
+			}
+		}
+
+		SECTION("div") {
+			for(auto t1 : types) {
+				for(auto t2 : types) {
+					if((t1 == DType::Half || t2 == DType::Half) && support_fp16 == false)
+						continue;
+					Tensor t = ones({1}, t1);
+					Tensor q = ones({1}, t2);
+					CHECK((t/q).dtype() == solve_binary_op_type(t1, t2));
+				}
+			}
+		}
+	}
 }
 
 // TEST_CASE("Serealize")
