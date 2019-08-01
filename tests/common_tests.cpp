@@ -140,6 +140,17 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(q.isSame(r));
 	}
 
+	SECTION("Property Check") {
+		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), DType::Int32));
+		CHECK_THROWS(requireProperties(ones(Shape{1}, DType::Float).pimpl(), DType::Int32));
+		CHECK_THROWS(requireProperties(ones(Shape{1}, DType::Float).pimpl(), IsDType{DType::Int32, DType::Bool}));
+
+		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), defaultBackend()));
+
+		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), IsContingous()));
+		CHECK_THROWS(requireProperties(ones(Shape{4,4}, DType::Int32).view({range(2), range(2)}).pimpl(), IsContingous()));
+	}
+
 	SECTION("Views") {
 		std::vector<int> data(16);
 		for(size_t i=0;i<data.size();i++)

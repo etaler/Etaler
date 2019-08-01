@@ -4,6 +4,7 @@
 #include "Shape.hpp"
 #include "DType.hpp"
 #include "Backend.hpp"
+#include "TypeHelpers.hpp"
 
 #include <memory>
 
@@ -55,6 +56,18 @@ protected:
 
 struct IsContingous {};
 
+template <typename Storage>
+struct IsDType
+{      
+	Storage types;
+};
+
+template<typename _Tp, typename... _Up>
+	IsDType(_Tp, _Up...)
+	-> IsDType<std::array<std::enable_if_t<(std::is_same_v<_Tp, _Up> && ...), _Tp>,
+		1 + sizeof...(_Up)>>;
+
+
 template <typename T>
 bool checkProperty(const TensorImpl* x, const T& value)
 {
@@ -64,6 +77,8 @@ bool checkProperty(const TensorImpl* x, const T& value)
 		return x->dtype() == value;
 	else if constexpr(std::is_same_v<T, IsContingous>)
 		return x->iscontiguous();
+	else if constexpr(is_specialization<std::remove_pointer_t<std::decay_t<T>>, IsDType>::value)
+		return (std::find(value.types.begin(), value.types.end(), x->dtype()) != value.types.end());
 	else
 		et_assert(false, "a non-supported value is passed into checkProperty");
 	return false;
@@ -77,12 +92,16 @@ void requireProperty(const TensorImpl* x, const T value, const std::string& line
 	
 	//Otherwise assertion failed
 	const std::string msg = line + " Tensor property requirment not match. Expecting " + v_name;
-	if constexpr(std::is_same_v<std::decay_t<T>, Backend*>)
+	if constexpr(std::is_base_of_v<Backend, std::remove_pointer_t<std::decay_t<T>>>)
 		throw EtError(msg + ".backend() == " + value->name());
 	else if constexpr(std::is_same_v<T, DType>)
 		throw EtError(msg + ".dtype() == " + to_ctype_string(value));
 	else if constexpr(std::is_same_v<T, IsContingous>)
 		throw EtError(msg + ".iscontiguous() == true");
+	else if constexpr(is_specialization<std::remove_pointer_t<std::decay_t<T>>, IsDType>::value) {
+		throw EtError(msg + ".dtype() is in {" + std::accumulate(value.types.begin(), value.types.end(), std::string()
+			, [](auto v, auto a){return v + to_ctype_string(a) + ", ";}));
+	}
 }
 
 template <typename ... Args>
@@ -99,5 +118,5 @@ void requirePropertiesInternal(const TensorImpl* x, const std::string& line, con
 
 }
 
-#define requireProperties(x, ...) requirePropertiesInternal(x, std::string(__FILE__)+":"+std::to_string(__LINE__)\
-	+":"+std::string(__func__)+"():", #x, __VA_ARGS__)
+#define requireProperties(x, ...) (requirePropertiesInternal(x, std::string(__FILE__)+":"+std::to_string(__LINE__)\
+	+":"+std::string(__func__)+"():", #x, __VA_ARGS__))
