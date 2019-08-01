@@ -1,0 +1,13 @@
+In order to run Etaler inside a docker, please use the dockerfile located in /.devcontainer directory (It's placed there for automatic image creation in vscode editory)
+It contains all dependencies for successfull building of Etaler project
+
+Steps - assuming you are in docker dir:
+1. copy the docker file into /docker directory with 
+    cp ../.devcontainer/Dockerfile .
+2. Build the image with 
+    docker -D build   --tag etaler:latest .
+3. Create a volume for code persistence 
+    docker volume create etaler-volume
+3. Run a container with 
+    docker run --rm -it -e DISPLAY=:0 --cap-add=SYS_PTRACE --mount source=etaler-volume,target=/home etaler:latest
+4. Inside (preferably in /home) you can git clone etaler repo and build according to the instructions..
