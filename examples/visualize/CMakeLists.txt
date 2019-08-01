@@ -1,0 +1,12 @@
+project(tm_visualize CXX)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/LayersVisualizer/build/)
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/LayersVisualizer/Easy3D/build/lib)
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/LayersVisualizer/)
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/LayersVisualizer/Easy3D)
+include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/LayersVisualizer/imgui)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/LayersVisualizer ${CMAKE_CURRENT_SOURCE_DIR}/LayersVisualizer/build/)
+find_package(OpenGL REQUIRED)
+add_executable(tm_visualize tm_visualize.cpp) 
+#target_link_libraries(tm_visualize ${OPENGL_LIBRARIES} Etaler LayersVisualizer glew core viewer glfw rply tinyfiledialogs util LAStools fileio dl glew glfw  ${OPENGL_LIBRARIES} X11 ) 
+target_link_libraries(tm_visualize ${OPENGL_LIBRARIES} Etaler LayersVisualizer core viewer tinyfiledialogs util fileio ) 
+
