@@ -169,6 +169,150 @@ void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const Tensor
 		}
 	});
 }
+
+template <typename PermType>
+void sortSynapse(TensorImpl* connections, TensorImpl* permeances, CPUBackend* backend)
+{
+	requireProperties(connections, backend, DType::Int32, IsContingous());
+	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
+	et_assert(connections->shape() == permeances->shape());
+
+	size_t max_synapse_per_cell = connections->shape().back();
+	size_t num_cells = connections->size()/max_synapse_per_cell;
+
+	uint32_t* conns = (uint32_t*)connections->data(); //HACK: -1s should be at the end of the arrays.
+	PermType* perms = (PermType*)permeances->data();
+
+	tbb::parallel_for(size_t(0), num_cells, [&](size_t i) {
+		size_t start_index = i*max_synapse_per_cell;
+		size_t end_index = (i+1)*max_synapse_per_cell;
+
+		std::vector<size_t> sort_indices(max_synapse_per_cell);
+		std::iota(sort_indices.begin(), sort_indices.end(), 0);
+		std::sort(sort_indices.begin(), sort_indices.end(),
+			[&](size_t i, size_t j)->bool {
+				return conns[i+start_index] < conns[j+start_index];
+			});
+		apply_permutation_in_place(conns+start_index, conns+end_index, sort_indices);
+		apply_permutation_in_place(perms+start_index, perms+end_index, sort_indices);
+	});
+}
+
+template <typename PermType>
+void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
+	, TensorImpl* permeances, float initial_perm, CPUBackend* backend)
+{
+	requireProperties(x, backend, DType::Bool, IsContingous());
+	requireProperties(y, backend, DType::Bool, IsContingous());
+	requireProperties(connections, backend, DType::Int32, IsContingous());
+	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
+
+	et_assert(connections->shape() == permeances->shape());
+	Shape s = connections->shape();
+	s.pop_back();
+	et_assert(s == y->shape());
+
+	size_t max_synapses_per_cell = connections->shape().back();
+	size_t input_cell_count = x->size();
+
+	const bool* in = (const bool*) x->data();
+	const bool* out = (const bool*) y->data();
+	int32_t* conns = (int32_t*)connections->data();
+	PermType* perms = (PermType*)permeances->data();
+
+	std::vector<uint32_t> on_bits;
+	on_bits.reserve(input_cell_count*0.1);
+	for(size_t i=0;i<input_cell_count;i++) {
+		if(in[i] == true)
+			on_bits.push_back(i);
+	}
+
+	size_t block_size = std::min(size_t(16), (size_t)y->shape().back());
+	tbb::parallel_for(tbb::blocked_range<size_t>(size_t(0), y->size(), block_size), [&](const auto& r) {
+		for(size_t i=r.begin();i!=r.end();i++) {
+			if(out[i] == 0)
+				continue;
+
+			uint32_t* synapses = (uint32_t*)conns+i*max_synapses_per_cell;
+			PermType* strengths = perms+i*max_synapses_per_cell;
+			uint32_t* end = synapses+max_synapses_per_cell;
+
+			if(synapses[max_synapses_per_cell-1] != uint32_t(-1)) //If there is no space for new synapse. Ignore
+				continue;
+
+			uint32_t* it = std::lower_bound(synapses, end, uint32_t(-1));
+			size_t used_space = it - synapses;
+
+			size_t write_idx = it - synapses;
+			size_t read_idx = 0;
+
+			for(size_t j=0;write_idx!=max_synapses_per_cell && j < on_bits.size();j++) {
+				bool connected = false;
+				for(;read_idx<used_space;read_idx++) {
+					if(synapses[read_idx] == on_bits[j]) {
+						connected = true;
+						break;
+					}
+					if(synapses[read_idx] > on_bits[j])
+						break;
+				}
+
+				if(connected == false) {
+					synapses[write_idx] = on_bits[j];
+					strengths[write_idx] = initial_perm;
+					write_idx++;
+				}
+			}
+
+			std::vector<size_t> sort_indices(write_idx);
+			std::iota(sort_indices.begin(), sort_indices.begin()+write_idx, 0);
+			std::sort(sort_indices.begin(), sort_indices.begin()+write_idx,
+				[&](size_t i, size_t j)->bool {
+					return ((uint32_t*)synapses)[i] < ((uint32_t*)synapses)[j];
+				});
+			apply_permutation_in_place(synapses, synapses+write_idx, sort_indices);
+			apply_permutation_in_place(strengths, strengths+write_idx, sort_indices);
+		}
+	});
+}
+
+template <typename PermType>
+void decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold, CPUBackend* backend)
+{
+	requireProperties(connections, backend, DType::Int32, IsContingous());
+	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
+	et_assert(connections->shape() == permeances->shape());
+
+	PermType* perms = (PermType*)permeances->data();
+	uint32_t* conns = (uint32_t*)connections->data();
+
+	size_t max_synapses_per_cell = connections->shape().back();
+	size_t input_cell_count = connections->size()/max_synapses_per_cell;
+
+	tbb::parallel_for(size_t(0), input_cell_count, [&](size_t i) {
+		uint32_t* synapses = (uint32_t*)conns+i*max_synapses_per_cell;
+		PermType* strengths = perms+i*max_synapses_per_cell;
+		uint32_t* end = synapses+max_synapses_per_cell;
+
+		uint32_t* it = std::lower_bound(synapses, end, uint32_t(-1));
+		size_t used_space = it - synapses;
+
+		for(size_t j=0;j<used_space;j++) {
+			if(strengths[j] < threshold)
+				synapses[j] = uint32_t(-1);
+		}
+
+		std::vector<size_t> sort_indices(used_space);
+		std::iota(sort_indices.begin(), sort_indices.begin()+used_space, 0);
+		std::sort(sort_indices.begin(), sort_indices.begin()+used_space,
+			[&](size_t i, size_t j)->bool {
+				return ((uint32_t*)synapses)[i] < ((uint32_t*)synapses)[j];
+			});
+		apply_permutation_in_place(synapses, synapses+used_space, sort_indices);
+		apply_permutation_in_place(strengths, strengths+used_space, sort_indices);
+	});
+}
+
 }
 
 std::shared_ptr<TensorImpl> CPUBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections, const TensorImpl* permeances
@@ -280,28 +424,8 @@ std::shared_ptr<TensorImpl> CPUBackend::copy(const TensorImpl* x)
 
 void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
-	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, DType::Float, IsContingous());
-	et_assert(connections->shape() == permeances->shape());
-
-	size_t max_synapse_per_cell = connections->shape().back();
-	size_t num_cells = connections->size()/max_synapse_per_cell;
-
-	uint32_t* conns = (uint32_t*)connections->data(); //HACK: -1s should be at the end of the arrays.
-	float* perms = (float*)permeances->data();
-
-	tbb::parallel_for(size_t(0), num_cells, [&](size_t i) {
-		size_t start_index = i*max_synapse_per_cell;
-		size_t end_index = (i+1)*max_synapse_per_cell;
-
-		std::vector<size_t> sort_indices(max_synapse_per_cell);
-		std::iota(sort_indices.begin(), sort_indices.end(), 0);
-		std::sort(sort_indices.begin(), sort_indices.end(),
-			[&](size_t i, size_t j)->bool {
-				return conns[i+start_index] < conns[j+start_index];
-			});
-		apply_permutation_in_place(conns+start_index, conns+end_index, sort_indices);
-		apply_permutation_in_place(perms+start_index, perms+end_index, sort_indices);
+	dispatch<type_list_t<float, half>>(permeances->dtype(), [&](auto v) {
+		detail::sortSynapse<decltype(v)>(connections, permeances, this);
 	});
 }
 
@@ -363,77 +487,8 @@ std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 	, TensorImpl* permeances, float initial_perm)
 {
-	requireProperties(x, this, DType::Bool, IsContingous());
-	requireProperties(y, this, DType::Bool, IsContingous());
-	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, DType::Float, IsContingous());
-
-	et_assert(connections->shape() == permeances->shape());
-	Shape s = connections->shape();
-	s.pop_back();
-	et_assert(s == y->shape());
-
-	size_t max_synapses_per_cell = connections->shape().back();
-	size_t input_cell_count = x->size();
-
-	const bool* in = (const bool*) x->data();
-	const bool* out = (const bool*) y->data();
-	int32_t* conns = (int32_t*)connections->data();
-	float* perms = (float*)permeances->data();
-
-	std::vector<uint32_t> on_bits;
-	on_bits.reserve(input_cell_count*0.1);
-	for(size_t i=0;i<input_cell_count;i++) {
-		if(in[i] == true)
-			on_bits.push_back(i);
-	}
-
-	size_t block_size = std::min(size_t(16), (size_t)y->shape().back());
-	tbb::parallel_for(tbb::blocked_range<size_t>(size_t(0), y->size(), block_size), [&](const auto& r) {
-		for(size_t i=r.begin();i!=r.end();i++) {
-			if(out[i] == 0)
-				continue;
-
-			uint32_t* synapses = (uint32_t*)conns+i*max_synapses_per_cell;
-			float* strengths = perms+i*max_synapses_per_cell;
-			uint32_t* end = synapses+max_synapses_per_cell;
-
-			if(synapses[max_synapses_per_cell-1] != uint32_t(-1)) //If there is no space for new synapse. Ignore
-				continue;
-
-			uint32_t* it = std::lower_bound(synapses, end, uint32_t(-1));
-			size_t used_space = it - synapses;
-
-			size_t write_idx = it - synapses;
-			size_t read_idx = 0;
-
-			for(size_t j=0;write_idx!=max_synapses_per_cell && j < on_bits.size();j++) {
-				bool connected = false;
-				for(;read_idx<used_space;read_idx++) {
-					if(synapses[read_idx] == on_bits[j]) {
-						connected = true;
-						break;
-					}
-					if(synapses[read_idx] > on_bits[j])
-						break;
-				}
-
-				if(connected == false) {
-					synapses[write_idx] = on_bits[j];
-					strengths[write_idx] = initial_perm;
-					write_idx++;
-				}
-			}
-
-			std::vector<size_t> sort_indices(write_idx);
-			std::iota(sort_indices.begin(), sort_indices.begin()+write_idx, 0);
-			std::sort(sort_indices.begin(), sort_indices.begin()+write_idx,
-				[&](size_t i, size_t j)->bool {
-					return ((uint32_t*)synapses)[i] < ((uint32_t*)synapses)[j];
-				});
-			apply_permutation_in_place(synapses, synapses+write_idx, sort_indices);
-			apply_permutation_in_place(strengths, strengths+write_idx, sort_indices);
-		}
+	dispatch<type_list_t<float, half>>(permeances->dtype(), [&](auto v) {
+		detail::growSynapses<decltype(v)>(x, y, connections, permeances, initial_perm, this);
 	});
 }
 
@@ -589,37 +644,8 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 
 void CPUBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
-	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, DType::Float, IsContingous());
-	et_assert(connections->shape() == permeances->shape());
-
-	float* perms = (float*)permeances->data();
-	uint32_t* conns = (uint32_t*)connections->data();
-
-	size_t max_synapses_per_cell = connections->shape().back();
-	size_t input_cell_count = connections->size()/max_synapses_per_cell;
-
-	tbb::parallel_for(size_t(0), input_cell_count, [&](size_t i) {
-		uint32_t* synapses = (uint32_t*)conns+i*max_synapses_per_cell;
-		float* strengths = perms+i*max_synapses_per_cell;
-		uint32_t* end = synapses+max_synapses_per_cell;
-
-		uint32_t* it = std::lower_bound(synapses, end, uint32_t(-1));
-		size_t used_space = it - synapses;
-
-		for(size_t j=0;j<used_space;j++) {
-			if(strengths[j] < threshold)
-				synapses[j] = uint32_t(-1);
-		}
-
-		std::vector<size_t> sort_indices(used_space);
-		std::iota(sort_indices.begin(), sort_indices.begin()+used_space, 0);
-		std::sort(sort_indices.begin(), sort_indices.begin()+used_space,
-			[&](size_t i, size_t j)->bool {
-				return ((uint32_t*)synapses)[i] < ((uint32_t*)synapses)[j];
-			});
-		apply_permutation_in_place(synapses, synapses+used_space, sort_indices);
-		apply_permutation_in_place(strengths, strengths+used_space, sort_indices);
+	dispatch<type_list_t<float, half>>(permeances->dtype(), [&](auto v) {
+		detail::decaySynapses<decltype(v)>(connections, permeances, threshold, this);
 	});
 }
 
