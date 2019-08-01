@@ -102,8 +102,13 @@ void OpenCLBackend::init(cl::Context context, cl::Platform platform, cl::Device 
 
 	//Make sureextentions used by Etaler is avaliable
 	std::string device_name = device_.getInfo<CL_DEVICE_NAME>();
-	et_assert(isExtentionSupported("cl_khr_local_int32_base_atomics"), "cl_khr_local_int32_base_atomics is not supported by " + device_name);
-	et_assert(isExtentionSupported("cl_khr_local_int32_extended_atomics"), "cl_khr_local_int32_extended_atomics is not supported by " + device_name);
+
+	if(localMemoryType() == CL_LOCAL) {
+		et_assert(isExtentionSupported("cl_khr_local_int32_base_atomics"), "cl_khr_local_int32_base_atomics is not supported by " + device_name);
+		et_assert(isExtentionSupported("cl_khr_local_int32_extended_atomics"), "cl_khr_local_int32_extended_atomics is not supported by " + device_name);
+	}
+	else
+		throw EtError("OpenCL device does support local memory but no local memory extentions avaliable.");
 
 	have_fp16_ = isExtentionSupported("cl_khr_fp16");
 }
