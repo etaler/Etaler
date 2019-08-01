@@ -33,7 +33,7 @@ Otherwise, loading the library can be simplifed:
 [cling]$ #include <Etaler/Etaler.hpp>
 ```
 
-The same solution works with ROOT too! Since ROOT by default turns on C++17 by default, the C++17 flags is not needed.
+The same solution works with ROOT too! By default ROOT is compiled with C++11 only. You'll need to compile your own version of ROOT with C++17 enabled (by using `cmake -Dcxx17=ON`). Or you'll need to down load a version with C++17 enabled. Like the one in [Arch Linux's repo](https://www.archlinux.org/packages/community/x86_64/root/)
 ```c++
 > root
    ------------------------------------------------------------

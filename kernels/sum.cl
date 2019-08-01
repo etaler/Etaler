@@ -10,6 +10,10 @@
         #error IntermidType not defined
 #endif
 
+#ifdef IntermidIsHalf
+        #pragma OPENCL EXTENSION cl_khr_fp16 : enable
+#endif
+
 //InType: Input Data type
 //OutType: Output Data type
 //in_size: number of elements of the input
