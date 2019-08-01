@@ -234,7 +234,7 @@ void KernelManager::compileFromFile(const std::vector<std::string>& paths, const
 {
 	std::vector<std::string> sources;
 	for(const auto& path : paths)
-		sources.emplace_back((prepend!=""?"\n":"") + readKernel(path));
+		sources.emplace_back(prepend + (prepend!=""?"\n":"") + readKernel(path));
 	compileKernel(sources, program_name, kernel_names, force_override, flags);
 }
 
@@ -266,7 +266,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 {
 	requireProperties(x, this, DType::Bool, IsContingous());
 	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(connections->dimentions() >= 2);
 
