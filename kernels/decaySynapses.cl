@@ -6,8 +6,12 @@
 	#error "MAX_SYNAPSE_PER_CELL is not defined"
 #endif
 
+#ifndef PERM_TYPE
+	#error "PERM_TYPE not defined"
+#endif
 
-kernel void decaySynapses(global int* restrict connections, global float* restrict permeances, float threshold)
+
+kernel void decaySynapses(global int* restrict connections, global PERM_TYPE* restrict permeances, float threshold)
 {
 	int global_size = get_global_size(0);
 	int global_id = get_global_id(0);

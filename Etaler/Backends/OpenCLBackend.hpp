@@ -52,9 +52,9 @@ struct KernelManager
 	void compileKernel(const std::vector<std::string>& srcs, const std::string& program_name, const std::vector<std::string>& kernel_names
 		, bool force_override=false, const std::string& flags="");
 	void compileFromFile(const std::string& paths, const std::string& program_name, const std::vector<std::string>& kernel_names
-		, bool force_override=false, const std::string& flags="");
+		, bool force_override=false, const std::string& flags="", const std::string& prepend="");
 	void compileFromFile(const std::vector<std::string>& paths, const std::string& program_name, const std::vector<std::string>& kernel_names
-		, bool force_override=false, const std::string& flags="");
+		, bool force_override=false, const std::string& flags="", const std::string& prepend="");
 	inline bool exists(const std::string& program_name, const std::string& kernel_name)
 	{
 		auto it = apps_.find(program_name);

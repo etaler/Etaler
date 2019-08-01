@@ -224,17 +224,17 @@ void KernelManager::compileKernel(const std::vector<std::string>& srcs, const st
 }
 
 void KernelManager::compileFromFile(const std::string& path, const std::string& program_name, const std::vector<std::string>& kernel_names
-	, bool force_override, const std::string& flags)
+	, bool force_override, const std::string& flags, const std::string& prepend)
 {
-	compileFromFile(std::vector<std::string>{path}, program_name, kernel_names, force_override, flags);
+	compileFromFile(std::vector<std::string>{path}, program_name, kernel_names, force_override, flags, prepend);
 }
 
 void KernelManager::compileFromFile(const std::vector<std::string>& paths, const std::string& program_name, const std::vector<std::string>& kernel_names
-	, bool force_override, const std::string& flags)
+	, bool force_override, const std::string& flags, const std::string& prepend)
 {
 	std::vector<std::string> sources;
 	for(const auto& path : paths)
-		sources.emplace_back(readKernel(path));
+		sources.emplace_back((prepend!=""?"\n":"") + readKernel(path));
 	compileKernel(sources, program_name, kernel_names, force_override, flags);
 }
 
@@ -266,7 +266,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 {
 	requireProperties(x, this, DType::Bool, IsContingous());
 	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, DType::Float, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(connections->dimentions() >= 2);
 
@@ -274,16 +274,18 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 	s.pop_back();
 	auto y = createTensor(s, DType::Int32);
 
-	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE=" + str(!has_unconnected_synapse);
-	auto hash = hash_string(args);
+	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE=" + str(!has_unconnected_synapse)
+		+ " -DPERM_TYPE="+to_ctype_string(permeances->dtype());
+	auto prepend = (permeances->dtype()==DType::Half?"#pragma OPENCL EXTENSION cl_khr_fp16 : enable":"");
+	auto hash = hash_string(args + prepend);
 	auto program_name = "overlapScore"+hash;
 
 	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("cellActivity.cl", program_name, {"cellActivity"}, false, args);
+		kernel_manager_.compileFromFile("cellActivity.cl", program_name, {"cellActivity"}, false, args, prepend);
 	else if(x->size() < localMemorySize()*8-8 && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("cellActivity_compressed_local.cl", program_name, {"cellActivity"}, false, args);
+		kernel_manager_.compileFromFile("cellActivity_compressed_local.cl", program_name, {"cellActivity"}, false, args, prepend);
 	else
-		kernel_manager_.compileFromFile("cellActivity_global.cl", program_name, {"cellActivity"}, false, args);
+		kernel_manager_.compileFromFile("cellActivity_global.cl", program_name, {"cellActivity"}, false, args, prepend);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "cellActivity");
 
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
@@ -380,22 +382,23 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 	requireProperties(x, this, DType::Bool, IsContingous());
 	requireProperties(learn, this, DType::Bool, IsContingous());
 	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, DType::Float, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(x->shape() == learn->shape());
 
 	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE="+str(!has_unconnected_synapse)
-		+" -DOUTPUT_SIZE="+str(learn->size());
-	auto hash = hash_string(args);
+		+" -DOUTPUT_SIZE="+str(learn->size()) + " -DPERM_TYPE="+to_ctype_string(permeances->dtype());
+	auto prepend = (permeances->dtype()==DType::Half?"#pragma OPENCL EXTENSION cl_khr_fp16 : enable":"");
+	auto hash = hash_string(args+prepend);
 	auto program_name = "learnCorrilation"+hash;
 
 	if(x->size() < localMemorySize() && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args);
+		kernel_manager_.compileFromFile("learnCorrilation.cl", program_name, {"learnCorrilation"}, false, args, prepend);
 	else if(x->size() < localMemorySize()*8-8 && localMemoryType() == CL_LOCAL)
-		kernel_manager_.compileFromFile("learnCorrilation_compressed_local.cl", program_name, {"learnCorrilation"}, false, args);
+		kernel_manager_.compileFromFile("learnCorrilation_compressed_local.cl", program_name, {"learnCorrilation"}, false, args, prepend);
 	else
-		kernel_manager_.compileFromFile("learnCorrilation_global.cl", program_name, {"learnCorrilation"}, false, args);
+		kernel_manager_.compileFromFile("learnCorrilation_global.cl", program_name, {"learnCorrilation"}, false, args, prepend);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "learnCorrilation");
 
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
@@ -416,12 +419,13 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
 	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, DType::Float, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
 
-	auto args = "-DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back());
-	auto program_name = "sortSynapse"+hash_string(args);
-	kernel_manager_.compileFromFile("sort.cl", program_name, {"sortSynapse"}, false, args);
+	auto args = "-DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back()) + " -DPERM_TYPE="+to_ctype_string(permeances->dtype());
+	auto prepend = (permeances->dtype()==DType::Half?"#pragma OPENCL EXTENSION cl_khr_fp16 : enable":"");
+	auto program_name = "sortSynapse"+hash_string(args+prepend);
+	kernel_manager_.compileFromFile("sort.cl", program_name, {"sortSynapse"}, false, args, prepend);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "sortSynapse");
 
 	int num_cells = connections->size()/connections->shape().back();
@@ -502,7 +506,7 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 	requireProperties(x, this, DType::Bool, IsContingous());
 	requireProperties(y, this, DType::Bool, IsContingous());
 	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, DType::Float, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
 	Shape s = connections->shape();
@@ -512,9 +516,11 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 	size_t max_synapses_per_cell = connections->shape().back();
 	size_t input_cell_count = x->size();
 
-	auto args = "-DNUM_CELLS="+str(y->size())+" -DNUM_INPUT_BITS="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell);
-	auto program_name = "growSynapses"+hash_string(args);
-	kernel_manager_.compileFromFile("growSynapses.cl", program_name, {"growSynapses"}, false, args);
+	auto args = "-DNUM_CELLS="+str(y->size())+" -DNUM_INPUT_BITS="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell)
+		+" -DPERM_TYPE="+to_ctype_string(permeances->dtype());
+	auto prepend = (permeances->dtype()==DType::Half?"#pragma OPENCL EXTENSION cl_khr_fp16 : enable":"");
+	auto program_name = "growSynapses"+hash_string(args+prepend);
+	kernel_manager_.compileFromFile("growSynapses.cl", program_name, {"growSynapses"}, false, args, prepend);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "growSynapses");
 
 	size_t local_size = 32;
@@ -777,15 +783,16 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
 	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, DType::Float, IsContingous());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
 	et_assert(connections->shape() == permeances->shape());
 
 	size_t max_synapses_per_cell = connections->shape().back();
 	size_t input_cell_count = connections->size()/max_synapses_per_cell;
 
-	auto args = "-DNUM_CELLS="+str(input_cell_count) + " -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell);
-	std::string program_name = "sum" + hash_string(args);
-	kernel_manager_.compileFromFile("decaySynapses.cl", program_name, {"decaySynapses"}, false, args);
+	auto args = "-DNUM_CELLS="+str(input_cell_count) + " -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell) + " -DPERM_TYPE="+to_ctype_string(permeances->dtype());
+	auto prepend = (permeances->dtype()==DType::Half?"#pragma OPENCL EXTENSION cl_khr_fp16 : enable":"");
+	std::string program_name = "sum" + hash_string(args+prepend);
+	kernel_manager_.compileFromFile("decaySynapses.cl", program_name, {"decaySynapses"}, false, args, prepend);
 
 	cl::Kernel k = kernel_manager_.kernel(program_name, "decaySynapses");
 

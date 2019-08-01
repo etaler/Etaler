@@ -6,6 +6,10 @@
 	#error "MAX_SYNAPSE_PER_CELL not defined"
 #endif
 
+#ifndef PERM_TYPE
+	#error "PERM_TYPE not defined"
+#endif
+
 #ifndef NO_UNUSED_SYNAPSE
 	#define NO_UNUSED_SYNAPSE false
 #endif
@@ -15,7 +19,7 @@
 //INPUT_SIZE: The size of input SDR, must be smaller then CL_DEVICE_LOCAL_MEMORY_SIZE
 //NO_UNUSED_SYNAPSE: If there are unised synapses. Useful for sparial pooler, accelerates ~30%
 kernel void cellActivity(global bool* restrict x, global int* restrict synapses
-	, global float* restrict permeances, global int* restrict y
+	, global PERM_TYPE* restrict permeances, global int* restrict y
 	, float connected_perm, int active_threshold, int output_size)
 {
 	int global_size = get_global_size(0);

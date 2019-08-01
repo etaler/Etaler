@@ -3,16 +3,20 @@
 	#error "MAX_SYNAPSE_PER_CELL not defined"
 #endif
 
-void merge(global unsigned int* restrict a1, global float* restrict a2, int l, int m, int r
-	, global unsigned int* restrict aux_buffer1, global float* restrict aux_buffer2)
+#ifndef PERM_TYPE
+	#error "PERM_TYPE not defined"
+#endif
+
+void merge(global unsigned int* restrict a1, global PERM_TYPE* restrict a2, int l, int m, int r
+	, global unsigned int* restrict aux_buffer1, global PERM_TYPE* restrict aux_buffer2)
 {
 	int n1 = m - l + 1;
 	int n2 =  r - m;
 
 	global unsigned int* restrict L = aux_buffer1;
 	global unsigned int* restrict R = aux_buffer1+n1;
-	global float* restrict L2 = aux_buffer2;
-	global float* restrict R2 = aux_buffer2+n1;
+	global PERM_TYPE* restrict L2 = aux_buffer2;
+	global PERM_TYPE* restrict R2 = aux_buffer2+n1;
 
 	for (int i=0;i<n1;i++) {
 		L[i] = a1[l+i];
@@ -56,8 +60,8 @@ void merge(global unsigned int* restrict a1, global float* restrict a2, int l, i
 	}
 }
 
-void mergeSort(global unsigned int* restrict connections, global float* restrict permeances, int n
-	,global unsigned int* restrict aux_buffer1, global float* restrict aux_buffer2)
+void mergeSort(global unsigned int* restrict connections, global PERM_TYPE* restrict permeances, int n
+	,global unsigned int* restrict aux_buffer1, global PERM_TYPE* restrict aux_buffer2)
 {
 	for (int curr_size=1; curr_size<=n-1; curr_size = 2*curr_size) {
 	   for (int left_start=0; left_start<n-1; left_start += 2*curr_size) {
