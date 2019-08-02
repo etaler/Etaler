@@ -289,16 +289,16 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 		}
 
 		if(base_dtype != t.dtype())
-			throw EtError("DType mismatch when concatnating.");
+			throw EtError("DType mismatch when concatenate.");
 		
 		if(base_backend != t.backend())
-			throw EtError("Backend mismatch when concatnating.");
+			throw EtError("Backend mismatch when concatenate.");
 
 		auto shape = t.shape();
 		assert(shape.size() <= dim);
 		shape[dim] = base_shape[dim];
 		if(shape != base_shape)
-			throw EtError("Tensors must have the same shape along all axises besides the concating axis.");
+			throw EtError("Tensors must have the same shape along all axises besides the concatenating axis.");
 	}
 
 	Shape res_shape = base_shape;

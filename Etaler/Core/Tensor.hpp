@@ -291,6 +291,8 @@ static void assign(Tensor& x, const Tensor& y)
 
 Tensor ETALER_EXPORT sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown);
 Tensor ETALER_EXPORT cat(const svector<Tensor>& tensors, intmax_t dim=0);
+inline Tensor concat(const svector<Tensor>& tensors, intmax_t dim=0) { return cat(tensors, dim); }
+inline Tensor concatenate(const svector<Tensor>& tensors, intmax_t dim=0) { return cat(tensors, dim); }
 std::pair<Tensor, Tensor> brodcast_tensors(const Tensor& a, const Tensor& b);
 
 static Tensor exp(const Tensor& x) { return x.exp(); }
