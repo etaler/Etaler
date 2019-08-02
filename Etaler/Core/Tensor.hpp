@@ -99,7 +99,6 @@ struct ETALER_EXPORT Tensor
 	//View/Indexing
 	Tensor view(svector<Range> ranges) const;
 
-	//TODO: Handle reshape for non-continous Tensor
 	Tensor reshape(Shape shape) const
 	{
 		if(size() != (size_t)shape.volume())
@@ -164,6 +163,7 @@ struct ETALER_EXPORT Tensor
 	Tensor logical_or(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_or(a(), b()); }
 
 	Tensor operator- () const {return negate();}
+	Tensor operator+ () const {return *this;}
 	Tensor operator! () const {return logical_not();}
 
 	Tensor operator+ (const Tensor& other) const {return add(other);}
