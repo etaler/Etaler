@@ -714,7 +714,7 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 	if(dest->shape() != src->shape())
 	throw EtError("Shape mismatch in tensor assignment. Shape "
-		+ to_string(dest->shape()) + "and " + to_string(src->shape()));
+		+ to_string(dest->shape()) + " and " + to_string(src->shape()));
 
 	auto source = realize(src);
 
