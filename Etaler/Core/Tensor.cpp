@@ -360,7 +360,7 @@ inline Shape brodcast_result_shape(Shape a, Shape b)
 	return s;
 }
 
-static Tensor brodcast_to(const Tensor& t, Shape s)
+Tensor et::brodcast_to(const Tensor& t, Shape s)
 {
 	et_assert(s.size() >= t.dimentions());
 	Shape stride = leftpad(shapeToStride(t.shape()), s.size(), 0);

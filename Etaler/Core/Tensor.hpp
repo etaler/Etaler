@@ -16,6 +16,7 @@ namespace et
 {
 
 struct Tensor;
+Tensor ETALER_EXPORT brodcast_to(const Tensor& t, Shape s);
 
 ETALER_EXPORT std::ostream& operator<< (std::ostream& os, const Tensor& t);
 std::string to_string(const Tensor& t);
@@ -42,7 +43,15 @@ struct ETALER_EXPORT Tensor
 	Tensor(bool v) : Tensor({1}, &v) {}
 
 	Tensor& operator= (const Tensor& t)& { this->pimpl_ = t.pimpl_; return *this; } //l-value assignment. i.e. normal assignment
-	Tensor& operator= (const Tensor& t)&& { assign(t); return *this; } //r-value assignment. i.e. Assigning to a returned value
+	Tensor& operator= (const Tensor& t)&& //r-value assignment. i.e. Assigning to a returned value
+	{
+		//The check here is for performance
+		if(t.shape() != shape())
+			assign(brodcast_to(t, shape()));
+		else
+			assign(t);
+		return *this;
+	}
 
 	//Member and property access
 	void* data() {return call_const(data);}

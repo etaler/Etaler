@@ -544,6 +544,24 @@ TEST_CASE("Tensor operations")
 			Tensor p = Tensor({3}, pred);
 			CHECK(b.isSame(p));
 		}
+
+		SECTION("concat") {
+			Tensor a = ones({2, 2});
+			Tensor b = zeros({2, 2});
+			Tensor c = zeros({2, 2}, DType::Float);
+			Tensor d = zeros({2, 3});
+			CHECK_THROWS(cat({a, c}));
+			
+			Tensor sol1 = ones({4, 2});
+			sol1.view({range(2, 4), all()}) = 0;
+			CHECK(cat({a, b}).isSame(sol1));
+
+			Tensor sol2 = ones({2, 5});
+			sol2.view({all(), range(2, 5)}) = 0;
+			CHECK(cat({a, d}, /*dim=*/1).isSame(sol2));
+
+			CHECK_THROWS(cat({a, d}));
+		}
 	}
 }
 
