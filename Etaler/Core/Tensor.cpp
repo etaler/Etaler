@@ -273,6 +273,53 @@ Tensor et::sum(const Tensor& x, intmax_t dim, DType dtype)
 	return x.sum(dim, dtype);
 }
 
+Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
+{
+	if(tensors.size() == 0)
+		throw EtError("trying to concatenate 0 tensors together");
+
+	// Check the tensors can be cated
+	auto base_shape = tensors[0].shape();
+	auto base_dtype = tensors[0].dtype();
+	auto base_backend = tensors[0].backend();
+	for(const auto& t : tensors) {
+		if((intmax_t)t.dimentions() <= dim) {
+			throw EtError("Requesting to concat along dim="+std::to_string(dim)
+				+", but tensor is "+std::to_string(t.dimentions())+"D.");
+		}
+
+		if(base_dtype != t.dtype())
+			throw EtError("DType mismatch when concatenate.");
+		
+		if(base_backend != t.backend())
+			throw EtError("Backend mismatch when concatenate.");
+
+		auto shape = t.shape();
+		assert(shape.size() <= dim);
+		shape[dim] = base_shape[dim];
+		if(shape != base_shape)
+			throw EtError("Tensors must have the same shape along all axises besides the concatenating axis.");
+	}
+
+	Shape res_shape = base_shape;
+	res_shape[dim] = std::accumulate(tensors.begin(), tensors.end(), intmax_t{0}
+		, [&](intmax_t a, const auto& t){return a+t.shape()[dim];});
+	Tensor res = Tensor(res_shape, base_dtype, base_backend);
+	
+	intmax_t pos = 0;
+	svector<Range> ranges;
+	for(size_t i=0;i<res_shape.size();i++)
+		ranges.push_back(all());
+
+	for(const auto& t : tensors) {
+		ranges[dim] = Range(pos, pos+t.shape()[dim]);
+		res.view(ranges) = t;
+		pos = pos + t.shape()[dim];
+	}
+
+	return res;
+}
+
 Tensor Tensor::copy() const
 {
 	//if(points_to<ViewTensor>(pimpl()))
@@ -313,7 +360,7 @@ inline Shape brodcast_result_shape(Shape a, Shape b)
 	return s;
 }
 
-static Tensor brodcast_to(const Tensor& t, Shape s)
+Tensor et::brodcast_to(const Tensor& t, Shape s)
 {
 	et_assert(s.size() >= t.dimentions());
 	Shape stride = leftpad(shapeToStride(t.shape()), s.size(), 0);

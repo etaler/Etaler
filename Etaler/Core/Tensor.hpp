@@ -16,6 +16,7 @@ namespace et
 {
 
 struct Tensor;
+Tensor ETALER_EXPORT brodcast_to(const Tensor& t, Shape s);
 
 ETALER_EXPORT std::ostream& operator<< (std::ostream& os, const Tensor& t);
 std::string to_string(const Tensor& t);
@@ -42,7 +43,15 @@ struct ETALER_EXPORT Tensor
 	Tensor(bool v) : Tensor({1}, &v) {}
 
 	Tensor& operator= (const Tensor& t)& { this->pimpl_ = t.pimpl_; return *this; } //l-value assignment. i.e. normal assignment
-	Tensor& operator= (const Tensor& t)&& { assign(t); return *this; } //r-value assignment. i.e. Assigning to a returned value
+	Tensor& operator= (const Tensor& t)&& //r-value assignment. i.e. Assigning to a returned value
+	{
+		//The check here is for performance
+		if(t.shape() != shape())
+			assign(brodcast_to(t, shape()));
+		else
+			assign(t);
+		return *this;
+	}
 
 	//Member and property access
 	void* data() {return call_const(data);}
@@ -90,7 +99,6 @@ struct ETALER_EXPORT Tensor
 	//View/Indexing
 	Tensor view(svector<Range> ranges) const;
 
-	//TODO: Handle reshape for non-continous Tensor
 	Tensor reshape(Shape shape) const
 	{
 		if(size() != (size_t)shape.volume())
@@ -155,6 +163,7 @@ struct ETALER_EXPORT Tensor
 	Tensor logical_or(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_or(a(), b()); }
 
 	Tensor operator- () const {return negate();}
+	Tensor operator+ () const {return *this;}
 	Tensor operator! () const {return logical_not();}
 
 	Tensor operator+ (const Tensor& other) const {return add(other);}
@@ -290,6 +299,9 @@ static void assign(Tensor& x, const Tensor& y)
 }
 
 Tensor ETALER_EXPORT sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown);
+Tensor ETALER_EXPORT cat(const svector<Tensor>& tensors, intmax_t dim=0);
+inline Tensor concat(const svector<Tensor>& tensors, intmax_t dim=0) { return cat(tensors, dim); }
+inline Tensor concatenate(const svector<Tensor>& tensors, intmax_t dim=0) { return cat(tensors, dim); }
 std::pair<Tensor, Tensor> brodcast_tensors(const Tensor& a, const Tensor& b);
 
 static Tensor exp(const Tensor& x) { return x.exp(); }

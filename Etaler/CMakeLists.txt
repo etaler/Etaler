@@ -56,6 +56,10 @@ install(FILES ${CMAKE_SOURCE_DIR}/cmake/FindEtaler.cmake
 install(DIRECTORY ${CMAKE_SOURCE_DIR}/Etaler
     DESTINATION include
     FILES_MATCHING PATTERN "*.hpp")
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/Etaler
+    DESTINATION include
+    FILES_MATCHING PATTERN "*.h")
+
 
 install(FILES ${PROJECT_BINARY_DIR}/Etaler_export.h DESTINATION include)
 
