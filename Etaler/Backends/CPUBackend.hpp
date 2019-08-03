@@ -23,6 +23,8 @@ struct CPUBuffer : public BufferImpl
 			storage_ = new int32_t[shape.volume()];
 		else if(dtype == DType::Float)
 			storage_ = new float[shape.volume()];
+		else if(dtype == DType::Half)
+			storage_ = new half[shape.volume()];
 		else
 			std::cerr << "Critical Warning: CPUBuffer Initialize failed. Unknown DType" << std::endl;
 	}
@@ -42,7 +44,7 @@ struct CPUBuffer : public BufferImpl
 	virtual void* data() const override;
 
 protected:
-	std::variant<bool*, int32_t*, float*> storage_;
+	std::variant<bool*, int32_t*, float*, half*> storage_;
 };
 
 struct CPUBackend : public Backend

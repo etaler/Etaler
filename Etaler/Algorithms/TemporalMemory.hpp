@@ -45,6 +45,11 @@ struct ETALER_EXPORT TemporalMemory
 
 	TemporalMemory to(Backend* b) const;
 
+	TemporalMemory copy() const
+	{
+		return to(connections_.backend());
+	}	
+
 	void loadState(const StateDict& states);
 
 	Shape input_shape_;

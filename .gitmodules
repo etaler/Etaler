@@ -1,6 +1,7 @@
 [submodule "Etaler/3rdparty/pcg-cpp"]
 	path = Etaler/3rdparty/pcg-cpp
 	url = https://github.com/imneme/pcg-cpp
+
 [submodule "Etaler/3rdparty/LayersVisualizer/Easy3D"]
 	path = Etaler/3rdparty/LayersVisualizer/Easy3D
 	url = https://github.com/LiangliangNan/Easy3D.git
@@ -10,3 +11,6 @@
 [submodule "examples/visualize/resource"]
 	path = examples/visualize/resource
 	url = git@github.com:alior101/resource.git
+[submodule "Etaler/3rdparty/half_precision"]
+	path = Etaler/3rdparty/half_precision
+	url = https://github.com/marty1885/half_precision

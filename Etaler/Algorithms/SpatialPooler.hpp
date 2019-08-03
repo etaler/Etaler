@@ -66,7 +66,12 @@ struct ETALER_EXPORT SpatialPooler
 	SpatialPooler to(Backend* b) const;
 
 	void loadState(const StateDict& states);
-protected:
+
+	SpatialPooler copy() const
+	{
+		return to(connections_.backend());
+	}
+//protected:
 	float permanence_inc_ = 0.1;
 	float permanence_dec_ = 0.1;
 	float connected_permanence_ = 0.21;

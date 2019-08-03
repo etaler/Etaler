@@ -114,6 +114,8 @@ static void printNDArray(std::ostream& os, const void* ptr, Shape shape, DType d
 		prettyPrintTensor(os, (int32_t*)ptr, shape, 0, shape.size(), 0, truncate);
 	else if(dtype == DType::Bool)
 		prettyPrintTensor(os, (bool*)ptr, shape, 0, shape.size(), 0, truncate);
+	else if(dtype == DType::Half)
+		prettyPrintTensor(os, (half*)ptr, shape, 0, shape.size(), 0, truncate);
 	else
 		throw EtError("Printing tensor of this type is not supported.");
 }
@@ -220,6 +222,8 @@ Tensor et::zeros(const Shape& shape, DType dtype, Backend* backend)
 		return constant<int32_t>(shape, 0, backend);
 	else if(dtype == DType::Float)
 		return constant<float>(shape, 0, backend);
+	else if(dtype == DType::Half)
+		return constant<half>(shape, half(0), backend);
 	else
 		throw EtError("Cannot creatr a tensor of zeros of type " + to_ctype_string(dtype));
 }
@@ -232,6 +236,8 @@ Tensor et::ones(const Shape& shape, DType dtype, Backend* backend)
 		return constant<int32_t>(shape, 1, backend);
 	else if(dtype == DType::Float)
 		return constant<float>(shape, 1, backend);
+	else if(dtype == DType::Half)
+		return constant<half>(shape, half(1), backend);
 	else
 		throw EtError("Cannot creatr a tensor of ones of type " + to_ctype_string(dtype));
 }

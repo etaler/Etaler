@@ -30,6 +30,15 @@ void load(Archive & archive , Shape & s)
 	s = Shape(vec.begin(), vec.end());
 }
 
+template<class Archive>
+void serialize(Archive & archive,
+	half & m)
+{
+	archive(m.storage_);
+}
+
+
+
 template <class Archive>
 void save(Archive & archive, Tensor const & t)
 {
@@ -40,6 +49,8 @@ void save(Archive & archive, Tensor const & t)
 			return "float";
 		if(t.dtype() == DType::Int32)
 			return "int32";
+		if(t.dtype() == DType::Half)
+			return "half";
 
 		throw EtError("Cannot handle such dtype()");
 	}();
@@ -57,6 +68,10 @@ void save(Archive & archive, Tensor const & t)
 	}
 	else if(t.dtype() == DType::Int32) {
 		std::vector<int32_t> arr = t.toHost<int32_t>();
+		archive(make_nvp("data", arr));
+	}
+	else if(t.dtype() == DType::Half) {
+		std::vector<half> arr = t.toHost<half>();
 		archive(make_nvp("data", arr));
 	}
 }
@@ -82,6 +97,11 @@ void load(Archive & archive, Tensor & t)
 	}
 	else if(dtype == "int32") {
 		std::vector<int32_t> d(s.volume());
+		archive(make_nvp("data", d));
+		t = Tensor(s, d.data());
+	}
+	else if(dtype == "half") {
+		std::vector<half> d(s.volume());
 		archive(make_nvp("data", d));
 		t = Tensor(s, d.data());
 	}
@@ -137,6 +157,8 @@ void save(Archive & archive ,StateDict const & item)
 			types.push_back("std::vector<int>");
 		else if(v.type() == typeid(std::vector<float>))
 			types.push_back("std::vector<float>");
+		else if(v.type() == typeid(std::vector<half>))
+			types.push_back("std::vector<half>");
 		else
 			throw EtError("Cannot save (mangled name:) type " + std::string(v.type().name()) + ", key " + k);
 	}
@@ -163,6 +185,8 @@ void save(Archive & archive ,StateDict const & item)
 			archive(std::any_cast<std::vector<int>>(v));
 		else if(v.type() == typeid(std::vector<float>))
 			archive(std::any_cast<std::vector<float>>(v));
+		else if(v.type() == typeid(std::vector<half>))
+			archive(std::any_cast<std::vector<half>>(v));
 		else
 			throw EtError("Cannot save type " + std::string(typeid(decltype(v)).name()) + ", key " + k);
 
@@ -211,6 +235,8 @@ void load(Archive & archive ,StateDict & item)
 			read_archive<std::vector<int>>(archive, item, key);
 		else if(type == "std::vector<float>")
 			read_archive<std::vector<float>>(archive, item, key);
+		else if(type == "std::vector<half>")
+			read_archive<std::vector<half>>(archive, item, key);
 		else
 			throw EtError("Cannot serealize type " + type);
 

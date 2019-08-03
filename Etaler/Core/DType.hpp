@@ -4,6 +4,8 @@
 #include <limits>
 #include <string>
 
+#include "Half.hpp"
+
 namespace et
 {
 
@@ -13,6 +15,7 @@ enum class DType
 	Bool = 0,
 	Int32,
 	Float,
+	Half,
 };
 
 template <typename T>
@@ -24,11 +27,13 @@ constexpr inline DType typeToDType()
 		return DType::Int32;
 	else if constexpr(std::is_same<T, bool>::value || std::is_same<T, uint8_t>::value)
 		return DType::Bool;
+	else if constexpr(std::is_same<T, float16>::value)
+		return DType::Half;
 	else
 		return DType::Unknown;
 }
 
-inline size_t dtypeToSize(DType dtype)
+inline constexpr size_t dtypeToSize(DType dtype)
 {
 	if(dtype == DType::Bool)
 		return sizeof(bool);
@@ -36,6 +41,8 @@ inline size_t dtypeToSize(DType dtype)
 		return sizeof(int32_t);
 	else if(dtype == DType::Float)
 		return sizeof(float);
+	else if(dtype == DType::Half)
+		return sizeof(float16);
 	return std::numeric_limits<size_t>::max();
 }
 
@@ -47,6 +54,8 @@ inline std::string to_ctype_string(DType dtype)
 		return "int";
 	else if(dtype == DType::Float)
 		return "float";
+	else if(dtype == DType::Half)
+		return "half";
 	return "Unknown";
 }
 
