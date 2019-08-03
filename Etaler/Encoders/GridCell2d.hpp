@@ -15,7 +15,7 @@ namespace et
 namespace encoder
 {
 
-static std::array<float, 4> inv2x2(std::array<float, 4> m)
+inline std::array<float, 4> inv2x2(std::array<float, 4> m)
 {
 	float det = m[0]*m[3] - m[1]*m[2];
 	float f = 1/det;
@@ -23,13 +23,13 @@ static std::array<float, 4> inv2x2(std::array<float, 4> m)
 	return {f*m[3], -f*m[1], -f*m[2], f*m[0]};
 }
 
-static std::array<float, 2> mvmul2(std::array<float, 4> m, std::array<float, 2> v, float f)
+inline std::array<float, 2> mvmul2(std::array<float, 4> m, std::array<float, 2> v, float f)
 {
 	return {(v[0]*m[0]+v[1]*m[1])*f, (v[0]*m[2]+v[1]*m[3])*f};
 }
 
 //This implementation is slower the one in tiny-htm. But is more accurate
-static std::vector<uint8_t> gcm2d(std::array<float, 2> p, float scale, float theta, size_t active_cells, std::array<size_t, 2> axis_length)
+inline std::vector<uint8_t> gcm2d(std::array<float, 2> p, float scale, float theta, size_t active_cells, std::array<size_t, 2> axis_length)
 {
 	std::vector<uint8_t> res(axis_length[0]*axis_length[1]);
 	std::array<float, 4> mat = inv2x2({cosf(theta), -sinf(theta)
@@ -60,7 +60,7 @@ static std::vector<uint8_t> gcm2d(std::array<float, 2> p, float scale, float the
 	return res;
 }
 
-static Tensor gridCell2d(std::array<float, 2> p, size_t num_gcm=16, size_t active_cells_per_gcm=1, std::array<size_t, 2> gcm_axis_length={4,4}
+inline Tensor gridCell2d(std::array<float, 2> p, size_t num_gcm=16, size_t active_cells_per_gcm=1, std::array<size_t, 2> gcm_axis_length={4,4}
 	, std::array<float, 2> scale_range={0.3f, 1.f}, size_t seed=42, Backend* backend=defaultBackend())
 {
 	const float pi = 3.14159265358979323846;
