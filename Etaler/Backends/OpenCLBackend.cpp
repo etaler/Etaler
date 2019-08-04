@@ -390,7 +390,6 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(x->shape() == learn->shape());
 
 	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE="+str(!has_unconnected_synapse)
 		+" -DOUTPUT_SIZE="+str(learn->size()) + " -DPERM_TYPE="+to_ctype_string(permeances->dtype());

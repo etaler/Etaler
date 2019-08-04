@@ -113,6 +113,7 @@ Tensor SpatialPooler::compute(const Tensor& x) const
 		activity = boost(activity, average_activity_, global_density_, boost_factor_);
 
 	Tensor res = globalInhibition(activity, global_density_);
+	assert(output_shape_ == res.shape());
 
 	return res;
 }
@@ -120,7 +121,7 @@ Tensor SpatialPooler::compute(const Tensor& x) const
 void SpatialPooler::learn(const Tensor& x, const Tensor& y)
 {
 	et_assert(x.shape() == input_shape_);
-	et_assert(y.shape() == input_shape_);
+
 	learnCorrilation(x, y, connections_, permanences_, permanence_inc_, permanence_dec_);
 
 	if(boost_factor_ != 0)

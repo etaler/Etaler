@@ -138,7 +138,6 @@ void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const Tensor
 	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(x->shape() == learn->shape());
 
 	const bool* input = (const bool*)x->data();
 	const bool* learning = (const bool*)learn->data();
