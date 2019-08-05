@@ -32,14 +32,18 @@ int main()
 	TemporalMemory tm({(intmax_t)sdr_size}, cells_per_column);
 
 	Tensor last_state = zeros({sdr_size, cells_per_column}, DType::Bool);
+	Tensor last_pred = zeros({sdr_size, cells_per_column}, DType::Bool);
 	for(size_t i=0;i<40;i++) {
 		size_t categoery = i%num_category;
 		Tensor x = encoder::category(categoery, num_category, bits_per_category);
 
-		auto [pred, active] = tm.compute(x, last_state);
+		auto [pred, active] = tm.compute(x, last_pred);
+
+		std::cout << last_state << std::endl;
 
 		tm.learn(active, last_state); //Let the TM learn
 		last_state = active;
+		last_pred = pred;
 
 		//Display results
 		auto prediction = sum(pred, 1, DType::Bool);
