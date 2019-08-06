@@ -10,7 +10,7 @@
 	url = https://github.com/alior101/LayersVisualizer.git
 [submodule "examples/visualize/resource"]
 	path = examples/visualize/resource
-	url = git@github.com:alior101/resource.git
+	url = https://github.com/alior101/resource.git
 [submodule "Etaler/3rdparty/half_precision"]
 	path = Etaler/3rdparty/half_precision
 	url = https://github.com/marty1885/half_precision
