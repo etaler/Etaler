@@ -127,12 +127,14 @@ make -j8
 
 Some cmake options are available:
 
-| option                | description               | default |
-| --------------------- | ------------------------- | ------- |
-| CMAKE_BUILD_TYPE      | Debug or Release build    | Release |
-| ETALER_ENABLE_OPENCL  | Enable the OpenCL backend | OFF     |
-| ETALER_BUILD_EXAMPLES | Build the examples        | ON      |
-| ETALER_BUILD_TESTS    | Build the tests           | ON      |
+| option                             | description               | default |
+| ---------------------------------- | ------------------------- | ------- |
+| CMAKE_BUILD_TYPE                   | Debug or Release build    | Release |
+| ETALER_ENABLE_OPENCL               | Enable the OpenCL backend | OFF     |
+| ETALER_BUILD_EXAMPLES              | Build the examples        | ON      |
+| ETALER_BUILD_EXAMPLE_VISUALIZER    | Build visualizer example  | OF      |
+| ETALER_BUILD_TESTS                 | Build the tests           | ON      |
+
 
 ### Building in Docker/VSC
 Open the folder in VSC with remote docker extension ( ext install ms-vscode-remote.remote-containers ) - the docker image and container will start automatically. If CMake Tools extension are also installed, the building will be done automaticaly also. Otherwhise, do the regular cmake procedure inside Etaler dir.
