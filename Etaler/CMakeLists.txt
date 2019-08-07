@@ -20,6 +20,7 @@ target_include_directories(Etaler PRIVATE 3rdparty)
 
 if(${TBB_FOUND})
 	target_link_libraries(Etaler ${TBB_IMPORTED_TARGETS})
+	target_include_directories(Etaler PRIVATE ${TBB_INCLUDE_DIRS})
 else()
 	target_link_libraries(Etaler tbb)
 endif()
