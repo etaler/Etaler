@@ -99,6 +99,15 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(r.shape() == Shape({1}));
 	}
 
+	SECTION("tensor like") {
+		Tensor t = ones({4,4});
+		Tensor q = ones_like(t);
+		CHECK(q.dtype() == t.dtype());
+		CHECK(q.shape() == t.shape());
+		CHECK(q.backend() == t.backend());
+		CHECK(q.shape() == zeros_like(t).shape()); //Lazy way to check if zeros_like works too
+	}
+
 	SECTION("Tesnor basic") {
 		Tensor t = Tensor({1,2,5,6,7}, DType::Float);
 
@@ -219,6 +228,11 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			Tensor s = t.view({range(2),range(2)});
 			s = constant({2,2}, 3); //Should change nothing
 			CHECK(t.isSame(pred2));
+
+			//Assign from view
+			Tensor u = ones({4,4});
+			u.view({all(), all()}) = zeros({1});
+			CHECK(u.isSame(zeros_like(u)));
 		}
 	}
 }

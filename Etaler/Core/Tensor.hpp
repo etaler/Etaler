@@ -320,6 +320,8 @@ static Tensor lesser(const Tensor& x1, const Tensor& x2) { return x1.lesser(x2);
 static Tensor logical_and(const Tensor& x1, const Tensor& x2) { return x1.logical_and(x2); }
 static Tensor logical_or(const Tensor& x1, const Tensor& x2) { return x1.logical_or(x2); }
 
+static Tensor zeros_like(const Tensor& x) { return zeros(x.shape(), x.dtype(), x.backend()); }
+static Tensor ones_like(const Tensor& x) { return ones(x.shape(), x.dtype(), x.backend()); }
 }
 
 #include <sstream>
