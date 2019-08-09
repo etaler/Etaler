@@ -711,13 +711,14 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 	requireProperties(dest, this);
 	requireProperties(src, this);
 
-	if(dest->shape() != src->shape())
-	throw EtError("Shape mismatch in tensor assignment. Shape "
-		+ to_string(dest->shape()) + " and " + to_string(src->shape()));
+	if(dest->shape() != src->shape()) {
+		throw EtError("Shape mismatch in tensor assignment. Shape "
+			+ to_string(dest->shape()) + " and " + to_string(src->shape()));
+	}
 
 	auto source = realize(src);
 
-	if(dest->dtype() != src->dtype())
+	if(dest->dtype() != source->dtype())
 		source = cast(realize(source.get()).get(), dest->dtype());
 
 	std::vector<std::string> conversion = jitCopyToView(dest);
@@ -725,7 +726,7 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 	kernel_manager_.compileKernel(conversion, "__copy", {"copy"});
 	cl::Kernel k = kernel_manager_.kernel("__copy", "copy");
 
-	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(src->buffer())->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(source->buffer())->buffer());
 	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(dest->buffer())->buffer());
 
 	size_t local_size = 128;
