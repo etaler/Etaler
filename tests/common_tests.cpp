@@ -228,6 +228,11 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			Tensor s = t.view({range(2),range(2)});
 			s = constant({2,2}, 3); //Should change nothing
 			CHECK(t.isSame(pred2));
+
+			//Assign from view
+			Tensor u = ones({4,4});
+			u.view({all(), all()}) = zeros({1});
+			CHECK(u.isSame(zeros_like(u)));
 		}
 	}
 }
