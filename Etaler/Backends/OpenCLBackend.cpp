@@ -104,11 +104,11 @@ void OpenCLBackend::init(cl::Context context, cl::Platform platform, cl::Device 
 	std::string device_name = device_.getInfo<CL_DEVICE_NAME>();
 
 	if(localMemoryType() == CL_LOCAL) {
-		et_assert(isExtentionSupported("cl_khr_local_int32_base_atomics"), "cl_khr_local_int32_base_atomics is not supported by " + device_name);
-		et_assert(isExtentionSupported("cl_khr_local_int32_extended_atomics"), "cl_khr_local_int32_extended_atomics is not supported by " + device_name);
+		et_assert(isExtentionSupported("cl_khr_local_int32_base_atomics")
+			, "The required exntention cl_khr_local_int32_base_atomics is not supported by " + device_name);
+		et_assert(isExtentionSupported("cl_khr_local_int32_extended_atomics")
+			, "The required exntention cl_khr_local_int32_extended_atomics is not supported by " + device_name);
 	}
-	else
-		throw EtError("OpenCL device does support local memory but no local memory extentions avaliable.");
 
 	have_fp16_ = isExtentionSupported("cl_khr_fp16");
 }
@@ -924,7 +924,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, c
 std::shared_ptr<TensorImpl> OpenCLBackend::exp(const TensorImpl* x)
 {
 	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
-	return applyUnaryOp(x, "#define f(x) (exp((float)x))", result_type);
+	return applyUnaryOp(x, "#define f(x) (exp((ResType)x))", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::negate(const TensorImpl* x)
@@ -936,13 +936,13 @@ std::shared_ptr<TensorImpl> OpenCLBackend::negate(const TensorImpl* x)
 std::shared_ptr<TensorImpl> OpenCLBackend::inverse(const TensorImpl* x)
 {
 	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
-	return applyUnaryOp(x, "#define f(x) (1.0f/(float)x)", result_type);
+	return applyUnaryOp(x, "#define f(x) ((ResType)1/(ResType)x)", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::log(const TensorImpl* x)
 {
 	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
-	return applyUnaryOp(x, "#define f(x) (log((float)x))", result_type);
+	return applyUnaryOp(x, "#define f(x) (log((ResType)x))", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::logical_not(const TensorImpl* x)
