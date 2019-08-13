@@ -719,7 +719,7 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 	auto source = realize(src);
 
 	if(dest->dtype() != source->dtype())
-		source = cast(realize(source.get()).get(), dest->dtype());
+		source = cast(source.get(), dest->dtype());
 
 	std::vector<std::string> conversion = jitCopyToView(dest);
 
