@@ -12,8 +12,8 @@ inline std::vector<T> vector_range(size_t start, size_t end)
 	return v;
 }
 
-SpatialPoolerND::SpatialPoolerND(const Shape& input_shape, size_t kernel_size, size_t stride=1, float potential_pool_pct=0.75, size_t seed=42
-	, float global_density = 0.15, float boost_factor = 0, Backend* b = defaultBackend())
+SpatialPoolerND::SpatialPoolerND(const Shape& input_shape, size_t kernel_size, size_t stride, float potential_pool_pct, size_t seed
+	, float global_density, float boost_factor, Backend* b)
 {
 	for(size_t i=0;i<input_shape.size();i++)
 		et_assert(input_shape[i] >= (intmax_t)kernel_size);
