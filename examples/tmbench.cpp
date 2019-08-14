@@ -22,12 +22,14 @@ float benchmarkTemporalMemory(const std::vector<Tensor>& x, size_t num_epoch)
 		tm.learn(t, t);
 
 		Tensor last_state = zeros(t.shape(), DType::Bool);
+		Tensor last_predict = zeros(t.shape(), DType::Bool);
 
 		auto t0 = std::chrono::high_resolution_clock::now();
 		for(const auto& d : x) {
-			auto [pred, active] = tm.compute(d, last_state);
+			auto [pred, active] = tm.compute(d, last_predict);
 			tm.learn(active, last_state);
 			last_state = active;
+			last_predict = pred;
 		}
 		defaultBackend()->sync();
 
