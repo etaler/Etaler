@@ -65,6 +65,6 @@ kernel void threshold(global int* restrict x, global bool* restrict y, global in
 	int thr = *threshold;
 	for(int i=id;i<INPUT_SIZE;i+=size) {
 		int v = x[i];
-		y[i] = (v > thr ? 1 : 0);
+		y[i] = (v >= thr ? 1 : 0);
 	}
 }
