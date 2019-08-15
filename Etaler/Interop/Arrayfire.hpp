@@ -28,7 +28,7 @@ Tensor from_afarray(const af::array& arr, bool transpose=true)
                         return DType::Float;
                 else if(type == s32)
                         return DType::Int32;
-                else
+                else if(type == b8)
                         return DType::Bool;
         }(arr.type());
 
@@ -44,11 +44,13 @@ Tensor from_afarray(const af::array& arr, bool transpose=true)
                 res = Tensor(s, ptr);
                 af::freeHost(ptr);
         }
-        else {
+        else if(dtype == DType::Bool) {
                 auto ptr = a.host<uint8_t>(); //Some arrayfire quarks
                 res = Tensor(s, ptr);
                 af::freeHost(ptr);
         }
+	else
+		throw EtError("from_afarray failed. Data type contained in ArrayFire array is not supported by Etaler.");
 
         return res;
 }
@@ -68,8 +70,10 @@ af::array to_afarray(const Tensor& t, bool transpose=true)
                         return f32;
                 else if(dtype == DType::Int32)
                         return s32;
-                else
+                else if(dtype == DType::Bool)
                         return b8;
+		else
+			throw EtError("to_afarray failed. Data type held by et::Tensor is not supported by ArrayFire.");
         }(t.dtype());
         af::array res(dims, dtype);
 
@@ -81,10 +85,12 @@ af::array to_afarray(const Tensor& t, bool transpose=true)
                 auto v = t.toHost<int32_t>();
                 res.write(v.data(), v.size()*dtypeToSize(t.dtype()));
         }
-        else {
+        else if(dtype == b8) {
                 auto v = t.toHost<uint8_t>();
                 res.write(v.data(), v.size()*dtypeToSize(t.dtype()));
         }
+	else
+		ASSERT(false && "to_afarray: should not reach here.");
 
         if(transpose)
                 return res.T();
