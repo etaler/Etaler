@@ -24,30 +24,38 @@ int main()
 {
 	//auto backend = std::make_shared<et::OpenCLBackend>();
 	//et::setDefaultBackend(backend.get());
+
+	//Parameters for the example
 	size_t num_category = 3;
 	size_t bits_per_category = 5;
 	intmax_t cells_per_column = 2;
 
+	//Initalize the Temporal Memory layer
 	intmax_t sdr_size = bits_per_category*num_category;
 	TemporalMemory tm({(intmax_t)sdr_size}, cells_per_column);
 
+	//Intermid HTM states
 	Tensor last_state = zeros({sdr_size, cells_per_column}, DType::Bool);
 	Tensor last_pred = zeros({sdr_size, cells_per_column}, DType::Bool);
+
+	//Iterate a few times
 	for(size_t i=0;i<40;i++) {
 		size_t categoery = i%num_category;
+
+		//Create SDR base on which iteration we are in
 		Tensor x = encoder::category(categoery, num_category, bits_per_category);
 
+		//Ask the TM to make predictions
 		auto [pred, active] = tm.compute(x, last_pred);
 
-		std::cout << last_state << std::endl;
-
-		tm.learn(active, last_state); //Let the TM learn
+		//Let the TM learn
+		tm.learn(active, last_state);
 		last_state = active;
 		last_pred = pred;
 
 		//Display results
-		auto prediction = sum(pred, 1, DType::Bool);
-		std::vector<size_t> pred_category = decoder::category(prediction, num_category);
+		auto prediction = sum(pred, 1, DType::Bool); // extract what the TM is predicting
+		auto pred_category = decoder::category(prediction, num_category);
 
 		std::cout << "input, prediction of next = " << categoery
 			<< ", " << to_string(pred_category);
