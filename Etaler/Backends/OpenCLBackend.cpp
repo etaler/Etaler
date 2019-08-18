@@ -483,7 +483,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 
 	size_t cells_per_column = x->shape().back();
 	size_t num_columns = x->size()/cells_per_column;
-	static pcg32 rng; //Static so the behavor hangees every time, breaking symmetry
+	static pcg32 rng(42); //Static so the behavor hangees every time, breaking symmetry
 	std::uniform_int_distribution<size_t> dist(0, cells_per_column-1);
 
 	auto res = copy(x);

@@ -43,7 +43,7 @@ kernel void fastTopK(global int* restrict x, global int* restrict result, int k)
 		for(int i=1;i<MAX_INPUT_VALUE;i++) {
 			int occur = res[i];
 			occur_sum += occur;
-			if(occur_sum >= n) {
+			if(occur_sum > n) {
 				*result = i;
 				solved = true;
 				break;
