@@ -488,17 +488,28 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 
 	auto res = copy(x);
 
+	size_t local_size = 128;
+	size_t global_size = selectWorkSize(4096, local_size, num_columns);
+	std::vector<uint32_t> seed1(global_size);
+	std::vector<uint32_t> seed2(global_size);
+
+	for(auto& v : seed1) v = rng();
+	for(auto& v : seed1) v = rng();
+
+	auto s1 = createTensor({global_size}, DType::Int32, seed1.data());
+	auto s2 = createTensor({global_size}, DType::Int32, seed2.data());
+
+
 	auto args = "-DCELLS_PER_COLUMN="+str(cells_per_column)+" -DNUM_COLUMNS="+str(num_columns);
 	auto program_name = "reverseBurst"+hash_string(args);
 	kernel_manager_.compileFromFile("reverseBurst.cl", program_name, {"reverseBurst"}, false, args);
 	cl::Kernel k = kernel_manager_.kernel(program_name, "reverseBurst");
 
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(res->buffer())->buffer());
-	k.setArg(1, rng());
-	k.setArg(2, rng());
+	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(s1->buffer())->buffer());
+	k.setArg(2, std::static_pointer_cast<const OpenCLBuffer>(s2->buffer())->buffer());
 
-	size_t local_size = 128;
-	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, num_columns)), cl::NDRange(local_size));
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(global_size), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel reverseBurst execution failed. Code " + str(err));
 	return res;

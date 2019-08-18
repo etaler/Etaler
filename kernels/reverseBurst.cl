@@ -16,13 +16,13 @@ unsigned int random(int seed1, int seed2)
 //CELLS_PER_COLUMN: number of cells in each column
 //NUM_COLUMNS: number of mini-coluumns
 //seed1, seed2: seed for RNG
-kernel void reverseBurst(global bool* x, uint seed1, uint seed2)
+kernel void reverseBurst(global bool* restrict x, global int* restrict seed1, global int* restrict seed2)
 {
 	int global_size = get_global_size(0);
 	int global_id = get_global_id(0);
 
-	uint s2 = seed2 * global_id + (4 - global_id);
-	uint s1 = seed1 + global_id;
+	uint s2 = seed2[global_id];
+	uint s1 = seed1[global_id];
 
 	for(int i=global_id;i<NUM_COLUMNS;i+=global_size) {
 		int sum = 0;
