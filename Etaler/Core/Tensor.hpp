@@ -182,6 +182,9 @@ struct ETALER_EXPORT Tensor
 	Tensor operator>= (const Tensor& other) const {return greater(other) || equal(other);}
 	Tensor operator!= (const Tensor& other) const {return !equal(other);}
 
+	//Subscription operator
+	Tensor operator [] (svector<Range> r) { return view(r); }
+
 	Tensor sum(intmax_t dim=-1, DType dtype=DType::Unknown) const;
 	bool isSame (const Tensor& other) const;
 
