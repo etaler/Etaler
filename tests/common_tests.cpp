@@ -234,6 +234,12 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			u.view({all(), all()}) = zeros({1});
 			CHECK(u.isSame(zeros_like(u)));
 		}
+
+		SECTION("subscription operator") {
+			svector<Range> r = {range(2)};
+			//The [] operator should work exactly like the view() function
+			CHECK(t[r].isSame(t.view(r)));
+		}
 	}
 }
 
