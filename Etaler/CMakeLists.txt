@@ -7,7 +7,7 @@ project(Etaler CXX)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 
 add_library(Etaler SHARED Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/Serialize.cpp Core/Tensor.cpp
-	Algorithms/SpatialPooler.cpp Algorithms/TemporalMemory.cpp Core/TypeHelpers.cpp)
+	Algorithms/SpatialPooler.cpp Algorithms/SpatialPoolerND.cpp Algorithms/TemporalMemory.cpp Core/TypeHelpers.cpp)
 
 # Auto-generate the export header for shared library macros
 include(GenerateExportHeader)
@@ -20,6 +20,7 @@ target_include_directories(Etaler PRIVATE 3rdparty)
 
 if(${TBB_FOUND})
 	target_link_libraries(Etaler ${TBB_IMPORTED_TARGETS})
+	target_include_directories(Etaler PRIVATE ${TBB_INCLUDE_DIRS})
 else()
 	target_link_libraries(Etaler tbb)
 endif()

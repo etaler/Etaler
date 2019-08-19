@@ -16,7 +16,7 @@ namespace encoder
 {
 
 //This implementation is slower the one in tiny-htm. But is more accurate
-static std::vector<uint8_t> gcm1d(float v, float scale, float bias, size_t active_cells, size_t num_cells)
+inline std::vector<uint8_t> gcm1d(float v, float scale, float bias, size_t active_cells, size_t num_cells)
 {
 	std::vector<uint8_t> res(num_cells);
 	float loc = v*scale+bias;
@@ -45,7 +45,7 @@ static std::vector<uint8_t> gcm1d(float v, float scale, float bias, size_t activ
 	return res;
 }
 
-static Tensor gridCell1d(float v, size_t num_gcm=16, size_t active_cells_per_gcm=1, size_t length_per_gcm=16
+inline Tensor gridCell1d(float v, size_t num_gcm=16, size_t active_cells_per_gcm=1, size_t length_per_gcm=16
 	, std::array<float, 2> scale_range={0.1f, 4.f}, size_t seed=42, Backend* backend=defaultBackend())
 {
 	std::vector<uint8_t> encoding(num_gcm*length_per_gcm);

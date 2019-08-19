@@ -55,6 +55,7 @@ int main(int argc, char **argv)
 	TemporalMemory tm({(intmax_t)sdr_size}, cells_per_column);
 
 	Tensor last_state = zeros({sdr_size, cells_per_column}, DType::Bool);
+	Tensor last_pred = zeros({sdr_size, cells_per_column}, DType::Bool);
 
 	std::unique_ptr<Visualizer> vis = std::make_unique<Visualizer>(cells_per_column, bits_per_category*num_category);
 
@@ -62,7 +63,7 @@ int main(int argc, char **argv)
 		size_t categoery = i%num_category;
 		Tensor x = encoder::category(categoery, num_category, bits_per_category);
 
-		auto [pred, active] = tm.compute(x, last_state);
+		auto [pred, active] = tm.compute(x, last_pred);
 
 		auto active_buff = active.toHost<uint8_t>();
 		vis->UpdateLayer(0, (bool*)active_buff.data());
@@ -72,6 +73,7 @@ int main(int argc, char **argv)
 
 		tm.learn(active, last_state); //Let the TM learn
 		last_state = active;
+		last_pred = pred;
 
 		//Display results
 		auto prediction = sum(pred, 1, DType::Bool);

@@ -138,7 +138,6 @@ void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const Tensor
 	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(x->shape() == learn->shape());
 
 	const bool* input = (const bool*)x->data();
 	const bool* learning = (const bool*)learn->data();
@@ -353,8 +352,9 @@ std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, fl
 
 	for(size_t i=0;i<y->size();i++)
 		output[i] = false;
-	int32_t min_accept_val = v[std::min((target_size==0? 0 : target_size-1), v.size()-1)].first;
-	auto bound_end = std::upper_bound(v.begin(), v.end(), min_accept_val, [](const auto& a, const auto& b){return a > b.first;});
+	size_t accept_index = (target_size==0? 0 : target_size-1);
+	int32_t min_accept_val = v[std::min(accept_index, v.size()-1)].first;
+	auto bound_end = std::upper_bound(v.begin()+accept_index, v.end(), min_accept_val, [](const auto& a, const auto& b){return a > b.first;});
 
 	for(auto it=v.begin();it!=bound_end;++it)
 		output[it->second] = true;

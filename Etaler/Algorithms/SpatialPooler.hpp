@@ -23,10 +23,6 @@ struct ETALER_EXPORT SpatialPooler
 	SpatialPooler(const Shape& input_shape, const Shape& output_shape, float potential_pool_pct=0.75, size_t seed=42
 		, float global_density = 0.15, float boost_factor = 0, Backend* b = defaultBackend());
 
-	//The topology version works like a Conv layer in NN
-	SpatialPooler(const Shape& input_shape, size_t kernel_size, size_t stride=1, float potential_pool_pct=0.75, size_t seed=42
-		, float global_density = 0.15, float boost_factor = 0, Backend* b = defaultBackend());
-
 	Tensor compute(const Tensor& x) const;
 
 	void learn(const Tensor& x, const Tensor& y);

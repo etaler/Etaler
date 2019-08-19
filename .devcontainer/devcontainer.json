@@ -14,7 +14,9 @@
     ],
     "runArgs": [  "-e" ,"DISPLAY=:0" , "-v" ,"/tmp/.X11-unix:/tmp/.X11-unix" ,
          "--cap-add=SYS_PTRACE" ,"--security-opt=seccomp:unconfined",
-        "-v","/var/run/docker.sock:/var/run/docker.sock"],
+        "-v","/var/run/docker.sock:/var/run/docker.sock" , "--device=/dev/dri/card0:/dev/dri/card0",
+        "--device=/dev/dri/renderD128:/dev/dri/renderD128",
+        "--mount" , "source=etaler-volume,target=/home etaler:latest"],
     "settings": {
 		"terminal.integrated.shell.linux": "/bin/bash"
 	}

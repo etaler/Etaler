@@ -104,11 +104,11 @@ void OpenCLBackend::init(cl::Context context, cl::Platform platform, cl::Device 
 	std::string device_name = device_.getInfo<CL_DEVICE_NAME>();
 
 	if(localMemoryType() == CL_LOCAL) {
-		et_assert(isExtentionSupported("cl_khr_local_int32_base_atomics"), "cl_khr_local_int32_base_atomics is not supported by " + device_name);
-		et_assert(isExtentionSupported("cl_khr_local_int32_extended_atomics"), "cl_khr_local_int32_extended_atomics is not supported by " + device_name);
+		et_assert(isExtentionSupported("cl_khr_local_int32_base_atomics")
+			, "The required exntention cl_khr_local_int32_base_atomics is not supported by " + device_name);
+		et_assert(isExtentionSupported("cl_khr_local_int32_extended_atomics")
+			, "The required exntention cl_khr_local_int32_extended_atomics is not supported by " + device_name);
 	}
-	else
-		throw EtError("OpenCL device does support local memory but no local memory extentions avaliable.");
 
 	have_fp16_ = isExtentionSupported("cl_khr_fp16");
 }
@@ -390,7 +390,6 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
 
 	et_assert(connections->shape() == permeances->shape());
-	et_assert(x->shape() == learn->shape());
 
 	auto args = "-DINPUT_SIZE="+str(x->size())+" -DMAX_SYNAPSE_PER_CELL="+str(connections->shape().back())+" -DNO_UNUSED_SYNAPSE="+str(!has_unconnected_synapse)
 		+" -DOUTPUT_SIZE="+str(learn->size()) + " -DPERM_TYPE="+to_ctype_string(permeances->dtype());
@@ -484,10 +483,22 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 
 	size_t cells_per_column = x->shape().back();
 	size_t num_columns = x->size()/cells_per_column;
-	static pcg32 rng; //Static so the behavor hangees every time, breaking symmetry
+	static pcg32 rng(42); //Static so the behavor hangees every time, breaking symmetry
 	std::uniform_int_distribution<size_t> dist(0, cells_per_column-1);
 
 	auto res = copy(x);
+
+	size_t local_size = 128;
+	size_t global_size = selectWorkSize(4096, local_size, num_columns);
+	std::vector<uint32_t> seed1(global_size);
+	std::vector<uint32_t> seed2(global_size);
+
+	for(auto& v : seed1) v = rng();
+	for(auto& v : seed1) v = rng();
+
+	auto s1 = createTensor({global_size}, DType::Int32, seed1.data());
+	auto s2 = createTensor({global_size}, DType::Int32, seed2.data());
+
 
 	auto args = "-DCELLS_PER_COLUMN="+str(cells_per_column)+" -DNUM_COLUMNS="+str(num_columns);
 	auto program_name = "reverseBurst"+hash_string(args);
@@ -495,11 +506,10 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 	cl::Kernel k = kernel_manager_.kernel(program_name, "reverseBurst");
 
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(res->buffer())->buffer());
-	k.setArg(1, rng());
-	k.setArg(2, rng());
+	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(s1->buffer())->buffer());
+	k.setArg(2, std::static_pointer_cast<const OpenCLBuffer>(s2->buffer())->buffer());
 
-	size_t local_size = 128;
-	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, num_columns)), cl::NDRange(local_size));
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(global_size), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel reverseBurst execution failed. Code " + str(err));
 	return res;
@@ -712,21 +722,22 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 	requireProperties(dest, this);
 	requireProperties(src, this);
 
-	if(dest->shape() != src->shape())
-	throw EtError("Shape mismatch in tensor assignment. Shape "
-		+ to_string(dest->shape()) + " and " + to_string(src->shape()));
+	if(dest->shape() != src->shape()) {
+		throw EtError("Shape mismatch in tensor assignment. Shape "
+			+ to_string(dest->shape()) + " and " + to_string(src->shape()));
+	}
 
 	auto source = realize(src);
 
-	if(dest->dtype() != src->dtype())
-		source = cast(realize(source.get()).get(), dest->dtype());
+	if(dest->dtype() != source->dtype())
+		source = cast(source.get(), dest->dtype());
 
 	std::vector<std::string> conversion = jitCopyToView(dest);
 
 	kernel_manager_.compileKernel(conversion, "__copy", {"copy"});
 	cl::Kernel k = kernel_manager_.kernel("__copy", "copy");
 
-	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(src->buffer())->buffer());
+	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(source->buffer())->buffer());
 	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(dest->buffer())->buffer());
 
 	size_t local_size = 128;
@@ -924,7 +935,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, c
 std::shared_ptr<TensorImpl> OpenCLBackend::exp(const TensorImpl* x)
 {
 	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
-	return applyUnaryOp(x, "#define f(x) (exp((float)x))", result_type);
+	return applyUnaryOp(x, "#define f(x) (exp((ResType)x))", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::negate(const TensorImpl* x)
@@ -936,13 +947,13 @@ std::shared_ptr<TensorImpl> OpenCLBackend::negate(const TensorImpl* x)
 std::shared_ptr<TensorImpl> OpenCLBackend::inverse(const TensorImpl* x)
 {
 	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
-	return applyUnaryOp(x, "#define f(x) (1.0f/(float)x)", result_type);
+	return applyUnaryOp(x, "#define f(x) ((ResType)1/(ResType)x)", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::log(const TensorImpl* x)
 {
 	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;
-	return applyUnaryOp(x, "#define f(x) (log((float)x))", result_type);
+	return applyUnaryOp(x, "#define f(x) (log((ResType)x))", result_type);
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::logical_not(const TensorImpl* x)

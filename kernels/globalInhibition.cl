@@ -43,7 +43,7 @@ kernel void fastTopK(global int* restrict x, global int* restrict result, int k)
 		for(int i=1;i<MAX_INPUT_VALUE;i++) {
 			int occur = res[i];
 			occur_sum += occur;
-			if(occur_sum >= n) {
+			if(occur_sum > n) {
 				*result = i;
 				solved = true;
 				break;
@@ -65,6 +65,6 @@ kernel void threshold(global int* restrict x, global bool* restrict y, global in
 	int thr = *threshold;
 	for(int i=id;i<INPUT_SIZE;i+=size) {
 		int v = x[i];
-		y[i] = (v > thr ? 1 : 0);
+		y[i] = (v >= thr ? 1 : 0);
 	}
 }
