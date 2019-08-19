@@ -86,7 +86,7 @@ struct ETALER_EXPORT OpenCLBackend : public Backend
 {
 	virtual ~OpenCLBackend() = default;
 	OpenCLBackend();
-	OpenCLBackend(size_t platform_id, size_t device_id);
+	OpenCLBackend(size_t platform_id, size_t device_id=0);
 	OpenCLBackend(cl::Context context, cl::Platform platform, cl::Device device);
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data=nullptr) override;
 	std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, cl::Buffer buf);
