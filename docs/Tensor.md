@@ -1,7 +1,7 @@
 # Tensor
 Tensors are how Etaler stores data. They are a minimal NDArray implementation. Thus it is currently lacking some features. But they should be enough for HTM.
 
-For now content type of `int`, `bool` and `float` are supported.
+For now content type of `int`, `bool`, `half` and `float` are supported.
 
 ## Creating a Tensor
 
