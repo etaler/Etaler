@@ -133,7 +133,7 @@ std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 	if(ptr == nullptr) {
 		void* buffer = malloc(q.size()*dtypeToSize(q.dtype()));
 		q.backend()->copyToHost(q.pimpl(), buffer);
-			printNDArray(os, buffer, q.shape(), q.dtype());
+		printNDArray(os, buffer, q.shape(), q.dtype());
 		free(buffer);
 	}
 	else {
