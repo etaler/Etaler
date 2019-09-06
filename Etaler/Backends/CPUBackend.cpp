@@ -348,6 +348,11 @@ std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, fl
 		if(input[i] != 0)
 			v.push_back({input[i], i});
 	}
+
+	//If we have a empty input
+	if(v.size() == 0)
+		return y;
+
 	std::sort(v.begin(), v.end(), [](const auto& a, const auto&b){return a.first > b.first;});
 
 	for(size_t i=0;i<y->size();i++)
