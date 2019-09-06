@@ -138,6 +138,16 @@ struct ETALER_EXPORT Tensor
 		return backend()->realize(pimpl());
 	}
 
+	template <typename T>
+	T item() const
+	{
+		if(size() != 1)
+			throw EtError("item() can only be called on tensors with exactly 1 element");
+		auto vec = toHost<T>();
+		assert(vec.size() == 1);
+		return vec[0];
+	}
+
 	// Common Tensor operators
 	Tensor cast(DType dtype) const
 	{

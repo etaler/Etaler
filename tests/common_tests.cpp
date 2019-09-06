@@ -241,6 +241,15 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(t[r].isSame(t.view(r)));
 		}
 	}
+
+	SECTION("item") {
+		Tensor t = ones({1});
+		CHECK(t.item<int>() == 1);
+		CHECK_THROWS(t.item<float>());
+		
+		Tensor q = ones({2});
+		CHECK_THROWS(q.item<int>());
+	}
 }
 
 TEST_CASE("Testing Encoders", "[Encoder]")
