@@ -596,8 +596,8 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 	auto source = realize(src);
 
-	if(dest->dtype() != src->dtype())
-		source = cast(realize(source.get()).get(), dest->dtype());
+	if(dest->dtype() != source->dtype())
+		source = cast(source.get(), dest->dtype());
 
 	dispatch(dest->dtype(), [&](auto v) {
 		using T = decltype(v);
