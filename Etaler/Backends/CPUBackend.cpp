@@ -353,12 +353,12 @@ std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, fl
 	if(v.size() == 0)
 		return y;
 
-	std::sort(v.begin(), v.end(), [](const auto& a, const auto&b){return a.first > b.first;});
+	tbb::parallel_sort(v.begin(), v.end(), [](const auto& a, const auto&b){return a.first > b.first;});
 
 	for(size_t i=0;i<y->size();i++)
 		output[i] = false;
-	size_t accept_index = (target_size==0? 0 : target_size-1);
-	int32_t min_accept_val = v[std::min(accept_index, v.size()-1)].first;
+	size_t accept_index = std::min((target_size==0? 0 : target_size-1), v.size()-1);
+	int32_t min_accept_val = v[accept_index].first;
 	auto bound_end = std::upper_bound(v.begin()+accept_index, v.end(), min_accept_val, [](const auto& a, const auto& b){return a > b.first;});
 
 	for(auto it=v.begin();it!=bound_end;++it)
@@ -500,6 +500,10 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 template <typename T>
 const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 {
+	// Optimized case for contnigous input
+	if(t->iscontiguous())
+		return ((const T*)t->data())+parent_idx;
+	
 	Shape s = foldIndex(parent_idx, t->shape());
 	s = Shape(t->stride().size()-s.size(), 0) + s;
 	size_t offset = t->offset() + unfold(s, t->stride());
