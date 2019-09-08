@@ -524,12 +524,12 @@ static std::shared_ptr<TensorImpl> uniaryOp(const TensorImpl* src, Op op)
 			, typename std::conditional_t<std::is_same_v<T, half>, half
 			, typename std::conditional_t<std::is_same_v<ResType, double>, float, ResType>>>;
 		dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
-		for(size_t i=0;i<src->size();i++) {
+		tbb::parallel_for(size_t(0), src->size(), [&](size_t i) {
 			auto ptr = getPtrToValue<T>(i, src);
 			auto res = op(*ptr);
 
 			reinterpret_cast<StoreType*>(dest->data())[i] = res;
-		}
+		});
 	});
 
 	et_assert((bool)dest);
@@ -551,13 +551,13 @@ static std::shared_ptr<TensorImpl> binaryOp(const TensorImpl* src, const TensorI
 			using StoreType = typename std::conditional<std::is_same<ResType, double>::value, float, ResType>::type;
 			dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
 
-			for(size_t i=0;i<src->size();i++) {
+			tbb::parallel_for(size_t(0), src->size(), [&](size_t i) {
 				auto ptr = getPtrToValue<T1>(i, src);
 				auto ptr2 = getPtrToValue<T2>(i, src2);
 				auto res = op(*ptr, *ptr2);
 
 				reinterpret_cast<StoreType*>(dest->data())[i] = res;
-			}
+			});
 		});
 	});
 
