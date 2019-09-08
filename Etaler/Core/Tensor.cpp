@@ -295,7 +295,7 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 			throw EtError("Backend mismatch when concatenate.");
 
 		auto shape = t.shape();
-		assert(shape.size() > dim);
+		assert((intmax_t)shape.size() > dim);
 		shape[dim] = base_shape[dim];
 		if(shape != base_shape)
 			throw EtError("Tensors must have the same shape along all axises besides the concatenating axis.");
