@@ -502,7 +502,7 @@ const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 {
 	// Optimized case for contnigous input
 	if(t->iscontiguous())
-		return ((const T*)t->data())+parent_idx;
+		return (const T*)t->data()+t->offset()+parent_idx;
 	
 	Shape s = foldIndex(parent_idx, t->shape());
 	s = Shape(t->stride().size()-s.size(), 0) + s;
@@ -602,10 +602,10 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 	dispatch(dest->dtype(), [&](auto v) {
 		using T = decltype(v);
-		auto s = (T*)source->data();
 		for(size_t i=0;i<dest->size();i++) {
+			auto s = (T*)getPtrToValue<T>(i, src);
 			auto ptr = (T*)getPtrToValue<T>(i, dest);
-			*ptr = s[i];
+			*ptr = *s;
 		}
 	});
 }
