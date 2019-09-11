@@ -14,7 +14,7 @@ float benchmarkSpatialPooler(const Shape& out_shape, const std::vector<Tensor>& 
 	SpatialPooler sp(x[0].shape(), out_shape);
 	// sp.permanences_ = sp.permanences_.cast(DType::Half);
 
-	//To make the OpenCL backen ptr-compile the kernels
+	//To make the OpenCL backen pre-compile the kernels
 	Tensor t = zeros(x[0].shape(), DType::Bool);
 	sp.compute(t);
 	sp.learn(t, t);
