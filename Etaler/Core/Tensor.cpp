@@ -369,7 +369,7 @@ Tensor et::brodcast_to(const Tensor& t, Shape s)
 		if(shape[i] != s[i])
 			stride[i] = 0;
 	}
-	return std::make_shared<TensorImpl>(t.shared_pimpl()->buffer(), s, stride);
+	return std::make_shared<TensorImpl>(t.shared_pimpl()->buffer(), s, stride, t.pimpl()->offset());
 }
 
 std::pair<Tensor, Tensor> et::brodcast_tensors(const Tensor& a, const Tensor& b)
