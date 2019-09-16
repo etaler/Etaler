@@ -31,7 +31,8 @@ struct ETALER_EXPORT TemporalMemory
 	void setActiveThreshold(size_t thr) { active_threshold_ = thr; }
 	size_t activeThreshold() const { return active_threshold_; }
 
-	size_t cellsPerColumn() const {return connections_.shape().back();}
+	size_t cellsPerColumn() const {return connections_.shape()[connections_.size()-2];}
+	size_t maxSynapsesPerCell() const {return connections_.shape().back();}
 
 	Tensor connections() const {return connections_;}
 	Tensor permanences() const {return permanences_;}
