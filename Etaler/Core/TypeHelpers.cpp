@@ -5,6 +5,7 @@ using namespace et;
 #ifdef HAVE_CXA_DEMANGLE //Set by CMake if avaliable
 
 #include <cxxabi.h>
+#include <stdlib.h>
 
 std::string et::demangle(const char* name) {
 

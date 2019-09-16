@@ -16,7 +16,6 @@
 namespace et
 {
 
-//TODO: Add topoligy
 struct ETALER_EXPORT SpatialPooler
 {
 	SpatialPooler() = default;

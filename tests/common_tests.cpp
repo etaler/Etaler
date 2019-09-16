@@ -240,6 +240,20 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			//The [] operator should work exactly like the view() function
 			CHECK(t[r].isSame(t.view(r)));
 		}
+
+		SECTION("assign to subscription") {
+			t[{2, 2}] = t[{2, 2}] + 1;
+			CHECK(t[{2, 2}].item<int>() == 11);
+		}
+	}
+
+	SECTION("item") {
+		Tensor t = ones({1});
+		CHECK(t.item<int>() == 1);
+		CHECK_THROWS(t.item<float>());
+		
+		Tensor q = ones({2});
+		CHECK_THROWS(q.item<int>());
 	}
 }
 

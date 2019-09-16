@@ -40,7 +40,7 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 				os << str << std::string(padding_len, ' ') << (i==size-1 ? "" : ", ");
 			}
 		}
-		//Print the truncated version
+		//Print the truncated version. ex: {1, 1, 1, ... 1, 1, 1}
 		else {
 			//The first half
 			for(intmax_t i=0;i<max_line_content/2;i++) {
@@ -133,7 +133,7 @@ std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 	if(ptr == nullptr) {
 		void* buffer = malloc(q.size()*dtypeToSize(q.dtype()));
 		q.backend()->copyToHost(q.pimpl(), buffer);
-			printNDArray(os, buffer, q.shape(), q.dtype());
+		printNDArray(os, buffer, q.shape(), q.dtype());
 		free(buffer);
 	}
 	else {
@@ -164,7 +164,8 @@ bool Tensor::isSame(const Tensor& other) const
 	if(shape() != other.shape())
 		return false;
 
-	return (*this == other).sum().toHost<int32_t>()[0] == (int32_t)size();
+	//A hacky comparsion
+	return (*this == other).sum().item<int32_t>() == (int32_t)size();
 }
 
 Tensor Tensor::view(svector<Range> ranges) const
@@ -295,7 +296,7 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 			throw EtError("Backend mismatch when concatenate.");
 
 		auto shape = t.shape();
-		assert(shape.size() <= dim);
+		assert((intmax_t)shape.size() > dim);
 		shape[dim] = base_shape[dim];
 		if(shape != base_shape)
 			throw EtError("Tensors must have the same shape along all axises besides the concatenating axis.");
@@ -369,7 +370,7 @@ Tensor et::brodcast_to(const Tensor& t, Shape s)
 		if(shape[i] != s[i])
 			stride[i] = 0;
 	}
-	return std::make_shared<TensorImpl>(t.shared_pimpl()->buffer(), s, stride);
+	return std::make_shared<TensorImpl>(t.shared_pimpl()->buffer(), s, stride, t.pimpl()->offset());
 }
 
 std::pair<Tensor, Tensor> et::brodcast_tensors(const Tensor& a, const Tensor& b)

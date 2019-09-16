@@ -348,12 +348,17 @@ std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, fl
 		if(input[i] != 0)
 			v.push_back({input[i], i});
 	}
-	std::sort(v.begin(), v.end(), [](const auto& a, const auto&b){return a.first > b.first;});
+
+	//If we have a empty input
+	if(v.size() == 0)
+		return y;
+
+	tbb::parallel_sort(v.begin(), v.end(), [](const auto& a, const auto&b){return a.first > b.first;});
 
 	for(size_t i=0;i<y->size();i++)
 		output[i] = false;
-	size_t accept_index = (target_size==0? 0 : target_size-1);
-	int32_t min_accept_val = v[std::min(accept_index, v.size()-1)].first;
+	size_t accept_index = std::min((target_size==0? 0 : target_size-1), v.size()-1);
+	int32_t min_accept_val = v[accept_index].first;
 	auto bound_end = std::upper_bound(v.begin()+accept_index, v.end(), min_accept_val, [](const auto& a, const auto& b){return a > b.first;});
 
 	for(auto it=v.begin();it!=bound_end;++it)
@@ -495,6 +500,10 @@ void CPUBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorIm
 template <typename T>
 const T* getPtrToValue(size_t parent_idx, const TensorImpl* t)
 {
+	// Optimized case for contnigous input
+	if(t->iscontiguous())
+		return (const T*)t->data()+t->offset()+parent_idx;
+	
 	Shape s = foldIndex(parent_idx, t->shape());
 	s = Shape(t->stride().size()-s.size(), 0) + s;
 	size_t offset = t->offset() + unfold(s, t->stride());
@@ -513,19 +522,18 @@ static std::shared_ptr<TensorImpl> uniaryOp(const TensorImpl* src, Op op)
 	std::shared_ptr<TensorImpl> dest;
 	dispatch(src->dtype(), [&](auto v){
 		using T = decltype(v);
-		for(size_t i=0;i<src->size();i++) {
+		using ResType = std::invoke_result_t<Op, T>;
+		//We don't have support to double percition now. Cast it to float
+		using StoreType = typename std::conditional_t<std::is_same_v<ResType, bool>, bool
+			, typename std::conditional_t<std::is_same_v<T, half>, half
+			, typename std::conditional_t<std::is_same_v<ResType, double>, float, ResType>>>;
+		dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
+		tbb::parallel_for(size_t(0), src->size(), [&](size_t i) {
 			auto ptr = getPtrToValue<T>(i, src);
 			auto res = op(*ptr);
-			using ResType = decltype(res);
-			//We don't have support to double percition now. Cast it to float
-			using StoreType = typename std::conditional_t<std::is_same_v<ResType, bool>, bool
-				, typename std::conditional_t<std::is_same_v<T, half>, half
-				, typename std::conditional_t<std::is_same_v<ResType, double>, float, ResType>>>;
-			if(i == 0)
-				dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
 
 			reinterpret_cast<StoreType*>(dest->data())[i] = res;
-		}
+		});
 	});
 
 	et_assert((bool)dest);
@@ -539,23 +547,21 @@ static std::shared_ptr<TensorImpl> binaryOp(const TensorImpl* src, const TensorI
 	et_assert(src->shape() == src2->shape());
 
 	dispatch(src->dtype(), [&](auto v){
-		using T = decltype(v);
-
+		using T1 = decltype(v);
 		dispatch(src2->dtype(), [&](auto v){
 			using T2 = decltype(v);
+			using ResType = std::invoke_result_t<Op, T1, T2>;
+			//We don't have support to double percition now. Cast it to float
+			using StoreType = typename std::conditional<std::is_same<ResType, double>::value, float, ResType>::type;
+			dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
 
-			for(size_t i=0;i<src->size();i++) {
-				auto ptr = getPtrToValue<T>(i, src);
+			tbb::parallel_for(size_t(0), src->size(), [&](size_t i) {
+				auto ptr = getPtrToValue<T1>(i, src);
 				auto ptr2 = getPtrToValue<T2>(i, src2);
 				auto res = op(*ptr, *ptr2);
-				using ResType = decltype(res);
-				//We don't have support to double percition now. Cast it to float
-				using StoreType = typename std::conditional<std::is_same<ResType, double>::value, float, ResType>::type;
-				if(i == 0)
-					dest = src->backend()->createTensor(src->shape(), typeToDType<StoreType>());
 
 				reinterpret_cast<StoreType*>(dest->data())[i] = res;
-			}
+			});
 		});
 	});
 
@@ -591,15 +597,15 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 	auto source = realize(src);
 
-	if(dest->dtype() != src->dtype())
-		source = cast(realize(source.get()).get(), dest->dtype());
+	if(dest->dtype() != source->dtype())
+		source = cast(source.get(), dest->dtype());
 
 	dispatch(dest->dtype(), [&](auto v) {
 		using T = decltype(v);
-		auto s = (T*)source->data();
 		for(size_t i=0;i<dest->size();i++) {
+			auto s = (T*)getPtrToValue<T>(i, src);
 			auto ptr = (T*)getPtrToValue<T>(i, dest);
-			*ptr = s[i];
+			*ptr = *s;
 		}
 	});
 }

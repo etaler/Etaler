@@ -132,7 +132,7 @@ Some cmake options are available:
 | CMAKE_BUILD_TYPE                   | Debug or Release build    | Release |
 | ETALER_ENABLE_OPENCL               | Enable the OpenCL backend | OFF     |
 | ETALER_BUILD_EXAMPLES              | Build the examples        | ON      |
-| ETALER_BUILD_EXAMPLE_VISUALIZER    | Build visualizer example  | OF      |
+| ETALER_BUILD_EXAMPLE_VISUALIZER    | Build visualizer example  | OFF     |
 | ETALER_BUILD_TESTS                 | Build the tests           | ON      |
 
 

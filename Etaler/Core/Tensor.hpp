@@ -138,6 +138,16 @@ struct ETALER_EXPORT Tensor
 		return backend()->realize(pimpl());
 	}
 
+	template <typename T>
+	T item() const
+	{
+		if(size() != 1)
+			throw EtError("item() can only be called on tensors with exactly 1 element");
+		auto vec = toHost<T>();
+		assert(vec.size() == 1);
+		return vec[0];
+	}
+
 	// Common Tensor operators
 	Tensor cast(DType dtype) const
 	{
@@ -200,22 +210,22 @@ protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };
 
-static Tensor operator+ (std::variant<float, int, bool> v, const Tensor& t)
+static Tensor operator+ (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)+t;}, v);
 }
 
-static Tensor operator- (std::variant<float, int, bool> v, const Tensor& t)
+static Tensor operator- (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)-t;}, v);
 }
 
-static Tensor operator* (std::variant<float, int, bool> v, const Tensor& t)
+static Tensor operator* (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)*t;}, v);
 }
 
-static Tensor operator/ (std::variant<float, int, bool> v, const Tensor& t)
+static Tensor operator/ (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)/t;}, v);
 }

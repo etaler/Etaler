@@ -14,9 +14,14 @@ struct ETALER_EXPORT SDRClassifer
 {
 	SDRClassifer() = default;
 	SDRClassifer(Shape input_shape, size_t num_classes)
-		: input_shape_(input_shape), references_(num_classes, zeros(input_shape))
+		: input_shape_(input_shape), references_(num_classes, zeros(input_shape, DType::Int32))
 		, num_patterns_(num_classes)
 	{
+	}
+
+	size_t numCategories() const
+	{
+		return num_patterns_.size();
 	}
 
 	void addPattern(const Tensor& sdr, size_t class_id)
@@ -26,6 +31,7 @@ struct ETALER_EXPORT SDRClassifer
 		et_assert(class_id < references_.size());
 
 		references_[class_id] = references_[class_id] + sdr;
+		num_patterns_[class_id]++;
 	}
 
 	size_t compute(const Tensor& x, float min_common_frac=0.75) const
@@ -34,7 +40,7 @@ struct ETALER_EXPORT SDRClassifer
 		size_t best_match = 0;
 		for(size_t i=0;i<references_.size();i++) {
 			int threshold = num_patterns_[i]*min_common_frac;
-			size_t overlaps = sum((references_[i] > threshold) && x).toHost<int32_t>()[0];
+			size_t overlaps = sum((references_[i] > threshold) && x).item<int>();
 
 			if(overlaps > best_match)
 				std::tie(best_match_id, best_match) = std::pair(i, overlaps);
