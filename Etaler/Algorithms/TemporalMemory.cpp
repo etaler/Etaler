@@ -31,7 +31,7 @@ void TemporalMemory::learn(const Tensor& active_cells, const Tensor& last_active
 	Tensor learning_cells = reverseBurst(active_cells);
 
 	learnCorrilation(last_active, learning_cells, connections_, permanences_, permanence_inc_, permanence_dec_);
-	growSynapses(last_active, learning_cells, connections_, permanences_, 0.21);
+	growSynapses(last_active, learning_cells, connections_, permanences_, initial_permanence_);
 
 }
 
