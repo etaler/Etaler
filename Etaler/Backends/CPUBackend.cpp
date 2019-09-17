@@ -164,7 +164,7 @@ void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const Tensor
 			else
 				perm -= perm_dec;
 
-			perm = std::max(std::min(perm, PermType(1)), PermType(0));
+			perm = std::clamp(perm, PermType(0), PermType(1));
 		}
 	});
 }

@@ -210,22 +210,22 @@ protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };
 
-static Tensor operator+ (std::variant<float, int, bool> v, const Tensor& t)
+static Tensor operator+ (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)+t;}, v);
 }
 
-static Tensor operator- (std::variant<float, int, bool> v, const Tensor& t)
+static Tensor operator- (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)-t;}, v);
 }
 
-static Tensor operator* (std::variant<float, int, bool> v, const Tensor& t)
+static Tensor operator* (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)*t;}, v);
 }
 
-static Tensor operator/ (std::variant<float, int, bool> v, const Tensor& t)
+static Tensor operator/ (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)/t;}, v);
 }

@@ -40,7 +40,7 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 				os << str << std::string(padding_len, ' ') << (i==size-1 ? "" : ", ");
 			}
 		}
-		//Print the truncated version
+		//Print the truncated version. ex: {1, 1, 1, ... 1, 1, 1}
 		else {
 			//The first half
 			for(intmax_t i=0;i<max_line_content/2;i++) {
@@ -164,7 +164,8 @@ bool Tensor::isSame(const Tensor& other) const
 	if(shape() != other.shape())
 		return false;
 
-	return (*this == other).sum().toHost<int32_t>()[0] == (int32_t)size();
+	//A hacky comparsion
+	return (*this == other).sum().item<int32_t>() == (int32_t)size();
 }
 
 Tensor Tensor::view(svector<Range> ranges) const

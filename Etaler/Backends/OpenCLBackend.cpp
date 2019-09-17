@@ -24,10 +24,10 @@ static std::string readAll(const std::string& path)
 	return str;
 }
 
-inline size_t selectWorkSize(size_t max, size_t mul_of, size_t size)
+inline intmax_t selectWorkSize(intmax_t max, intmax_t mul_of, intmax_t size)
 {
 	auto round = [mul_of](auto v){return ((v/mul_of)*mul_of) + (v%mul_of == 0 ? 0 : mul_of);};
-	return std::min((size_t)max, round(size));
+	return std::min((intmax_t)max, round(size));
 }
 
 
@@ -488,8 +488,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 
 	auto res = copy(x);
 
-	size_t local_size = 128;
-	size_t global_size = selectWorkSize(4096, local_size, num_columns);
+	intmax_t local_size = 128;
+	intmax_t global_size = selectWorkSize(4096, local_size, num_columns);
 	std::vector<uint32_t> seed1(global_size);
 	std::vector<uint32_t> seed2(global_size);
 
