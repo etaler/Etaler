@@ -14,6 +14,8 @@ if(NOT CMAKE_BUILD_TYPE)
 	FORCE)
 endif(NOT CMAKE_BUILD_TYPE)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
 #Enable C++17, may need C++20 in the future
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -29,7 +31,10 @@ else()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DNOMINMAX")
 endif()
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+#Use GOLD if avaliabel (on Linux)
+if(UNIX)
+	include("cmake/UseGOLD.cmake")
+endif()
 
 option(ETALER_ENABLE_OPENCL "Enable the OpenCL backend" OFF)
 
