@@ -34,7 +34,7 @@ struct CPUBuffer : public BufferImpl
 	{
 		void* ptr = data();
 
-		//TODO: Lazy method to dopy data
+		//HACK: Lazy method to dopy data
 		if(src_ptr != nullptr)
 			memcpy(ptr, src_ptr, shape.volume()*dtypeToSize(dtype));
 	}
