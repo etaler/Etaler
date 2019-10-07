@@ -621,6 +621,8 @@ std::optional<cl::Buffer> OpenCLBackend::toSparse(const TensorImpl* x)
 	on_bits.setArg(0, x_buf);
 	on_bits.setArg(1, num);
 	cl_int err = queue_.enqueueNDRangeKernel(on_bits, cl::NullRange, cl::NDRange(256), cl::NDRange(256));
+	if(err != CL_SUCCESS)
+		throw EtError("OpenCL kernel onBits execution failed. Code " + str(err));
 
 	int* num_on = (int*) queue_.enqueueMapBuffer(num, CL_TRUE, CL_MAP_READ, 0, sizeof(int));
 	int num_elements = *num_on;
