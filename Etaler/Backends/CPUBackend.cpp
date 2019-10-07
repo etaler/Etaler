@@ -602,10 +602,21 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 	dispatch(dest->dtype(), [&](auto v) {
 		using T = decltype(v);
-		for(size_t i=0;i<dest->size();i++) {
-			auto s = (T*)getPtrToValue<T>(i, src);
-			auto ptr = (T*)getPtrToValue<T>(i, dest);
-			*ptr = *s;
+
+		//Parallelize if the problem is big enought
+		if(dest->size() > 2000) {
+			tbb::parallel_for(size_t(0), dest->size(), [&](size_t i) {
+				auto s = (T*)getPtrToValue<T>(i, src);
+				auto ptr = (T*)getPtrToValue<T>(i, dest);
+				*ptr = *s;
+			});
+		}
+		else {
+			for(size_t i=0;i<dest->size();i++) {
+				auto s = (T*)getPtrToValue<T>(i, src);
+				auto ptr = (T*)getPtrToValue<T>(i, dest);
+				*ptr = *s;
+			}
 		}
 	});
 }
