@@ -39,4 +39,18 @@ inline void replaceAll(std::string& str, const std::string& from, const std::str
 	}
 }
 
+// A lazy and not bullet-proof hashing function
+template <typename ... Args>
+std::string hashify(Args ... args)
+{
+	auto to_str = [](const auto& v) {
+	using namespace std;
+		if constexpr(std::is_same_v<std::decay_t<decltype(v)>, std::string>)
+			return v;
+		else
+			return to_string(v);
+	};
+	return hash_string((... + to_str(args)));
+}
+
 }

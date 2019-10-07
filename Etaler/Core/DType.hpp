@@ -59,4 +59,9 @@ inline std::string to_ctype_string(DType dtype)
 	return "Unknown";
 }
 
+inline std::string to_string(DType dtype)
+{
+	return to_ctype_string(dtype);
+}
+
 }
