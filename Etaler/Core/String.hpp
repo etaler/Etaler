@@ -50,7 +50,7 @@ std::string hashify(Args ... args)
 		else
 			return to_string(v);
 	};
-	return hash_string((... + to_str(args)));
+	return hash_string((... + ( " " + to_str(args))));
 }
 
 }
