@@ -137,7 +137,7 @@ std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 		free(buffer);
 	}
 	else {
-			printNDArray(os, ptr, q.shape(), q.dtype());
+		printNDArray(os, ptr, q.shape(), q.dtype());
 	}
 
 	return os;

@@ -475,7 +475,11 @@ TEST_CASE("Backend functions", "[Backend]")
 
 		int pred[] = {1, -1, 0, -1};
 		CHECK(Tensor({2,2}, pred).isSame(c));
-		//TODO: Add test for p
+
+		CHECK((double)p[{0, 0}].item<float>() == Approx(0.7).epsilon(1.e-5));
+		CHECK((double)p[{1, 0}].item<float>() == Approx(0.5).epsilon(1.e-5));
+		// Only values from good synapses are defined. The others can be erases, set
+		// to 0, etc. Depending on implementation.
 	}
 }
 
