@@ -637,11 +637,11 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 		dispatch(result_dtype, [&](auto v) {
 			using ResType = decltype(v);
 			auto ptr = (ResType*) res->data();
-			for(size_t i=0;i<x->size()/chunk_size;i++) {
+			tbb::parallel_for(size_t(0), size_t(x->size()/chunk_size), [&](size_t i) {
 				size_t offset = i*chunk_size;
 				ResType s = std::accumulate(in+offset, in+offset+chunk_size, ResType(0));
 				ptr[i] = s;
-			}
+			});
 		});
 	});
 
