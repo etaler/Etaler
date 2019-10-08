@@ -164,7 +164,7 @@ void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const Tensor
 			else
 				perm -= perm_dec;
 
-			perm = std::max(std::min(perm, PermType(1)), PermType(0));
+			perm = std::clamp(perm, PermType(0), PermType(1));
 		}
 	});
 }
@@ -602,10 +602,21 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 	dispatch(dest->dtype(), [&](auto v) {
 		using T = decltype(v);
-		for(size_t i=0;i<dest->size();i++) {
-			auto s = (T*)getPtrToValue<T>(i, src);
-			auto ptr = (T*)getPtrToValue<T>(i, dest);
-			*ptr = *s;
+
+		//Parallelize if the problem is big enought
+		if(dest->size() > 2000) {
+			tbb::parallel_for(size_t(0), dest->size(), [&](size_t i) {
+				auto s = (T*)getPtrToValue<T>(i, src);
+				auto ptr = (T*)getPtrToValue<T>(i, dest);
+				*ptr = *s;
+			});
+		}
+		else {
+			for(size_t i=0;i<dest->size();i++) {
+				auto s = (T*)getPtrToValue<T>(i, src);
+				auto ptr = (T*)getPtrToValue<T>(i, dest);
+				*ptr = *s;
+			}
 		}
 	});
 }
@@ -637,11 +648,11 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 		dispatch(result_dtype, [&](auto v) {
 			using ResType = decltype(v);
 			auto ptr = (ResType*) res->data();
-			for(size_t i=0;i<x->size()/chunk_size;i++) {
+			tbb::parallel_for(size_t(0), size_t(x->size()/chunk_size), [&](size_t i) {
 				size_t offset = i*chunk_size;
 				ResType s = std::accumulate(in+offset, in+offset+chunk_size, ResType(0));
 				ptr[i] = s;
-			}
+			});
 		});
 	});
 

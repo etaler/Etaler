@@ -31,7 +31,11 @@ struct ETALER_EXPORT TemporalMemory
 	void setActiveThreshold(size_t thr) { active_threshold_ = thr; }
 	size_t activeThreshold() const { return active_threshold_; }
 
-	size_t cellsPerColumn() const {return connections_.shape().back();}
+	size_t cellsPerColumn() const {return connections_.shape()[connections_.size()-2];}
+	size_t maxSynapsesPerCell() const {return connections_.shape().back();}
+
+	float initialPermanence() const {return initial_permanence_;}
+	void setInitialPermanence(float p) {initial_permanence_ = p;}
 
 	Tensor connections() const {return connections_;}
 	Tensor permanences() const {return permanences_;}
@@ -53,10 +57,11 @@ struct ETALER_EXPORT TemporalMemory
 	void loadState(const StateDict& states);
 
 	Shape input_shape_;
-	float connected_permanence_ = 0.1;
+	float connected_permanence_ = 0.15;
 	size_t active_threshold_ = 2;
 	float permanence_inc_ = 0.1;
 	float permanence_dec_ = 0.1;
+	float initial_permanence_ = 0.21;
 	Tensor connections_;
 	Tensor permanences_;
 };

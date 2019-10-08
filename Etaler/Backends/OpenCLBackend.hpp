@@ -55,7 +55,7 @@ struct KernelManager
 		, bool force_override=false, const std::string& flags="", const std::string& prepend="");
 	void compileFromFile(const std::vector<std::string>& paths, const std::string& program_name, const std::vector<std::string>& kernel_names
 		, bool force_override=false, const std::string& flags="", const std::string& prepend="");
-	inline bool exists(const std::string& program_name, const std::string& kernel_name)
+	inline bool exists(const std::string& program_name, const std::string& kernel_name) const
 	{
 		auto it = apps_.find(program_name);
 		if(it == apps_.end())
@@ -63,6 +63,11 @@ struct KernelManager
 		if(it->second.kernels.find(kernel_name) == it->second.kernels.end())
 			return false;
 		return true;
+	}
+	inline bool exists(const std::string& program_name) const
+	{
+		auto it = apps_.find(program_name);
+		return it != apps_.end();
 	}
 	const cl::Kernel& kernel(const std::string& program_name, const std::string& kernel_name) const {return apps_.at(program_name).kernels.at(kernel_name);}
 	const cl::Kernel& kernel(const std::string& name) const {return kernel(name, name);}

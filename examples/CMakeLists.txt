@@ -22,6 +22,9 @@ project(tmbench CXX)
 add_executable(tmbench tmbench.cpp)
 target_link_libraries(tmbench Etaler)
 
+project(mnist CXX)
+add_executable(mnist mnist.cpp)
+target_link_libraries(mnist Etaler)
 
 if(ETALER_ENABLE_OPENCL)
 	project(backend2backend CXX)
