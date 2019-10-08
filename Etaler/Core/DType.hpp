@@ -16,6 +16,11 @@ enum class DType
 	Int32,
 	Float,
 	Half,
+
+	//Aliases
+	Float32 = Float,
+	Float16 = Half,
+	Int = Int32,
 };
 
 template <typename T>
