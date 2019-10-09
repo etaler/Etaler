@@ -15,10 +15,10 @@ kernel void onBits(global bool* restrict x, global int* restrict y)
 		count = 0;
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-	for(int i=id;i<INPUT_SIZE;i+=size) {
-		if(x[i] == true)
-			atomic_inc(&count);
-	}
+	int local_count = 0;
+	for(int i=id;i<INPUT_SIZE;i+=size)
+		local_count += x[i];
+	atomic_add(&count, local_count);
 
 	barrier(CLK_LOCAL_MEM_FENCE);
 	if(id == 0)
