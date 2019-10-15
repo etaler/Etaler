@@ -81,4 +81,8 @@ struct ETALER_EXPORT SDRClassifer
 	std::vector<int> num_patterns_;
 };
 
+// SDRClassifer in Etaler is CLAClassifer in NuPIC
+// SDRClassifer from NuPIC is not implemented
+using CLAClassifer = SDRClassifer;
+
 }

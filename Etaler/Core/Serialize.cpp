@@ -3,6 +3,7 @@
 #include "Serialize.hpp"
 
 #include "Etaler/Core/Tensor.hpp"
+#include "TypeHelpers.hpp"
 
 using namespace et;
 
@@ -34,7 +35,11 @@ template<class Archive>
 void serialize(Archive & archive,
 	half & m)
 {
+	#ifndef __aarch64__
 	archive(m.storage_);
+	#else
+	archive((unsigned short)m);
+	#endif
 }
 
 
@@ -160,7 +165,7 @@ void save(Archive & archive ,StateDict const & item)
 		else if(v.type() == typeid(std::vector<half>))
 			types.push_back("std::vector<half>");
 		else
-			throw EtError("Cannot save (mangled name:) type " + std::string(v.type().name()) + ", key " + k);
+			throw EtError("Cannot save type: " + demangle(v.type().name()) + ", key " + k);
 	}
 	archive(make_nvp("types", types));
 
@@ -188,7 +193,7 @@ void save(Archive & archive ,StateDict const & item)
 		else if(v.type() == typeid(std::vector<half>))
 			archive(std::any_cast<std::vector<half>>(v));
 		else
-			throw EtError("Cannot save type " + std::string(typeid(decltype(v)).name()) + ", key " + k);
+			throw EtError("Cannot save type: " + demangle(typeid(decltype(v)).name()) + ", key " + k);
 
 	}
 }

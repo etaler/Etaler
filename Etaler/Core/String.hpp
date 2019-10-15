@@ -4,6 +4,8 @@
 #include <string>
 #include <sstream>
 
+#include "Shape.hpp"
+
 namespace et
 {
 
@@ -39,18 +41,27 @@ inline void replaceAll(std::string& str, const std::string& from, const std::str
 	}
 }
 
+class Tensor;
 // A lazy and not bullet-proof hashing function
 template <typename ... Args>
-std::string hashify(Args ... args)
+inline std::string hashify(const Args& ... args)
 {
-	auto to_str = [](const auto& v) {
-	using namespace std;
-		if constexpr(std::is_same_v<std::decay_t<decltype(v)>, std::string>)
+	auto to_str = [](const auto& v) -> std::string {
+		using ValueType = std::decay_t<decltype(v)>;
+		// HACK: You should NEVER put a tensor in hashify
+		static_assert(std::is_same_v<ValueType, Tensor> == false);
+
+
+		using namespace std;
+		if constexpr(std::is_same_v<ValueType, std::string>)
 			return v;
-		else
+		else if constexpr(std::is_same_v<ValueType, Shape> || std::is_same_v<ValueType, DType>)
 			return to_string(v);
+		else
+			return std::to_string(v);
 	};
-	return hash_string((... + to_str(args)));
+	std::string concated = ((to_str(args) + " ") + ...);
+	return hash_string(concated);
 }
 
 }
