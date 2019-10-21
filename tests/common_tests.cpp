@@ -89,14 +89,18 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		Tensor t = 7;
 		CHECK(t.dtype() == DType::Int32);
 		CHECK(t.shape() == Shape({1}));
+		CHECK(t.item<int>() == 7);
+		CHECK_THROWS(t.item<float>());
 
 		Tensor q = 1.2f;
 		CHECK(q.dtype() == DType::Float);
 		CHECK(q.shape() == Shape({1}));
+		CHECK((double)q.item<float>() == Approx(1.2));
 
 		Tensor r = true;
 		CHECK(r.dtype() == DType::Bool);
 		CHECK(r.shape() == Shape({1}));
+		CHECK(r.item<uint8_t>() == true);
 	}
 
 	SECTION("tensor like") {
@@ -402,8 +406,8 @@ TEST_CASE("Backend functions", "[Backend]")
 	}
 
 	SECTION("Reverse Burst") {
-		uint8_t in[] = {1, 1, 1, 1,
-				1, 0, 0, 0,
+		uint8_t in[] = {1, 1, 1, 1, // This column should be set to only 1 active cell
+				1, 0, 0, 0, // Other shouldn't
 				0, 1, 0, 0,
 				0, 1, 1, 0,
 				0, 0, 0, 0};
