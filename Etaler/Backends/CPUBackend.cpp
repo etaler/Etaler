@@ -366,53 +366,35 @@ std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, fl
 	return y;
 }
 
-template <typename Ret, typename Op>
-static Ret run(const CPUBuffer& t, Op op)
-{
-	if(t.dtype() == DType::Bool)
-		return op((const bool*)t.data());
-	else if(t.dtype() == DType::Int32)
-		return op((int32_t*)t.data());
-	else if(t.dtype() == DType::Float)
-		return op((float*)t.data());
-	else if(t.dtype() == DType::Half)
-		return op((half*)t.data());
-	else
-		throw EtError("Cannot cast");
-}
 
 template <typename To, typename From>
-static std::vector<To> castData(const From* ptr, size_t n)
+static auto castData(const From* ptr, size_t n)
 {
-	return std::vector<To>(ptr, ptr+n);
+	// Deal with the special case of bool
+	if constexpr(std::is_same_v<std::decay_t<To>, bool>) {
+		std::vector<uint8_t> res(n);
+		std::transform(ptr, ptr+n, res.begin(), [](auto a){ return (bool)a; });
+		return res;
+	}
+	else
+		return std::vector<To>(ptr, ptr+n);
 }
 
 std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 {
 	requireProperties(x, this, IsContingous());
-	const CPUBuffer* p = dynamic_cast<const CPUBuffer*>(x->buffer().get());
-	const CPUBuffer& t = *p;
-	return run<std::shared_ptr<TensorImpl>>(t, [&x, toType, this](const auto* ptr){
-		if(toType == DType::Bool) {
-			auto bool_vec = castData<bool>(ptr, x->size());
-			std::vector<uint8_t> casted_data(bool_vec.begin(), bool_vec.end());
-			return createTensor(x->shape(), toType, casted_data.data());
-		}
-		else if(toType == DType::Int32) {
-			auto casted_data = castData<int32_t>(ptr, x->size());
-			return createTensor(x->shape(), toType, casted_data.data());
-		}
-		else if(toType == DType::Float){
-			auto casted_data = castData<float>(ptr, x->size());
-			return createTensor(x->shape(), toType, casted_data.data());
-		}
-		else if(toType == DType::Half){
-			auto casted_data = castData<half>(ptr, x->size());
-			return createTensor(x->shape(), toType, casted_data.data());
-		}
-		else
-			throw EtError("Cannot cast");
+	auto res = createTensor(x->shape(), toType);
+	dispatch(toType, [&](auto v0){
+		using ToType = decltype(v0);
+		dispatch(x->dtype(), [&](auto v1){
+			using FromType = decltype(v1);
+			auto casted_data = castData<ToType>((FromType*)x->data(), x->size());
+			static_assert(sizeof(typename decltype(casted_data)::value_type) == sizeof(ToType));
+			memcpy(res->data(), casted_data.data(), casted_data.size()*sizeof(ToType));
+		});
+		
 	});
+	return res;
 }
 
 void CPUBackend::copyToHost(const TensorImpl* t, void* ptr)
