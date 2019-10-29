@@ -10,7 +10,6 @@
 namespace et
 {
 
-struct RawView {};
 struct Range
 {
 	Range() = default;

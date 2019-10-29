@@ -177,6 +177,18 @@ std::cout << (a+b).shape() << std::endl;
 //Fails
 ```
 
+Unlike PyTorch and NumPy, Etaler does not support the lagecy brodcasting rule. It doesn't allow certain tensors with
+ different shapes but have the same amount of elements to brodcast together.
+
+```
+//This would get you a warning in PyTorch and works in NumPy.
+//But not in Etaler
+a = ones({4})
+b = ones({4, 1})
+std::cout << (a+b).shape() << std::endl;
+//Fails
+```
+
 ## Copy Tensor from backend to backend
 If you have multiple backends (ex: one on the CPU and one for GPU), you can easily transfer data between the backends.
 ```C++
