@@ -6,7 +6,9 @@
 #include <numeric>
 #include <cmath>
 
-#include <tbb/tbb.h>
+#include <tbb/parallel_for.h>
+#include <tbb/blocked_range.h>
+#include <tbb/parallel_sort.h>
 
 using namespace et;
 
