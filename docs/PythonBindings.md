@@ -38,3 +38,6 @@ print(t)
 
 """
 ```
+
+## Python binding
+The offical Python binding - [PyEtaler](https://guthub.com/etaler/pyetaler) in currently work in progress. But we recomment using ROOT to bind from Python before PyEtaler leaves WIP.
