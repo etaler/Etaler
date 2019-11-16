@@ -57,7 +57,7 @@ int main(int argc, char** argv)
 
 	//Read the MNIST dataset
 	auto dataset = mnist::read_dataset<std::vector, std::vector, uint8_t, uint8_t>(data_path);
-	if(dataset.training_labels.size() == 0 || dataset.test_labels.size()) {
+	if(dataset.training_labels.size() == 0) {
 		std::cerr << "Cannot load MNIST dataset. from path: " << data_path << std::endl;
 		return -1;
 	}
@@ -65,11 +65,11 @@ int main(int argc, char** argv)
 
 	// HTM hyper parameters
 	const size_t epochs = 1;
-	const intmax_t sp_cells = 8192; // More cells, better accuracy
+	const intmax_t sp_cells = 16384; // More cells, better accuracy
 	const float global_density = 0.06; // slightly lesser than 0.1
 	const float permanence_inc = 0.14; // HTM.core parameters
 	const float permanence_dec = 0.006; // a lot lower than perm inc
-	const float bootsting_factor = 0; // Leave it at 0, boosting doesn't help in this case
+	const float bootsting_factor = 0.1; // Leave it at 0, boosting doesn't help in this case
 
 	// Other parameters
 	const size_t display_steps = 100;
