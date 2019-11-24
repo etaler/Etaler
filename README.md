@@ -178,3 +178,23 @@ Etaler tho provides basically the same feature, is very different from Numenta's
 If you have the tests builded. Run `tests/etaler_test`.
 
 We are still thinking about weather a CI is worth the trouble. C++ projects takes too long to build on most CIs so it drags the development speed.
+
+## Cite us
+
+We're happy that you can use the library and are having fun. Please attribute us by linking to [etaler](https://github.com/etaler/Etaler) at [https://github.com/etaler/Etaler](https://github.com/etaler/Etaler). For scientific publications, we suggest the following BibTex citation.
+
+```Bibtex
+@misc{etaler2019,
+	abstract = "Implementation of Hierarchical Temporal Memory and related algorithms in C++ and OpenCL",
+	author = "An-Pang Clang",
+	commit = 0226cdac1f03a642a4849ad8b9d4574ef35c943c,
+	howpublished = "\url{https://github.com/etaler/Etaler}",
+	journal = "GitHub repository",
+	keywords = "HTM; Hierarchical Temporal Memory; Numenta; NuPIC; cortical; sparse distributed representation; SDR; anomaly; prediction; bioinspired; neuromorphic",
+	publisher = "Github",
+	title = "{Etaler implementation of Hierarchical Temporal Memory}",
+	year = "2019"
+}
+```
+
+> Note: The commit number, publication year shown above are the ones when we last update the citation. You can update the fields to match the version you uses.
