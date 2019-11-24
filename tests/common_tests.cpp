@@ -249,6 +249,12 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			t[{2, 2}] = t[{2, 2}] + 1;
 			CHECK(t[{2, 2}].item<int>() == 11);
 		}
+
+		SECTION("self increment and assign") {
+			t[{2}] = t[{2}] + 1;
+			//Check a subset of weather the result is correct
+			CHECK(t[{2, 2}].item<int>() == 11);
+		}
 	}
 
 	SECTION("item") {
