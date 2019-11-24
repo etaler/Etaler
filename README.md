@@ -18,6 +18,7 @@ You can now explore HTM with modern, easy to use API and enjoy the performance b
   * [Building from source](#building-from-source)
 * [Notes](#notes)
 * [For NuPIC Users](#for-nupic-users)
+* [Cite us](#cite-us)
 
 ## More about Etaler
 
