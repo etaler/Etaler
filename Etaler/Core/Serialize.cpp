@@ -35,10 +35,12 @@ template<class Archive>
 void serialize(Archive & archive,
 	half & m)
 {
+	static_assert(sizeof(m) == 2);
 	#ifndef __aarch64__
 	archive(m.storage_);
 	#else
-	archive((unsigned short)m);
+	uint16_t *p = (uint16_t*)&m;
+	archive(*p);
 	#endif
 }
 
@@ -136,6 +138,9 @@ void save(Archive & archive ,StateDict const & item)
 {
 	std::vector<std::string> keys;
 	std::vector<std::string> types;
+
+	keys.reserve(item.size());
+	types.reserve(item.size());
 
 	for(const auto & [k, v] : item)
 		keys.push_back(k);
