@@ -656,7 +656,7 @@ int location_func$ID(int location)
 		loc %= s;
 	}
 	int sum = 0;
-	for(int i=0;i<$IN_DIMS;i++)
+	for(int i=0;i<$DIMS;i++)
 		sum += ndpos[i]*stride[i];
 	sum += bias;
 	return sum;
