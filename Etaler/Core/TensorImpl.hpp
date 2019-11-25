@@ -12,7 +12,7 @@
 namespace et
 {
 
-struct BufferImpl : public std::enable_shared_from_this<BufferImpl>
+struct ETALER_EXPORT BufferImpl : public std::enable_shared_from_this<BufferImpl>
 {
 	BufferImpl(size_t size, DType dtype, std::shared_ptr<Backend> backend)
 		: size_(size), dtype_(dtype), backend_(backend) {}
@@ -26,7 +26,7 @@ struct BufferImpl : public std::enable_shared_from_this<BufferImpl>
 	std::shared_ptr<Backend> backend_;
 };
 
-struct TensorImpl : public std::enable_shared_from_this<TensorImpl>
+struct ETALER_EXPORT TensorImpl : public std::enable_shared_from_this<TensorImpl>
 {
 	TensorImpl(std::shared_ptr<BufferImpl> buffer, Shape shape, Shape stride, size_t offset=0)
 		: buffer_(buffer), shape_(shape), stride_(stride), offset_(offset) {}

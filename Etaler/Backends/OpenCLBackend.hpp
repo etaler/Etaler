@@ -35,7 +35,7 @@ protected:
 	cl::Buffer buffer_;
 };
 
-struct KernelManager
+struct ETALER_EXPORT KernelManager
 {
 	KernelManager() : KernelManager(cl::Device(), cl::Context()) {};
 	KernelManager(cl::Device device, cl::Context context);

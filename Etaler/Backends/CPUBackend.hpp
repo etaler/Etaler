@@ -12,7 +12,7 @@
 namespace et
 {
 
-struct CPUBuffer : public BufferImpl
+struct ETALER_EXPORT CPUBuffer : public BufferImpl
 {
 	CPUBuffer(const Shape& shape, DType dtype, std::shared_ptr<Backend> backend)
 		: BufferImpl(shape.volume(), dtype, std::move(backend))
