@@ -76,7 +76,7 @@ Saving layers
 save(sp.states(), "sp.cereal");
 ```
 
-For more information see [the documents](docs/)
+Documents are avalible online on [Read the Docs](https://etaler.readthedocs.io/en/latest)
 
 ## Building and platform support
 
