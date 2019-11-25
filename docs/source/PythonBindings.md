@@ -28,7 +28,7 @@ et = ROOT.et
 Then you can call Etaler functions from Python.
 
 ```Python
-s = et.Shape();
+s = et.Shape()
 [s.push_back(v) for v in [2, 2]] #HACK: ROOT doesn't support initalizer lists.
 t = et.ones(s)
 print(t)
@@ -40,4 +40,11 @@ print(t)
 ```
 
 ## PyEtaler
-The offical Python binding - [PyEtaler](https://guthub.com/etaler/pyetaler) in currently work in progress. But we recomment using ROOT to bind from Python before PyEtaler leaves WIP.
+The offical Python binding - [PyEtaler](https://guthub.com/etaler/pyetaler) in currently work in progress. We recomment using ROOT to bind from Python before PyEtaler leaves WIP.
+
+```
+>>> from etaler import et
+>>> et.ones([2, 2])
+{{ 1, 1}, 
+ { 1, 1}}
+```
