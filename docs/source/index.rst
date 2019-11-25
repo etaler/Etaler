@@ -14,7 +14,7 @@ Etaler provides:
 * HTM algorithms with modern API
 * A minimal cross-platform (CPU, GPU, etc..) Tensor implementation
 
-Etaker requires a modern C++ compiler supporting C++17. The following C++ compilers are supported
+Etaler requires a modern C++ compiler supporting C++17. The following C++ compilers are supported
 
 * On Windows, Visual C++2019 or better
 * On Unix systems, GCC 8.2 or a recent version of clang
