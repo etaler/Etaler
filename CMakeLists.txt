@@ -102,3 +102,8 @@ option(ETALER_BUILD_TESTS "Build tests" ON)
 if (ETALER_BUILD_TESTS)
 	add_subdirectory(tests)
 endif()
+
+option(ETALER_BUILD_DOCS "Build documents" ON)
+if (ETALER_BUILD_DOCS)
+	add_subdirectory(docs)
+endif()

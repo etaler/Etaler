@@ -64,9 +64,9 @@ struct IsDType
 };
 
 template<typename _Tp, typename... _Up>
-	IsDType(_Tp, _Up...)
-	-> IsDType<std::array<std::enable_if_t<(std::is_same_v<_Tp, _Up> && ...), _Tp>,
-		1 + sizeof...(_Up)>>;
+IsDType(_Tp, _Up...)
+-> IsDType<std::array<std::enable_if_t<(std::is_same_v<_Tp, _Up> && ...), _Tp>,
+	1 + sizeof...(_Up)>>;
 
 
 template <typename T>
