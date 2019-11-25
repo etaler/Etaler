@@ -47,7 +47,7 @@ protected:
 	std::variant<bool*, int32_t*, float*, half*> storage_;
 };
 
-struct CPUBackend : public Backend
+struct ETALER_EXPORT CPUBackend : public Backend
 {
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data=nullptr) override
 	{
