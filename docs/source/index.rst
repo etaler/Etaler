@@ -6,6 +6,9 @@
 Welcome to Etaler's documentation!
 ==================================
 
+`Etaler<https://github.com/etaler/Etaler>`_ in an high-performance implementation of `Numenta<https://numenta.com/>`_'s HTM algorithms in C++.
+It is diesigned to be used in real world applications and research projects.
+
 .. toctree::
    :maxdepth: 1
    :caption: INSTALLATION
