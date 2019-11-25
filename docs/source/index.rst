@@ -17,7 +17,7 @@ Etaler provides:
 Etaker requires a modern C++ compiler supporting C++17. The following C++ compilers are supported
 
 * On Windows, Visual C++2019 or better
-* On *nix systems, GCC 8.2 or a recent version of clang
+* On Unix systems, GCC 8.2 or a recent version of clang
 
 Licensing
 ==================================
@@ -61,5 +61,5 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _Etaler:: https://github.com/etaler/Etaler
-.. _Numenta:: https://numenta.com/
+.. _Etaler: https://github.com/etaler/Etaler
+.. _Numenta: https://numenta.com/
