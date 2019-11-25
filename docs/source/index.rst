@@ -42,13 +42,13 @@ Be aware that Numenta holds the rights to HTM related patents. And only allows f
    Tensor
    PythonBindings
    UsingWithClingROOT
-   Contribution
    GUI
 
 .. toctree::
    :caption: DEVELOPER ZONE
    :maxdepth: 2
 
+   Contribution
    Backends
    DeveloperNotes
    OpenCLBackend
