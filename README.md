@@ -76,7 +76,7 @@ Saving layers
 save(sp.states(), "sp.cereal");
 ```
 
-For more information see [the documents](docs/)
+Documents are avalible online on [Read the Docs](https://etaler.readthedocs.io/en/latest)
 
 ## Building and platform support
 
@@ -135,6 +135,7 @@ Some cmake options are available:
 | ETALER_BUILD_EXAMPLES              | Build the examples        | ON      |
 | ETALER_BUILD_EXAMPLE_VISUALIZER    | Build visualizer example  | OFF     |
 | ETALER_BUILD_TESTS                 | Build the tests           | ON      |
+| ETALER_BUILD_DOCS                  | Build the documents       | OFF     |
 
 
 ### Building in Docker/VSC
