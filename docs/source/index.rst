@@ -6,7 +6,7 @@
 Welcome to Etaler's documentation!
 ==================================
 
-`Etaler`_ in an high-performance implementation of `Numenta`_'s HTM algorithms in C++.
+Etaler in an high-performance implementation of Numenta's HTM algorithms in C++.
 It is diesigned to be used in real world applications and research projects.
 
 Etaler provides:
@@ -36,7 +36,7 @@ Be aware that Numenta holds the rights to HTM related patents. And only allows f
 
 .. toctree::
    :maxdepth: 2
-   :caption: USAGE:
+   :caption: USAGE
 
    Introduction
    Tensor
