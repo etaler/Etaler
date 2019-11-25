@@ -180,7 +180,7 @@ std::cout << (a+b).shape() << std::endl;
 Unlike PyTorch and NumPy, Etaler does not support the lagecy brodcasting rule. It doesn't allow certain tensors with
  different shapes but have the same amount of elements to brodcast together.
 
-```
+```C++
 //This would get you a warning in PyTorch and works in NumPy.
 //But not in Etaler
 a = ones({4})
