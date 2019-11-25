@@ -6,7 +6,7 @@
 Welcome to Etaler's documentation!
 ==================================
 
-`Etaler`_ in an high-performance implementation of `Numenta`_'s HTM algorithms in C++.
+Etaler in an high-performance implementation of Numenta's HTM algorithms in C++.
 It is diesigned to be used in real world applications and research projects.
 
 Etaler provides:
@@ -14,10 +14,10 @@ Etaler provides:
 * HTM algorithms with modern API
 * A minimal cross-platform (CPU, GPU, etc..) Tensor implementation
 
-Etaker requires a modern C++ compiler supporting C++17. The following C++ compilers are supported
+Etaler requires a modern C++ compiler supporting C++17. The following C++ compilers are supported
 
 * On Windows, Visual C++2019 or better
-* On *nix systems, GCC 8.2 or a recent version of clang
+* On Unix systems, GCC 8.2 or a recent version of clang
 
 Licensing
 ==================================
@@ -36,7 +36,7 @@ Be aware that Numenta holds the rights to HTM related patents. And only allows f
 
 .. toctree::
    :maxdepth: 2
-   :caption: USAGE:
+   :caption: USAGE
 
    Introduction
    Tensor
@@ -61,5 +61,5 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-.. _Etaler:: https://github.com/etaler/Etaler
-.. _Numenta:: https://numenta.com/
+.. _Etaler: https://github.com/etaler/Etaler
+.. _Numenta: https://numenta.com/
