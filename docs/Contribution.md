@@ -28,3 +28,4 @@ If you want to develop the library it self, you are very welcomed! We are excite
 * follow the KISS (Keep it Simple Stupid) principle
 * Configuration files are evil (Looking at you NuPIC)
 
+If you are adding a dependency to the library. Please discuss it in a relevant thread or make a new issue. For now, we are actively avoiding [Boost](https://www.boost.org/) and try to stick to STL as much as possible. Using Boost might lead to trouble later on. But we might decide use Boost later on.
