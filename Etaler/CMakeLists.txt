@@ -4,10 +4,10 @@ project(Etaler CXX)
 ############################################################################
 # Setup the Etaler library building
 
-set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-
 add_library(Etaler SHARED Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/Serialize.cpp Core/Tensor.cpp
 	Algorithms/SpatialPooler.cpp Algorithms/SpatialPoolerND.cpp Algorithms/TemporalMemory.cpp Core/TypeHelpers.cpp)
+
+set_target_properties(Etaler PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 # Auto-generate the export header for shared library macros
 include(GenerateExportHeader)

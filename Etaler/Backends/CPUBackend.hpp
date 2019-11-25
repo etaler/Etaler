@@ -12,7 +12,7 @@
 namespace et
 {
 
-struct CPUBuffer : public BufferImpl
+struct ETALER_EXPORT CPUBuffer : public BufferImpl
 {
 	CPUBuffer(const Shape& shape, DType dtype, std::shared_ptr<Backend> backend)
 		: BufferImpl(shape.volume(), dtype, std::move(backend))
@@ -47,7 +47,7 @@ protected:
 	std::variant<bool*, int32_t*, float*, half*> storage_;
 };
 
-struct CPUBackend : public Backend
+struct ETALER_EXPORT CPUBackend : public Backend
 {
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data=nullptr) override
 	{

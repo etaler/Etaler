@@ -103,7 +103,7 @@ if (ETALER_BUILD_TESTS)
 	add_subdirectory(tests)
 endif()
 
-option(ETALER_BUILD_DOCS "Build documents" ON)
+option(ETALER_BUILD_DOCS "Build documents" OFF)
 if (ETALER_BUILD_DOCS)
 	add_subdirectory(docs)
 endif()

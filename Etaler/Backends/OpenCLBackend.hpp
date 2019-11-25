@@ -23,7 +23,7 @@ namespace et
 {
 
 
-struct OpenCLBuffer : public BufferImpl
+struct ETALER_EXPORT OpenCLBuffer : public BufferImpl
 {
 	OpenCLBuffer(const Shape& shape, DType dtype, const cl::Buffer& buffer, std::shared_ptr<Backend> backend)
 		: BufferImpl(shape.volume(), dtype, backend), buffer_(buffer) {}
@@ -35,7 +35,7 @@ protected:
 	cl::Buffer buffer_;
 };
 
-struct KernelManager
+struct ETALER_EXPORT KernelManager
 {
 	KernelManager() : KernelManager(cl::Device(), cl::Context()) {};
 	KernelManager(cl::Device device, cl::Context context);
