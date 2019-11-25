@@ -1,4 +1,4 @@
-# Backends
+# Backend Design
 
 Backends are how Etaler supports computing on different device/processors. They perform the actual computing and memory managment. Currently there are 2 backends avaliable.
 
