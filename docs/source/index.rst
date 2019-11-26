@@ -33,6 +33,7 @@ Be aware that Numenta holds the rights to HTM related patents. And only allows f
 
    BuildOnMSVC
    BuildOnOSX
+   BuildOnLinux
 
 .. toctree::
    :maxdepth: 2
