@@ -32,7 +32,7 @@ sudo wget https://www.khronos.org/registry/OpenCL/api/2.1/cl.hpp -P /System/Libr
 ## Build Etaler
 
 ```shell
-git clone https://github.com/Etaler/Etaler
+git clone https://github.com/Etaler/Etaler --recursive
 cd Etaler
 mkdir build && cd build
 cmake ..
