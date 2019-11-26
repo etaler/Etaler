@@ -129,9 +129,9 @@ Tensor z_1 = cat({x_1, y_1});
 cout << z_1 << endl;
 
 // Concatenate columns:
-x_2 = zeros({2, 3});
-y_2 = zeros({2, 5});
-z_2 = cat({x_2, y_2}, 1);
+Tensor x_2 = zeros({2, 3});
+Tensor y_2 = zeros({2, 5});
+Tensor z_2 = cat({x_2, y_2}, 1);
 cout << z_2 << endl;
 ```
 
