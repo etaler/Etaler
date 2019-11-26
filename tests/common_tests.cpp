@@ -36,7 +36,7 @@ TEST_CASE("Testing Shape", "[Shape]")
 		CHECK(s != n);
 	}
 
-	SECTION("Shape comutation") {
+	SECTION("Shape computation") {
 		Shape stride = shapeToStride(s);
 		CHECK(stride.size() == s.size());
 		CHECK(stride == Shape({5,1}));
@@ -109,7 +109,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(q.dtype() == t.dtype());
 		CHECK(q.shape() == t.shape());
 		CHECK(q.backend() == t.backend());
-		CHECK(q.shape() == zeros_like(t).shape()); //Lazy way to check if zeros_like works too
+		CHECK(q.isSame(t) == true);
 	}
 
 	SECTION("Tesnor basic") {
@@ -245,12 +245,12 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(t[r].isSame(t.view(r)));
 		}
 
-		SECTION("assign to subscription") {
+		SECTION("assign to subscription (scalar)") {
 			t[{2, 2}] = t[{2, 2}] + 1;
 			CHECK(t[{2, 2}].item<int>() == 11);
 		}
 
-		SECTION("self increment and assign") {
+		SECTION("assign to subscription (vector)") {
 			t[{2}] = t[{2}] + 1;
 			//Check a subset of weather the result is correct
 			CHECK(t[{2, 2}].item<int>() == 11);
@@ -260,9 +260,11 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 	SECTION("item") {
 		Tensor t = ones({1});
 		CHECK(t.item<int>() == 1);
+		// item() should fail because asking for the wrong type
 		CHECK_THROWS(t.item<float>());
 		
 		Tensor q = ones({2});
+		// item() should fail because q is not a scalar
 		CHECK_THROWS(q.item<int>());
 	}
 }
