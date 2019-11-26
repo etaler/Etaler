@@ -13,6 +13,7 @@ You can now explore HTM with modern, easy to use API and enjoy the performance b
 
 * [More about Etaler](#more-about-etaler)
 * [Examples](#examples)
+* [Documentation](#documentation)
 * [Building and platform support](#building-and-platform-support)
   * [Dependencies](#dependencies)
   * [Building from source](#building-from-source)
@@ -76,7 +77,9 @@ Saving layers
 save(sp.states(), "sp.cereal");
 ```
 
-Documents are avalible online on [Read the Docs](https://etaler.readthedocs.io/en/latest)
+## Documentation
+
+Documents are avalible online on [Read the Docs](https://etaler.readthedocs.io/en/latest).
 
 ## Building and platform support
 
