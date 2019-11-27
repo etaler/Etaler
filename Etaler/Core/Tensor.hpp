@@ -211,22 +211,22 @@ protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };
 
-static Tensor operator+ (std::variant<float, int, bool, half> v, const Tensor& t)
+inline Tensor operator+ (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)+t;}, v);
 }
 
-static Tensor operator- (std::variant<float, int, bool, half> v, const Tensor& t)
+inline Tensor operator- (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)-t;}, v);
 }
 
-static Tensor operator* (std::variant<float, int, bool, half> v, const Tensor& t)
+inline Tensor operator* (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)*t;}, v);
 }
 
-static Tensor operator/ (std::variant<float, int, bool, half> v, const Tensor& t)
+inline Tensor operator/ (std::variant<float, int, bool, half> v, const Tensor& t)
 {
 	return std::visit([&t](auto v) {return Tensor(v)/t;}, v);
 }
@@ -255,59 +255,59 @@ inline Tensor attempt_realize(const Tensor& t)
 	return t.realize();
 }
 
-static Tensor cellActivity(const Tensor& x, const Tensor& connections, const Tensor& permeances
+inline Tensor cellActivity(const Tensor& x, const Tensor& connections, const Tensor& permeances
 	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true)
 {
 	return x.backend()->cellActivity(x(), connections(), permeances(), connected_permeance, active_threshold, has_unconnected_synapse);
 }
 
-static void learnCorrilation(const Tensor& x, const Tensor& learn, const Tensor& connection
+inline void learnCorrilation(const Tensor& x, const Tensor& learn, const Tensor& connection
 	, Tensor& permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse=true)
 {
 	x.backend()->learnCorrilation(x(), learn(), connection(), permeances(), perm_inc, perm_dec, has_unconnected_synapse);
 }
 
-static Tensor globalInhibition(const Tensor& x, float fraction)
+inline Tensor globalInhibition(const Tensor& x, float fraction)
 {
 	return x.backend()->globalInhibition(x(), fraction);
 }
 
-Tensor static cast(const Tensor& x, DType dtype)
+Tensor inline cast(const Tensor& x, DType dtype)
 {
 	return x.cast(dtype);
 }
 
-static Tensor copy(const Tensor& x)
+inline Tensor copy(const Tensor& x)
 {
 	return x.copy();
 }
 
-static void sortSynapse(Tensor& connection, Tensor& permeances)
+inline void sortSynapse(Tensor& connection, Tensor& permeances)
 {
 	connection.backend()->sortSynapse(connection(), permeances());
 }
 
-static Tensor burst(const Tensor& x, const Tensor& s)
+inline Tensor burst(const Tensor& x, const Tensor& s)
 {
 	return x.backend()->burst(x(), s());
 }
 
-static Tensor reverseBurst(const Tensor& x)
+inline Tensor reverseBurst(const Tensor& x)
 {
 	return x.backend()->reverseBurst(x());
 }
 
-static void growSynapses(const Tensor& x, const Tensor& y, Tensor& connections, Tensor& permeances, float init_perm)
+inline void growSynapses(const Tensor& x, const Tensor& y, Tensor& connections, Tensor& permeances, float init_perm)
 {
 	x.backend()->growSynapses(x(), y(), connections(), permeances(), init_perm);
 }
 
-static void decaySynapses(Tensor& connections, Tensor& permeances, float threshold)
+inline void decaySynapses(Tensor& connections, Tensor& permeances, float threshold)
 {
 	connections.backend()->decaySynapses(connections(), permeances(), threshold);
 }
 
-static void assign(Tensor& x, const Tensor& y)
+inline void assign(Tensor& x, const Tensor& y)
 {
 	x.assign(y);
 }
@@ -318,24 +318,24 @@ inline Tensor concat(const svector<Tensor>& tensors, intmax_t dim=0) { return ca
 inline Tensor concatenate(const svector<Tensor>& tensors, intmax_t dim=0) { return cat(tensors, dim); }
 std::pair<Tensor, Tensor> brodcast_tensors(const Tensor& a, const Tensor& b);
 
-static Tensor exp(const Tensor& x) { return x.exp(); }
-static Tensor negate(const Tensor& x) { return x.negate(); }
-static Tensor inverse(const Tensor& x) { return x.inverse(); }
-static Tensor log(const Tensor& x) { return x.log(); }
-static Tensor logical_not(const Tensor& x) { return x.logical_not(); }
+inline Tensor exp(const Tensor& x) { return x.exp(); }
+inline Tensor negate(const Tensor& x) { return x.negate(); }
+inline Tensor inverse(const Tensor& x) { return x.inverse(); }
+inline Tensor log(const Tensor& x) { return x.log(); }
+inline Tensor logical_not(const Tensor& x) { return x.logical_not(); }
 
-static Tensor add(const Tensor& x1, const Tensor& x2) { return x1.add(x2); }
-static Tensor subtract(const Tensor& x1, const Tensor& x2) { return x1.subtract(x2); }
-static Tensor mul(const Tensor& x1, const Tensor& x2) { return x1.mul(x2); }
-static Tensor div(const Tensor& x1, const Tensor& x2) { return x1.div(x2); }
-static Tensor equal(const Tensor& x1, const Tensor& x2) { return x1.equal(x2); }
-static Tensor greater(const Tensor& x1, const Tensor& x2) { return x1.greater(x2); }
-static Tensor lesser(const Tensor& x1, const Tensor& x2) { return x1.lesser(x2); }
-static Tensor logical_and(const Tensor& x1, const Tensor& x2) { return x1.logical_and(x2); }
-static Tensor logical_or(const Tensor& x1, const Tensor& x2) { return x1.logical_or(x2); }
+inline Tensor add(const Tensor& x1, const Tensor& x2) { return x1.add(x2); }
+inline Tensor subtract(const Tensor& x1, const Tensor& x2) { return x1.subtract(x2); }
+inline Tensor mul(const Tensor& x1, const Tensor& x2) { return x1.mul(x2); }
+inline Tensor div(const Tensor& x1, const Tensor& x2) { return x1.div(x2); }
+inline Tensor equal(const Tensor& x1, const Tensor& x2) { return x1.equal(x2); }
+inline Tensor greater(const Tensor& x1, const Tensor& x2) { return x1.greater(x2); }
+inline Tensor lesser(const Tensor& x1, const Tensor& x2) { return x1.lesser(x2); }
+inline Tensor logical_and(const Tensor& x1, const Tensor& x2) { return x1.logical_and(x2); }
+inline Tensor logical_or(const Tensor& x1, const Tensor& x2) { return x1.logical_or(x2); }
 
-static Tensor zeros_like(const Tensor& x) { return zeros(x.shape(), x.dtype(), x.backend()); }
-static Tensor ones_like(const Tensor& x) { return ones(x.shape(), x.dtype(), x.backend()); }
+inline Tensor zeros_like(const Tensor& x) { return zeros(x.shape(), x.dtype(), x.backend()); }
+inline Tensor ones_like(const Tensor& x) { return ones(x.shape(), x.dtype(), x.backend()); }
 }
 
 #include <sstream>
