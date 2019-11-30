@@ -28,19 +28,6 @@ private:
 
 //et_assert is basically C assert but not efficeted by the NDEBUG flag. Use assert for debug, et_assert for possible user screw-ups.
 #define et_assert(...) __GetAtAssrtyMacro(__VA_ARGS__ ,et_assert_with_message, et_assert_no_message)(__VA_ARGS__)
-
-template<typename T2, typename T1>
-bool points_to(const T1 p)
-{
-	if constexpr (std::is_pointer<T1>::value)
-		return dynamic_cast<const T2*>(p) != nullptr;
-	//TODO: Replace this with C++20's concepts. Check if p.get() is returning a pointer
-	else if(is_specialization_v<T1, std::shared_ptr> || is_specialization_v<T1, std::unique_ptr>
-		|| is_specialization_v<T1, std::weak_ptr>)
-		return dynamic_cast<const T2*>(p.get()) != nullptr;
-	else
-		return false;
-}
 }
 
 //Replaces stupid C asserts

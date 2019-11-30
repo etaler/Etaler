@@ -42,6 +42,7 @@ inline void replaceAll(std::string& str, const std::string& from, const std::str
 }
 
 class Tensor;
+enum class DType;
 // A lazy and not bullet-proof hashing function
 template <typename ... Args>
 inline std::string hashify(const Args& ... args)
