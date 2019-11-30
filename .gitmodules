@@ -7,7 +7,7 @@
 	url = https://github.com/LiangliangNan/Easy3D.git
 [submodule "examples/visualize/LayersVisualizer"]
 	path = examples/visualize/LayersVisualizer
-	url = https://github.com/alior101/LayersVisualizer.git
+	url = https://github.com/marty1885/LayersVisualizer.git
 [submodule "examples/visualize/resource"]
 	path = examples/visualize/resource
 	url = https://github.com/alior101/resource.git
