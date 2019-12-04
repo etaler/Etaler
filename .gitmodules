@@ -3,12 +3,15 @@
 	url = https://github.com/imneme/pcg-cpp
 
 [submodule "Etaler/3rdparty/LayersVisualizer/Easy3D"]
+	ignore = dirty
 	path = Etaler/3rdparty/LayersVisualizer/Easy3D
 	url = https://github.com/LiangliangNan/Easy3D.git
 [submodule "examples/visualize/LayersVisualizer"]
+	ignore = dirty
 	path = examples/visualize/LayersVisualizer
-	url = https://github.com/alior101/LayersVisualizer.git
+	url = https://github.com/marty1885/LayersVisualizer.git
 [submodule "examples/visualize/resource"]
+	ignore = dirty
 	path = examples/visualize/resource
 	url = https://github.com/alior101/resource.git
 [submodule "Etaler/3rdparty/half_precision"]

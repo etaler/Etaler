@@ -8,5 +8,5 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/LayersVisualizer ${CMAKE_CURRENT_SO
 find_package(OpenGL REQUIRED)
 add_executable(tm_visualize tm_visualize.cpp) 
 #target_link_libraries(tm_visualize ${OPENGL_LIBRARIES} Etaler LayersVisualizer glew core viewer glfw rply tinyfiledialogs util LAStools fileio dl glew glfw  ${OPENGL_LIBRARIES} X11 ) 
-target_link_libraries(tm_visualize ${OPENGL_LIBRARIES} Etaler LayersVisualizer core viewer tinyfiledialogs util fileio ) 
+target_link_libraries(tm_visualize ${OPENGL_LIBRARIES} Etaler LayersVisualizer core viewer tinyfiledialogs util fileio imgui) 
 
