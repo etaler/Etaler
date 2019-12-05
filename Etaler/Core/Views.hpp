@@ -6,6 +6,7 @@
 
 #include <variant>
 #include <memory>
+#include <optional>
 
 namespace et
 {
@@ -14,52 +15,30 @@ struct Range
 {
 	Range() = default;
 	Range(intmax_t start)
-	{
-		start_ = start;
-		end_ = start+1;
-	}
+		: start_(start), stop_(start+1)
+	{}
 
-	Range(intmax_t start, intmax_t end)
-	{
-		start_ = start;
-		end_ = end;
+	Range(intmax_t start, intmax_t stop)
+		: start_(start), stop_(stop)
+	{}
 
-		if (start < 0) {
-			start_from_back_ = true;
-			end = -end;
-		}
+	Range(intmax_t start, intmax_t stop, intmax_t step)
+		: start_(start), stop_(stop), step_(step)
+	{}
 
-		if (end < 0) {
-			end_from_back_ = true;
-			end = -end;
-		}
-	}
-
-	Range(intmax_t start, intmax_t end, bool start_from_back, bool end_from_back)
-	{
-		start_ = start;
-		et_assert(end >= 0);
-		end_ = end;
-		start_from_back_ = start_from_back;
-		end_from_back_ = end_from_back;
-	}
-
-	intmax_t start() const {return start_;}
-	intmax_t end() const {return end_;}
-	bool startFromBack() const {return start_from_back_;}
-	bool endFromBack() const {return end_from_back_;}
+	std::optional<intmax_t> start() const {return start_;}
+	std::optional<intmax_t> stop() const {return stop_;}
+	std::optional<intmax_t> step() const {return step_;}
 
 protected:
-	intmax_t start_ = 0;
-	bool start_from_back_ = false;
-	intmax_t end_ = 0;
-	bool end_from_back_ = false;
-	//intmax_t step_size_ = 1;
+	std::optional<intmax_t> start_;
+	std::optional<intmax_t> stop_;
+	std::optional<intmax_t> step_;
 };
 
 inline Range all()
 {
-	return Range(0, 0, false, true);
+	return Range();
 }
 
 inline Range range(intmax_t start, intmax_t end)
@@ -70,6 +49,11 @@ inline Range range(intmax_t start, intmax_t end)
 inline Range range(intmax_t end)
 {
 	return Range(0, end);
+}
+
+inline Range range(intmax_t start, intmax_t stop, intmax_t step)
+{
+	return Range(start, stop, step);
 }
 
 

@@ -239,6 +239,25 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(u.isSame(zeros_like(u)));
 		}
 
+		SECTION("Strided views") {
+			SECTION("read") {
+				int a[] = {0, 2};
+				Tensor q = Tensor({2}, a);
+				Tensor res = t.view({0, range(0, 3, 2)});
+				CHECK(res.isSame(q));
+			}
+
+			SECTION("write") {
+				int a[] = {-1, -1};
+				Tensor q = Tensor({2}, a);
+				t[{0, range(0, 3, 2)}] = q;
+
+				int b[] = {-1, 1, -1, 3};
+				Tensor r = Tensor({4}, b);
+				CHECK(t[{0}].isSame(r));
+			}
+		}
+
 		SECTION("subscription operator") {
 			svector<Range> r = {range(2)};
 			//The [] operator should work exactly like the view() function
