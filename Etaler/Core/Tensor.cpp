@@ -190,7 +190,10 @@ Tensor Tensor::view(svector<Range> ranges) const
 
 	Shape result_shape;
 	svector<intmax_t> offset;
+	Shape viewed_strides = pimpl_->stride();
 	offset.reserve(dimentions());
+
+	assert(viewed_strides.size() == dimentions());
 
 	for(size_t i=0;i<dimentions();i++) {
 		const Range& r = ranges[i];
@@ -198,7 +201,7 @@ Tensor Tensor::view(svector<Range> ranges) const
 
 		intmax_t start = r.start().value_or(0);
 		intmax_t stop = r.stop().value_or(dim_size);
-		intmax_t step = std::abs(r.step().value_or(1));
+		intmax_t step = r.step().value_or(1);
 
 		// Indexing validations
 		if(step == 0)
@@ -214,10 +217,10 @@ Tensor Tensor::view(svector<Range> ranges) const
 
 		if((real_stop - real_start) * step < 0)
 			throw EtError("Step is going in the wrong direction. Will cause infinate loop");
-		et_assert(step == 1, "Cuz I haven't implement dat.");
+		viewed_strides[i] *= step;
 
 		offset.push_back(real_start);
-		if(size != 1 || result_shape.empty() == true) //Ignore heading 1 dimentions
+		if(size != 1 || result_shape.empty() == false) //Ignore heading 1 dimentions
 			result_shape.push_back(size);
 	}
 
@@ -225,9 +228,8 @@ Tensor Tensor::view(svector<Range> ranges) const
 	if(result_shape.empty() == true)
 		result_shape.push_back(1);
 
-	Shape view_meta_strides = pimpl_->stride();
 	size_t initial_offset = unfold(offset, pimpl_->stride())+pimpl_->offset();
-	return std::make_shared<TensorImpl>(pimpl_->buffer(), result_shape, view_meta_strides, initial_offset);
+	return std::make_shared<TensorImpl>(pimpl_->buffer(), result_shape, viewed_strides, initial_offset);
 }
 
 Tensor et::zeros(const Shape& shape, DType dtype, Backend* backend)
@@ -379,7 +381,7 @@ inline Shape brodcast_result_shape(Shape a, Shape b)
 Tensor et::brodcast_to(const Tensor& t, Shape s)
 {
 	et_assert(s.size() >= t.dimentions());
-	Shape stride = leftpad(shapeToStride(t.shape()), s.size(), 0);
+	Shape stride = leftpad(t.stride(), s.size(), 0);
 	Shape shape = leftpad(t.shape(), s.size(), 0);
 	for(size_t i=0;i<s.size();i++) {
 		if(shape[i] != s[i])

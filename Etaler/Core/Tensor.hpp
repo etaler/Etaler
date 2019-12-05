@@ -63,8 +63,9 @@ struct ETALER_EXPORT Tensor
 	size_t dimentions() const {return pimpl_->dimentions();}
 	void resize(Shape s) {pimpl()->resize(s);}
 	bool iscontiguous() const {return pimpl()->iscontiguous();}
+	Shape stride() const {return pimpl()->stride();}
 
-	Backend* backend() const {return pimpl()->backend();};
+	Backend* backend() const {return pimpl()->backend();}
 
 
 	template <typename ImplType=TensorImpl>

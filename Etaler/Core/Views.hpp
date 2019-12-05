@@ -51,5 +51,10 @@ inline Range range(intmax_t end)
 	return Range(0, end);
 }
 
+inline Range range(intmax_t start, intmax_t stop, intmax_t step)
+{
+	return Range(start, stop, step);
+}
+
 
 }
