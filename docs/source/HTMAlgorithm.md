@@ -107,3 +107,44 @@ Out
  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 
  1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 ```
+
+## Spatial Pooler
+
+[Spatial Pooler](https://numenta.com/neuroscience-research/research-publications/papers/htm-spatial-pooler-neocortical-algorithm-for-online-sparse-distributed-coding/) is a dimention reduction/clustering algorithm. As a black box, a Spatial Pooler learns the associations between bits (learning groups of bits frequently becomes a 1 together) and merges them together. The process removes reducdent information within the SDR and enforces a stable density (number of 1 bits in the SDR). Improving Temporal Memory's performance.
+
+```C++
+auto sp = SpatialPooler(/*input_shape=*/{256}, /*output_shape=*/{64});
+auto y = encoder::gridCell1d(0.5);
+cout << sp.compute(y) << endl;
+```
+
+Out
+
+```
+{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1}
+```
+
+An untrained Spatial Pooler is pretty much useless; knowing nothing about the input SDR and only guess the relation among bits. We need to feed data to it and allow it to learn the relations itself - by feed the results back into the `learn` method.
+
+```C++
+auto sp = SpatialPooler(/*input_shape=*/{256}, /*output_shape=*/{64});
+for(const auto& sample : dataset) {
+    auto x = encode_data(sample);
+    auto y = sp.compute(x);
+
+    sp.learn(x, y); // Ask the SP the learn!
+}
+```
+
+Like any machine learning algorithm, the Spatial Pooler have multiple hyper-parameters. The important ones include:
+
+```C++
+sp.setGlobalDensity(density); // The density of the generated SDR
+sp.setBoostingFactor(factor); // Allows under-performing cells to activate
+sp.setActiveThreshold(thr);   // How much activity can lead to cell activation
+
+sp.setPermanenceInc(inc);     // These are the learning rates
+sp.setPermanenceDec(dec);     // For both reward and punish
+```
