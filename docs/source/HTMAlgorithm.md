@@ -110,7 +110,7 @@ Out
 
 ## Spatial Pooler
 
-[Spatial Pooler](https://numenta.com/neuroscience-research/research-publications/papers/htm-spatial-pooler-neocortical-algorithm-for-online-sparse-distributed-coding/) is a dimention reduction/clustering algorithm. As a black box, a Spatial Pooler learns the associations between bits (learning groups of bits frequently becomes a 1 together) and merges them together. The process removes reducdent information within the SDR and enforces a stable density (number of 1 bits in the SDR). Improving Temporal Memory's performance.
+[Spatial Pooler](https://numenta.com/neuroscience-research/research-publications/papers/htm-spatial-pooler-neocortical-algorithm-for-online-sparse-distributed-coding/) is a dimention reduction/clustering algorithm. As a black box, a Spatial Pooler learns the associations between bits (learning which groups of bits frequently becomes a 1 together) and merges them together. The process removes reducdent information within the SDR and enforces a stable density (number of 1 bits in the SDR). Improving Temporal Memory's performance.
 
 ```C++
 auto sp = SpatialPooler(/*input_shape=*/{256}, /*output_shape=*/{64});
@@ -126,7 +126,7 @@ Out
   0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1}
 ```
 
-An untrained Spatial Pooler is pretty much useless; knowing nothing about the input SDR and only guess the relation among bits. We need to feed data to it and allow it to learn the relations itself - by feed the results back into the `learn` method.
+An untrained Spatial Pooler is pretty much useless; knowing nothing about the input SDR and only guess the relation among bits. We need to feed data to it and allow it to learn the relations itself - by feeding the results back into the `learn` method.
 
 ```C++
 auto sp = SpatialPooler(/*input_shape=*/{256}, /*output_shape=*/{64});
@@ -148,3 +148,81 @@ sp.setActiveThreshold(thr);   // How much activity can lead to cell activation
 sp.setPermanenceInc(inc);     // These are the learning rates
 sp.setPermanenceDec(dec);     // For both reward and punish
 ```
+
+## Temporal Memory
+
+As the name implied, [Temporal Memory](https://numenta.com/neuroscience-research/research-publications/papers/why-neurons-have-thousands-of-synapses-theory-of-sequence-memory-in-neocortex/) is a sequence memory. It learns the relations of bits at time `t` and `t+1`. For a high level view, given a Temporal Memory layer is trained on the sequence A-B-C-D. Then asking what is after A, the TM layer will respond B.
+
+```C++
+// Some setup is requied for a TM
+// In this example, the input shape is {256} and there are 16 cells per column
+// last_active and last_pred are the stats of the TM
+// This is annoning and will be fixed in a future release
+Tensor last_active = zeros({256, 16}, DType::Bool);
+Tensor last_pred = zeros({256, 16}, DType::Bool);
+
+auto tm = TemporalMemory(/*input_shape*/{256}, /*cells_per_column=*/16);
+auto [pred, active] = tm.compute(encoder::gridCell1d(0.5), last_pred);
+cout << pred << endl;
+```
+
+Out
+
+```
+{{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+ { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+ { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+ ....
+ { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+ { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 
+ { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}}
+```
+
+The Temporal Memory has some very good properties. First, a Temporal Memory will respond "nothing" when it has no idea what is going on (unlike neural networks, they return at least something when met with unknown). Like in this case, we asked a Temporal Memory that has been trained on nothing to predict what's after 0.5. The layer responded with a zero tensor of shape `{input_shape, cells_per_column}`. Indicating nothing.
+
+In most applications. We don't care about what's happning within each column but weather a column contains a cell that is a 1. This can be extracted with a `sum()` call.
+
+```C++
+// Continuing from the previous block
+auto pred_sdr = sum(pred, 1, DType::Bool);
+cout << pred_sdr << endl;
+```
+
+Out
+
+```
+{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  ...
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0, 0, 0, 0, 0, 0, 0, 0}
+```
+
+Traning a Temporal Memory involved basically the same process as the Spatial Pooler. But with slightly more steps.
+
+```C++
+// Continuing from the previous block
+for(const auto& sample : dataset) {
+    auto x = encode_data(sample);
+    auto [pred, active] = tm.compute(x, last_active);
+    // You can you the predictions here
+    ...
+    // Now update the states
+    tm.learn(active, last_state);
+    tie(last_pred, last_active) = pair(pred, active);
+}
+```
+
+Idealy, unless your input data is very simple. We recommend to pass the encoded through a SpatialPooler to reduce useless information.
+
+```C++
+for(...) {
+    auto x = encode_data(...);
+    auto y = sp.compute(x); // Use the SP!
+
+    auto [pred, active] = tm.compute(y, last_active);
+    ...
+}
+```
+
+After traning, the TM should be able to predict what is possible in the next time step based on current input and the state. A Temporal Memory layer can gracefully deal with ambiguous situaction. When trained on the sequence A-B-C-B-C-D then asking what's after C without a context(past state), the TM will respond both B and D.
+
