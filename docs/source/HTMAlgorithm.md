@@ -226,3 +226,25 @@ for(...) {
 
 After traning, the TM should be able to predict what is possible in the next time step based on current input and the state. A Temporal Memory layer can gracefully deal with ambiguous situaction. When trained on the sequence A-B-C-B-C-D then asking what's after C without a context(past state), the TM will respond both B and D.
 
+## Classifers
+
+It's good to have the ability to predict the future. But sometimes it's hard to make sense of the predictios in the SDR form. Etaler provides a biologically possible classifer to categorize results back into human readable information.
+
+**Note:** The API of classifers are pron to change. And more classifers will be added.
+
+```C++
+auto clf = SDRClassifer(/*input_shape=*/{256}, /*num_class=*/10);
+
+//Add SDRs to the classifer
+for(int i=0;i<10;i++)
+    clf.addPattern(encoder::gridCell1d(i/10.f), i);
+
+cout << "The value 0.8 is close to "
+    << clf.compute(encoder::gridCell1d(0.8))/10.f << endl;
+```
+
+Out
+
+```
+The value 0.8 is close to 0.8
+```
