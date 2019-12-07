@@ -226,6 +226,24 @@ for(...) {
 
 After traning, the TM should be able to predict what is possible in the next time step based on current input and the state. A Temporal Memory layer can gracefully deal with ambiguous situaction. When trained on the sequence A-B-C-B-C-D then asking what's after C without a context(past state), the TM will respond both B and D.
 
+### Detection anomaly
+
+One of HTM's main use is to perform anomaly detection. The method is stright forward. Given a well trained Spatial Pooler, Temporal Memory and a cyclic signal. The only cause for the TM to not predicting well must be an anomaly in the signal. The TM's property ties in very well with the application. A TM will resolve ambiguous states by predicting everything and predicts nothing when it don't know.
+
+We can compute the anomaly score using the TM's prediction from the last time step and the actual input from the current time step.
+
+```C++
+for(...) {
+    auto x = encode_data(...);
+    auto [pred, active] = tm.compute(y, last_active);
+
+    float anomaly_score = anomaly(sum(last_pred, 1, DType::Bool), x);
+    ...
+}
+```
+
+Do note that detecting anomaly at `t=0` will always give you an anomaly score of 1 due to having no past history to rely on.
+
 ## Classifers
 
 It's good to have the ability to predict the future. But sometimes it's hard to make sense of the predictios in the SDR form. Etaler provides a biologically possible classifer to categorize results back into human readable information.
