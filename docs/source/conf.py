@@ -18,7 +18,9 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 def setup(app):
     app.add_stylesheet("main_stylesheet.css")
 
-extensions = ['recommonmark', 'sphinx.ext.autosectionlabel']
+extensions = ['recommonmark',
+    'sphinx.ext.autosectionlabel',
+    'sphinx_markdown_tables']
 #templates_path = ['_templates']
 #html_static_path = ['_static']
 source_suffix = {
