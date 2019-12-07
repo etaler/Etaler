@@ -40,6 +40,7 @@ Be aware that Numenta holds the rights to HTM related patents. And only allows f
    :caption: USAGE
 
    Introduction
+   HTMAlgotirthm
    Tensor
    PythonBindings
    UsingWithClingROOT
