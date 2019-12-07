@@ -495,6 +495,15 @@ TEST_CASE("Backend functions", "[Backend]")
 		CHECK(s1.isSame(Tensor({4}, pred1)));
 	}
 
+	SECTION("sum with negative index") {
+		auto a = ones({1, 2, 3});
+		CHECK(sum(a, -1).shape() == Shape({1, 2}));
+		CHECK(sum(a, -2).shape() == Shape({1, 3}));
+		CHECK(sum(a, -3).shape() == Shape({2, 3}));
+
+		CHECK_THROWS(sum(a, -4).shape());
+	}
+
 	SECTION("decay synapses") {
 		int a[] = {0,1,0,1};
 		Tensor c({2,2}, a);

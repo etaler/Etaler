@@ -269,26 +269,27 @@ Tensor Tensor::sum(std::optional<intmax_t> dim_id, DType dtype) const
 		return backend()->sum(pimpl(), size(), dtype);
 
 	intmax_t dim = dim_id.value();
-	dim = dim < 0 ? dimentions() - dim : dim;
+	// negative index means counting from back
+	dim = dim < 0 ? dimentions() + dim : dim;
 	if(dim >= (intmax_t)dimentions() || dim < 0)
 		throw EtError("Dimension " + std::to_string(dim_id.value()) + " is out of range.");
 
-	Shape s = shape();
-	s.erase(s.begin()+dim);
+	Shape final_shape = shape();
+	final_shape.erase(final_shape.begin() + dim);
+	intmax_t sum_size = shape()[dim];
+	Shape result_shape = shape();
+	result_shape[dim] = result_shape[result_shape.size()-1];
+	result_shape.pop_back();
 
 	if(size_t(dim) == dimentions()-1) { //Special, optimized case for the last dim
 		Tensor res = backend()->sum(pimpl(), shape().back(), dtype);
-		res.resize(s);
+		res.resize(final_shape);
 		return res;
 	}
 
-	Tensor res = backend()->sum(swapaxis(dimentions()-1, dim).realize().pimpl(), shape()[dim], dtype);
-	res.resize(s);
-
-	if(dim == (intmax_t)(res.dimentions()-1)) //special case, no need to swap axis
-		return res;
-
-	return res.swapaxis(res.shape().size()-1, dim).realize();
+	Tensor res = backend()->sum(swapaxis(dimentions()-1, dim).realize().pimpl(), sum_size, dtype);
+	res.resize(result_shape);
+	return res.swapaxis(res.shape().size()-1, dim).reshape(final_shape);
 }
 
 Tensor et::sum(const Tensor& x, std::optional<intmax_t> dim, DType dtype)
