@@ -1,4 +1,4 @@
-# HTM Algorithms
+# Introduction to HTM Algorithms
 
 Hierarchical Temporal Memory is a biologically possible machine learning algorithm developed by [Numenta](https://numenta.com/). Biological possiblity means the algorithms has to simulate (or approximate) behaivour and limitations of real neurons. i.e. Neurons has to speak binary ([spikes](https://en.wikipedia.org/wiki/Biological_neuron_model)) and there's no global learning (no [backpropergation](https://en.wikipedia.org/wiki/Backpropagation)). In HTM Theory, this means HTM operates on [Sparse Distributed Representation](https://en.wikipedia.org/wiki/Sparse_distributed_memory) (SDR, basically binary tensors) and every layer operates indipendently.
 
@@ -88,7 +88,8 @@ Out
 It is quite hard to build a robust encoder for complex data and in most cases the data are not related to each other. So pratically we would apply encoding to each field then concatenate all SDRs together.
 
 ```C++
-Tensor complex_encoder(float v1, float v2, float v3) {
+Tensor complex_encoder(float v1, float v2, float v3)
+{
         Tensor sdr1 = encoder::scalar(v1);
         Tensor sdr2 = encoder::scalar(v2);
         Tensor sdr3 = encoder::scalar(v3);
