@@ -260,13 +260,18 @@ Tensor et::ones(const Shape& shape, DType dtype, Backend* backend)
 		throw EtError("Cannot creatr a tensor of ones of type " + to_ctype_string(dtype));
 }
 
-Tensor Tensor::sum(intmax_t dim, DType dtype) const
+Tensor Tensor::sum(std::optional<intmax_t> dim_id, DType dtype) const
 {
-	et_assert(dim >= -1 && dim < (intmax_t)dimentions());
+	et_assert(dim_id.has_value() || dim_id.value_or(0) < (intmax_t)dimentions());
 
-	//-1 means sum the entire tensor
-	if(dim == -1)
+	// dim_id has no value means sum the entire tensor
+	if(dim_id.has_value() == false)
 		return backend()->sum(pimpl(), size(), dtype);
+
+	intmax_t dim = dim_id.value();
+	dim = dim < 0 ? dimentions() - dim : dim;
+	if(dim >= (intmax_t)dimentions() || dim < 0)
+		throw EtError("Dimension " + std::to_string(dim_id.value()) + " is out of range.");
 
 	Shape s = shape();
 	s.erase(s.begin()+dim);
@@ -286,7 +291,7 @@ Tensor Tensor::sum(intmax_t dim, DType dtype) const
 	return res.swapaxis(res.shape().size()-1, dim).realize();
 }
 
-Tensor et::sum(const Tensor& x, intmax_t dim, DType dtype)
+Tensor et::sum(const Tensor& x, std::optional<intmax_t> dim, DType dtype)
 {
 	return x.sum(dim, dtype);
 }
