@@ -55,7 +55,7 @@ root [] g.SetTitle("# of overlapping bits");
 
 Out
 
-![number of verlapping bits](../images/gc1d_overlap.svg)
+![number_of_overlapping_bits](../images/gc1d_overlap.svg)
 
 ### Extending encodings
 

@@ -197,7 +197,7 @@ struct ETALER_EXPORT Tensor
 	//Subscription operator
 	Tensor operator [] (svector<Range> r) { return view(r); }
 
-	Tensor sum(intmax_t dim=-1, DType dtype=DType::Unknown) const;
+	Tensor sum(std::optional<intmax_t> dim=std::nullopt, DType dtype=DType::Unknown) const;
 	bool isSame (const Tensor& other) const;
 
 	//Utils
@@ -313,7 +313,7 @@ inline void assign(Tensor& x, const Tensor& y)
 	x.assign(y);
 }
 
-Tensor ETALER_EXPORT sum(const Tensor& x, intmax_t dim=-1, DType dtype=DType::Unknown);
+Tensor ETALER_EXPORT sum(const Tensor& x, std::optional<intmax_t> dim=std::nullopt, DType dtype=DType::Unknown);
 Tensor ETALER_EXPORT cat(const svector<Tensor>& tensors, intmax_t dim=0);
 inline Tensor concat(const svector<Tensor>& tensors, intmax_t dim=0) { return cat(tensors, dim); }
 inline Tensor concatenate(const svector<Tensor>& tensors, intmax_t dim=0) { return cat(tensors, dim); }
