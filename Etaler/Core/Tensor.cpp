@@ -346,8 +346,6 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 
 Tensor Tensor::copy() const
 {
-	//if(points_to<ViewTensor>(pimpl()))
-	//	return realize().copy();
 	return backend()->copy(pimpl());
 }
 
