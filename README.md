@@ -155,7 +155,7 @@ Be aware that [Numenta](https://numenta.com/) holds the rights to HTM related pa
 
 HTM Theory is in it's young age and as we are growing. We'd like to get contributions from you to accelerate the development of Etaler! Just fork, make changes and launch a PR!
 
-See [CONTRIBUTION.md](docs/Contribution.md)
+See [CONTRIBUTION.md](docs/source/Contribution.md)
 
 ## Notes
 
