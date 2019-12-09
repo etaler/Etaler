@@ -9,6 +9,7 @@
 #include <tbb/parallel_for.h>
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_sort.h>
+#include <tbb/parallel_reduce.h>
 
 using namespace et;
 
@@ -57,7 +58,9 @@ void* CPUBuffer::data() const
 	return std::visit([](const auto& v){return (void*)v;}, storage_);
 }
 
-template <typename TypeList = type_list_t<int32_t, float, bool, half>, typename Func = void>
+using DefaultTypeList = type_list_t<int32_t, float, bool, half>;
+
+template <typename TypeList = DefaultTypeList, typename Func = void>
 inline void dispatch(DType dtype, Func f)
 {
 	static_assert(std::is_same_v<Func, void> == false); //void is just a dummy value
@@ -71,6 +74,18 @@ inline void dispatch(DType dtype, Func f)
 	}
 	else
 		throw EtError("Cannot dispatch such dtype: " + to_ctype_string(dtype));
+}
+
+template <typename TL1 = DefaultTypeList, typename TL2 = DefaultTypeList, typename Func = void>
+inline void dispatch2d(DType t1, DType t2, Func f)
+{
+	dispatch<TL1>(t1, [&](auto v1){
+		using T1 = decltype(v1);
+		dispatch<TL2>(t2, [&](auto v2){
+			using T2 = decltype(v2);
+			f(T1(), T2());
+		});
+	});
 }
 
 namespace et::detail
@@ -624,13 +639,30 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 		}();
 	}
 
-	auto res = createTensor({(intmax_t)(x->size()/chunk_size)}, result_dtype);
+	size_t result_size = x->size()/chunk_size;
+	auto res = createTensor({intmax_t(result_size)}, result_dtype);
 
-	dispatch(x->dtype(), [&](auto v){
-		using T = decltype(v);
-		auto in = (const T*)x->data();
-		dispatch(result_dtype, [&](auto v) {
-			using ResType = decltype(v);
+	// Optimized case for summing everything
+	if(result_size == 1) {
+		dispatch2d(x->dtype(), result_dtype, [&](auto v1, auto v2) {
+			using T = decltype(v1);
+			auto in = (const T*)x->data();
+			using ResType = decltype(v2);
+			auto ptr = (ResType*) res->data();
+			*ptr = tbb::parallel_reduce(tbb::blocked_range(in, in+x->size()), ResType(0)
+				, [](const auto& r, ResType init){
+					return std::accumulate(r.begin(), r.end(), init);
+				},
+				[](auto x, auto y) {
+					return x + y;
+				});
+		});
+	}
+	else {
+		dispatch2d(x->dtype(), result_dtype, [&](auto v1, auto v2) {
+			using T = decltype(v1);
+			auto in = (const T*)x->data();
+			using ResType = decltype(v2);
 			auto ptr = (ResType*) res->data();
 			tbb::parallel_for(size_t(0), size_t(x->size()/chunk_size), [&](size_t i) {
 				size_t offset = i*chunk_size;
@@ -638,7 +670,7 @@ std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_si
 				ptr[i] = s;
 			});
 		});
-	});
+	}
 
 	return res;
 }
