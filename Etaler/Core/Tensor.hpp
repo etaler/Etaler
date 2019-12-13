@@ -31,11 +31,11 @@ struct ETALER_EXPORT TensorIterator
 	using ThisIterator = TensorIterator<T>;
 	TensorIterator(reference t, intmax_t curr = 0) : t_(&t), curr_(curr)
 	{static_assert(std::is_same_v<raw_value_type, Tensor>); }
-	reference operator*() { return t_->view({curr_}); }
+	value_type operator*() { return t_->view({curr_}); }
 	// Unfortunatelly returning a pointer is not doable
 	pointer operator->() { return std::make_unique<raw_value_type>(*(*this)); }
-	bool operator==(ThisIterator rhs) { return curr_ == rhs.curr_ && t_ == rhs.t_; }
-	bool operator!=(ThisIterator rhs) { return !(*this == rhs); }
+	bool operator==(ThisIterator rhs) const { return curr_ == rhs.curr_ && t_ == rhs.t_; }
+	bool operator!=(ThisIterator rhs) const { return !(*this == rhs); }
 	ThisIterator& operator++() {curr_ += 1; return *this;}
 	ThisIterator operator++(int) {ThisIterator retval = *this; ++(*this); return retval;}
 	value_type* t_; // Using a pointer because Tensor is a incomplete type here
@@ -234,12 +234,12 @@ struct ETALER_EXPORT Tensor
 	using const_iterator = TensorIterator<const Tensor>;
 
 	iterator begin() { return iterator(*this, 0); }
-	iterator back() { return iterator(*this, shape().back()-1); }
-	iterator end() { return iterator(*this, shape().back()); }
+	iterator back() { return iterator(*this, shape()[0]-1); }
+	iterator end() { return iterator(*this, shape()[0]); }
 
 	const_iterator begin() const { return const_iterator(*this, 0); }
-	const_iterator back() const { return const_iterator(*this, shape().back()-1); }
-	const_iterator end() const { return const_iterator(*this, shape().back()); }
+	const_iterator back() const { return const_iterator(*this, shape()[0]-1); }
+	const_iterator end() const { return const_iterator(*this, shape()[0]); }
 
 	bool has_value() const {return (bool)pimpl_ && size() > 0;}
 

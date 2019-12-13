@@ -286,6 +286,20 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		// item() should fail because q is not a scalar
 		CHECK_THROWS(q.item<int>());
 	}
+
+	SECTION("iterator") {
+		Tensor t = ones({3, 4});
+		CHECK(t.begin() != t.end());
+		CHECK(t.begin() == t.begin());
+		STATIC_REQUIRE(std::is_same_v<Tensor::iterator::value_type, Tensor>);
+
+		int num_iteration = 0;
+		for(auto s : t) {
+			CHECK(s.shape() == Shape({4}));
+			num_iteration += 1;
+		}
+		CHECK(num_iteration == t.shape()[0]);
+	}
 }
 
 TEST_CASE("Testing Encoders", "[Encoder]")
