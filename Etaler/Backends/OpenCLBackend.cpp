@@ -848,7 +848,7 @@ void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeance
 	size_t input_cell_count = connections->size()/max_synapses_per_cell;
 
 	auto param_hash = hashify(input_cell_count, max_synapses_per_cell, permeances->dtype());
-	std::string program_name = "sum" + param_hash;
+	std::string program_name = "decaySynapses" + param_hash;
 	if(kernel_manager_.exists(program_name) == false) {
 		auto args = "-DNUM_CELLS="+str(input_cell_count) + " -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell) + 
 			" -DPERM_TYPE="+to_ctype_string(permeances->dtype());
