@@ -17,6 +17,32 @@ namespace et
 {
 
 struct Tensor;
+
+template <typename T>
+struct ETALER_EXPORT TensorIterator
+{
+	using iterator_category = std::forward_iterator_tag;
+	using value_type = T;
+	using raw_value_type = std::remove_const_t<value_type>; // extra
+	using difference_type = intmax_t;
+	using pointer = std::unique_ptr<raw_value_type>;
+	using reference = T&;
+
+	using ThisIterator = TensorIterator<T>;
+	TensorIterator(reference t, intmax_t curr = 0) : t_(&t), curr_(curr)
+	{static_assert(std::is_same_v<raw_value_type, Tensor>); }
+	reference operator*() { return t_->view({curr_}); }
+	// Unfortunatelly returning a pointer is not doable
+	pointer operator->() { return std::make_unique<raw_value_type>(*(*this)); }
+	bool operator==(ThisIterator rhs) { return curr_ == rhs.curr_ && t_ == rhs.t_; }
+	bool operator!=(ThisIterator rhs) { return !(*this == rhs); }
+	ThisIterator& operator++() {curr_ += 1; return *this;}
+	ThisIterator operator++(int) {ThisIterator retval = *this; ++(*this); return retval;}
+	value_type* t_; // Using a pointer because Tensor is a incomplete type here
+	intmax_t curr_ = 0;
+};
+
+
 Tensor ETALER_EXPORT brodcast_to(const Tensor& t, Shape s);
 
 ETALER_EXPORT std::ostream& operator<< (std::ostream& os, const Tensor& t);
@@ -203,6 +229,17 @@ struct ETALER_EXPORT Tensor
 	//Utils
 	TensorImpl* operator () () {return pimpl();}
 	const TensorImpl* operator () () const {return pimpl();}
+
+	using iterator = TensorIterator<Tensor>;
+	using const_iterator = TensorIterator<const Tensor>;
+
+	iterator begin() { return iterator(*this, 0); }
+	iterator back() { return iterator(*this, shape().back()-1); }
+	iterator end() { return iterator(*this, shape().back()); }
+
+	const_iterator begin() const { return const_iterator(*this, 0); }
+	const_iterator back() const { return const_iterator(*this, shape().back()-1); }
+	const_iterator end() const { return const_iterator(*this, shape().back()); }
 
 	bool has_value() const {return (bool)pimpl_ && size() > 0;}
 
