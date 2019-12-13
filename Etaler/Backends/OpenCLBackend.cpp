@@ -520,7 +520,6 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 	std::vector<uint32_t> seed2(global_size);
 
 	for(auto& v : seed1) v = rng();
-	for(auto& v : seed1) v = rng();
 
 	auto s1 = createTensor({global_size}, DType::Int32, seed1.data());
 	auto s2 = createTensor({global_size}, DType::Int32, seed2.data());
