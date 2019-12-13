@@ -249,7 +249,7 @@ inline Tensor realize(const Tensor& t)
 	return t.realize();
 }
 
-inline Tensor attempt_realize(const Tensor& t)
+inline Tensor ravel(const Tensor& t)
 {
 	if(t.iscontiguous() == false)
 		return t;

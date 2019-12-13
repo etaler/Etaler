@@ -813,26 +813,38 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 		return DType::Int32;
 	}(x->dtype(), result_dtype);
 
-	auto param_hash = hashify(x->dtype(), result_dtype, intermid_type);
+	intmax_t result_size = intmax_t(x->size()/chunk_size);
+	bool use_local_kernel = result_size <= numComputeUnits(); // Weather to use the kernel optimized for generating small number of results
+	auto param_hash = hashify(x->dtype(), result_dtype, intermid_type, use_local_kernel);
 	std::string program_name = "sum" + param_hash;
 	if(kernel_manager_.exists(program_name) == false) {
 		std::string args = "-DInType=" + to_ctype_string(x->dtype()) + " -DOutType=" + to_ctype_string(result_dtype) + " -DIntermidType=" + to_ctype_string(intermid_type)
 		+ (intermid_type==DType::Half? " -DIntermidIsHalf" : "");
-		kernel_manager_.compileFromFile("sum.cl", program_name, {"sum"}, false, args);
+
+		if(use_local_kernel)
+			kernel_manager_.compileFromFile("sum_local.cl", program_name, {"sum"}, false, args);
+		else
+			kernel_manager_.compileFromFile("sum.cl", program_name, {"sum"}, false, args);
 	}
 
 	cl::Kernel k = kernel_manager_.kernel(program_name, "sum");
-
-	auto res = createTensor({intmax_t(x->size()/chunk_size)}, result_dtype);
+	auto res = createTensor({result_size}, result_dtype);
 
 	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
 	k.setArg(1, std::static_pointer_cast<OpenCLBuffer>(res->buffer())->buffer());
 	k.setArg(2, int(x->size()));
 	k.setArg(3, int(chunk_size));
 
-	size_t local_size = 128;
-
-	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size()/chunk_size)), cl::NDRange(local_size));
+	cl_int err = CL_SUCCESS;
+	if(use_local_kernel) {
+		size_t local_size = 64; // the same value set in sum_local.cl
+		err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(local_size*result_size), cl::NDRange(local_size));
+	}
+	else {
+		size_t local_size = 128;
+		err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size()/chunk_size)), cl::NDRange(local_size));
+	}
+	
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
 	return res;
@@ -848,7 +860,7 @@ void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeance
 	size_t input_cell_count = connections->size()/max_synapses_per_cell;
 
 	auto param_hash = hashify(input_cell_count, max_synapses_per_cell, permeances->dtype());
-	std::string program_name = "sum" + param_hash;
+	std::string program_name = "decaySynapses" + param_hash;
 	if(kernel_manager_.exists(program_name) == false) {
 		auto args = "-DNUM_CELLS="+str(input_cell_count) + " -DMAX_SYNAPSE_PER_CELL="+str(max_synapses_per_cell) + 
 			" -DPERM_TYPE="+to_ctype_string(permeances->dtype());
