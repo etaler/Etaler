@@ -21,7 +21,8 @@ struct Tensor;
 template <typename T>
 struct ETALER_EXPORT TensorIterator
 {
-	using iterator_category = std::forward_iterator_tag;
+	// Iterator properties
+	using iterator_category = std::random_access_iterator_tag;
 	using value_type = T;
 	using raw_value_type = std::remove_const_t<value_type>; // extra
 	using difference_type = intmax_t;
@@ -29,17 +30,20 @@ struct ETALER_EXPORT TensorIterator
 	using reference = T&;
 
 	using ThisIterator = TensorIterator<T>;
-	TensorIterator(reference t, intmax_t curr = 0) : t_(&t), curr_(curr)
+	TensorIterator() = default;
+	TensorIterator(reference t, intmax_t offset = 0) : t_(&t), offset_(offset)
 	{static_assert(std::is_same_v<raw_value_type, Tensor>); }
-	value_type operator*() { return t_->view({curr_}); }
+	value_type operator*() { return t_->view({offset_}); }
 	// Unfortunatelly returning a pointer is not doable
 	pointer operator->() { return std::make_unique<raw_value_type>(*(*this)); }
-	bool operator==(ThisIterator rhs) const { return curr_ == rhs.curr_ && t_ == rhs.t_; }
+	bool operator==(ThisIterator rhs) const { return offset_ == rhs.offset_ && t_ == rhs.t_; }
 	bool operator!=(ThisIterator rhs) const { return !(*this == rhs); }
-	ThisIterator& operator++() {curr_ += 1; return *this;}
+	ThisIterator& operator++() {offset_ += 1; return *this;}
 	ThisIterator operator++(int) {ThisIterator retval = *this; ++(*this); return retval;}
-	value_type* t_; // Using a pointer because Tensor is a incomplete type here
-	intmax_t curr_ = 0;
+	ThisIterator& operator--() {offset_ -= 1; return *this;}
+	ThisIterator operator--(int) {ThisIterator retval = *this; --(*this); return retval;}
+	value_type* t_ = nullptr; // Using a pointer because Tensor is a incomplete type here
+	intmax_t offset_ = 0;
 };
 
 
