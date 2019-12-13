@@ -289,10 +289,11 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 	SECTION("iterator") {
 		Tensor t = ones({3, 4});
+		Tensor q = zeros({3, 4});
 		STATIC_REQUIRE(std::is_same_v<Tensor::iterator::value_type, Tensor>);
 
 		// Tensor::iterator should be random-access able.
-		// Reference: http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
+		// Reference: http://www.cplusplus.com/reference/iterator/BidirectionalIterator/
 		STATIC_REQUIRE(std::is_default_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_assignable_v<Tensor::iterator>);
@@ -308,11 +309,9 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		--it1;
 		it2--;
 		CHECK(it1 == it2);
-		// TODO: Add support for arithmetic operators
-		// TODO: Add support for inequality relational operators
-		// TODO: Add support for compound assignment
-		// TODO: Add support for [] operator
-		// TODO: Add support for swap
+
+		// This is not doable becaue *it gives us rvalue
+		// swap(*t.begin(), *q.begin());
 
 		int num_iteration = 0;
 		for(auto s : t) {

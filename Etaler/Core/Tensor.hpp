@@ -22,7 +22,7 @@ template <typename T>
 struct ETALER_EXPORT TensorIterator
 {
 	// Iterator properties
-	using iterator_category = std::random_access_iterator_tag;
+	using iterator_category = std::bidirectional_iterator_tag;
 	using value_type = T;
 	using raw_value_type = std::remove_const_t<value_type>; // extra
 	using difference_type = intmax_t;
@@ -352,6 +352,13 @@ inline void decaySynapses(Tensor& connections, Tensor& permeances, float thresho
 inline void assign(Tensor& x, const Tensor& y)
 {
 	x.assign(y);
+}
+
+inline void swap(Tensor& x, Tensor& y)
+{
+	Tensor tmp = x.copy();
+	x.assign(y);
+	y.assign(tmp);
 }
 
 Tensor ETALER_EXPORT sum(const Tensor& x, std::optional<intmax_t> dim=std::nullopt, DType dtype=DType::Unknown);
