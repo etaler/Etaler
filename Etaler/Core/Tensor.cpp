@@ -228,8 +228,10 @@ Tensor Tensor::view(svector<Range> ranges) const
 	}
 
 	//If all dims are 1, thus no shape. Give it a shape
-	if(result_shape.empty() == true)
+	if(result_shape.empty() == true) {
 		result_shape.push_back(1);
+		result_stride.push_back(1);
+	}
 
 	size_t initial_offset = unfold(offset, pimpl_->stride())+pimpl_->offset();
 	return std::make_shared<TensorImpl>(pimpl_->buffer(), result_shape, result_stride, initial_offset);
