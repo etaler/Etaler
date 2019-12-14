@@ -346,7 +346,9 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 
 Tensor Tensor::copy() const
 {
-	return backend()->copy(pimpl());
+	if(iscontiguous() == true)
+		return backend()->copy(pimpl());
+	return realize().copy();
 }
 
 inline bool brodcastable(Shape a, Shape b)

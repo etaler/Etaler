@@ -310,8 +310,8 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		it2--;
 		CHECK(it1 == it2);
 
-		// This is not doable becaue *it gives us rvalue
-		// swap(*t.begin(), *q.begin());
+		swap(*t.begin(), *q.begin());
+		CHECK(t[{0}].isSame(zeros({4})));
 
 		int num_iteration = 0;
 		for(auto s : t) {

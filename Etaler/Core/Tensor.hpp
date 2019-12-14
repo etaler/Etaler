@@ -292,7 +292,7 @@ inline Tensor realize(const Tensor& t)
 
 inline Tensor ravel(const Tensor& t)
 {
-	if(t.iscontiguous() == false)
+	if(t.iscontiguous() == true)
 		return t;
 	return t.realize();
 }
@@ -354,9 +354,9 @@ inline void assign(Tensor& x, const Tensor& y)
 	x.assign(y);
 }
 
-inline void swap(Tensor& x, Tensor& y)
+inline void swap(Tensor x, Tensor y)
 {
-	Tensor tmp = x.copy();
+	Tensor tmp = ravel(x).copy();
 	x.assign(y);
 	y.assign(tmp);
 }
