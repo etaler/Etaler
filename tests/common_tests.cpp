@@ -316,9 +316,11 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		int num_iteration = 0;
 		for(auto s : t) {
 			CHECK(s.shape() == Shape({4}));
+			s.assign(constant({4}, 42));
 			num_iteration += 1;
 		}
 		CHECK(num_iteration == t.shape()[0]);
+		CHECK(t.sum().item<int>() == 42*t.size());
 	}
 }
 
