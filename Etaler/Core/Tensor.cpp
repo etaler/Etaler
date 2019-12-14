@@ -191,6 +191,7 @@ Tensor Tensor::view(svector<Range> ranges) const
 	Shape result_shape;
 	svector<intmax_t> offset;
 	Shape viewed_strides = pimpl_->stride();
+	Shape result_stride;
 	offset.reserve(dimentions());
 
 	assert(viewed_strides.size() == dimentions());
@@ -220,8 +221,10 @@ Tensor Tensor::view(svector<Range> ranges) const
 		viewed_strides[i] *= step;
 
 		offset.push_back(real_start);
-		if(size != 1 || result_shape.empty() == false) //Ignore heading 1 dimentions
+		if(size != 1 || result_shape.empty() == false) { //Ignore heading 1 dimentions
 			result_shape.push_back(size);
+			result_stride.push_back(viewed_strides[i]);
+		}
 	}
 
 	//If all dims are 1, thus no shape. Give it a shape
@@ -229,7 +232,7 @@ Tensor Tensor::view(svector<Range> ranges) const
 		result_shape.push_back(1);
 
 	size_t initial_offset = unfold(offset, pimpl_->stride())+pimpl_->offset();
-	return std::make_shared<TensorImpl>(pimpl_->buffer(), result_shape, viewed_strides, initial_offset);
+	return std::make_shared<TensorImpl>(pimpl_->buffer(), result_shape, result_stride, initial_offset);
 }
 
 Tensor et::zeros(const Shape& shape, DType dtype, Backend* backend)

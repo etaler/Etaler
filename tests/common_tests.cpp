@@ -208,6 +208,13 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(realize(r).isSame(pred));
 		}
 
+		SECTION("View of views") {
+			Tensor t = ones({4, 4});
+			Tensor v1 = t[{3}];
+			Tensor v2 = v1[{all()}];
+			CHECK(v2.size() == 4);
+		}
+
 		SECTION("View write back") {
 			Tensor q = t.view({range(2),range(2)});
 			CHECK_THROWS(q.assign(ones({5,5})));
@@ -292,7 +299,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		Tensor q = zeros({3, 4});
 		STATIC_REQUIRE(std::is_same_v<Tensor::iterator::value_type, Tensor>);
 
-		// Tensor::iterator should be random-access able.
+		// Tensor::iterator should be bideractional
 		// Reference: http://www.cplusplus.com/reference/iterator/BidirectionalIterator/
 		STATIC_REQUIRE(std::is_default_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
