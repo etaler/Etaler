@@ -669,7 +669,7 @@ int location_func$ID(int location)
 
 	replaceAll(func, "$STRIDE", to_string(x->stride()));
 	replaceAll(func, "$BIAS", std::to_string(x->offset()));
-return func;
+	return func;
 }
 
 static std::vector<std::string> jitCopyFromView(const TensorImpl* x)
@@ -729,7 +729,7 @@ kernel void copy(global Type* restrict x, global Type* restrict y)
 std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 {
 	requireProperties(x, this);
-	if(x->iscontiguous() == true)
+	if(x->isplain() == true)
 		return copy(x);
 
 	std::vector<std::string> conversion = jitCopyFromView(x);

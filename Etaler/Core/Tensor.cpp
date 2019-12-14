@@ -229,6 +229,7 @@ Tensor Tensor::view(svector<Range> ranges) const
 
 	//If all dims are 1, thus no shape. Give it a shape
 	if(result_shape.empty() == true) {
+		et_assert(result_stride.size() == result_shape.size());
 		result_shape.push_back(1);
 		result_stride.push_back(1);
 	}
