@@ -17,6 +17,36 @@ namespace et
 {
 
 struct Tensor;
+
+template <typename T>
+struct ETALER_EXPORT TensorIterator
+{
+	// Iterator properties
+	using iterator_category = std::bidirectional_iterator_tag;
+	using value_type = T;
+	using raw_value_type = std::remove_const_t<value_type>; // extra
+	using difference_type = intmax_t;
+	using pointer = std::unique_ptr<raw_value_type>;
+	using reference = T&;
+
+	using ThisIterator = TensorIterator<T>;
+	TensorIterator() = default;
+	TensorIterator(reference t, intmax_t offset = 0) : t_(&t), offset_(offset)
+	{static_assert(std::is_same_v<raw_value_type, Tensor>); }
+	value_type operator*() { return t_->view({offset_}); }
+	// Unfortunatelly returning a pointer is not doable
+	pointer operator->() { return std::make_unique<raw_value_type>(*(*this)); }
+	bool operator==(ThisIterator rhs) const { return offset_ == rhs.offset_ && t_ == rhs.t_; }
+	bool operator!=(ThisIterator rhs) const { return !(*this == rhs); }
+	ThisIterator& operator++() {offset_ += 1; return *this;}
+	ThisIterator operator++(int) {ThisIterator retval = *this; ++(*this); return retval;}
+	ThisIterator& operator--() {offset_ -= 1; return *this;}
+	ThisIterator operator--(int) {ThisIterator retval = *this; --(*this); return retval;}
+	value_type* t_ = nullptr; // Using a pointer because Tensor is a incomplete type here
+	intmax_t offset_ = 0;
+};
+
+
 Tensor ETALER_EXPORT brodcast_to(const Tensor& t, Shape s);
 
 ETALER_EXPORT std::ostream& operator<< (std::ostream& os, const Tensor& t);
@@ -204,6 +234,17 @@ struct ETALER_EXPORT Tensor
 	TensorImpl* operator () () {return pimpl();}
 	const TensorImpl* operator () () const {return pimpl();}
 
+	using iterator = TensorIterator<Tensor>;
+	using const_iterator = TensorIterator<const Tensor>;
+
+	iterator begin() { return iterator(*this, 0); }
+	iterator back() { return iterator(*this, shape()[0]-1); }
+	iterator end() { return iterator(*this, shape()[0]); }
+
+	const_iterator begin() const { return const_iterator(*this, 0); }
+	const_iterator back() const { return const_iterator(*this, shape()[0]-1); }
+	const_iterator end() const { return const_iterator(*this, shape()[0]); }
+
 	bool has_value() const {return (bool)pimpl_ && size() > 0;}
 
 	std::pair<Tensor, Tensor> brodcast(const Tensor& other) const;
@@ -251,7 +292,7 @@ inline Tensor realize(const Tensor& t)
 
 inline Tensor ravel(const Tensor& t)
 {
-	if(t.iscontiguous() == false)
+	if(t.iscontiguous() == true)
 		return t;
 	return t.realize();
 }
@@ -311,6 +352,13 @@ inline void decaySynapses(Tensor& connections, Tensor& permeances, float thresho
 inline void assign(Tensor& x, const Tensor& y)
 {
 	x.assign(y);
+}
+
+inline void swap(Tensor x, Tensor y)
+{
+	Tensor tmp = ravel(x).copy();
+	x.assign(y);
+	y.assign(tmp);
 }
 
 Tensor ETALER_EXPORT sum(const Tensor& x, std::optional<intmax_t> dim=std::nullopt, DType dtype=DType::Unknown);

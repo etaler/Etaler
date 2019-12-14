@@ -520,7 +520,6 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 	std::vector<uint32_t> seed2(global_size);
 
 	for(auto& v : seed1) v = rng();
-	for(auto& v : seed1) v = rng();
 
 	auto s1 = createTensor({global_size}, DType::Int32, seed1.data());
 	auto s2 = createTensor({global_size}, DType::Int32, seed2.data());
@@ -670,7 +669,7 @@ int location_func$ID(int location)
 
 	replaceAll(func, "$STRIDE", to_string(x->stride()));
 	replaceAll(func, "$BIAS", std::to_string(x->offset()));
-return func;
+	return func;
 }
 
 static std::vector<std::string> jitCopyFromView(const TensorImpl* x)
@@ -730,7 +729,7 @@ kernel void copy(global Type* restrict x, global Type* restrict y)
 std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 {
 	requireProperties(x, this);
-	if(x->iscontiguous() == true)
+	if(x->isplain() == true)
 		return copy(x);
 
 	std::vector<std::string> conversion = jitCopyFromView(x);

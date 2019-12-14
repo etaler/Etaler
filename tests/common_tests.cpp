@@ -162,6 +162,10 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), IsContingous()));
 		CHECK_THROWS(requireProperties(ones(Shape{4,4}, DType::Int32).view({range(2), range(2)}).pimpl(), IsContingous()));
+
+		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), IsPlain()));
+		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).view({0}).pimpl(), IsPlain()));
+		CHECK_THROWS(requireProperties(ones(Shape{4,4}, DType::Int32).view({range(2), range(2)}).pimpl(), IsPlain()));
 	}
 
 	SECTION("Views") {
@@ -206,6 +210,13 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			int a[] = {0,1,4,5};
 			Tensor pred = Tensor({2,2}, a);
 			CHECK(realize(r).isSame(pred));
+		}
+
+		SECTION("View of views") {
+			Tensor t = ones({4, 4});
+			Tensor v1 = t[{3}];
+			Tensor v2 = v1[{all()}];
+			CHECK(v2.size() == 4);
 		}
 
 		SECTION("View write back") {
@@ -285,6 +296,42 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		Tensor q = ones({2});
 		// item() should fail because q is not a scalar
 		CHECK_THROWS(q.item<int>());
+	}
+
+	SECTION("iterator") {
+		Tensor t = ones({3, 4});
+		Tensor q = zeros({3, 4});
+		STATIC_REQUIRE(std::is_same_v<Tensor::iterator::value_type, Tensor>);
+
+		// Tensor::iterator should be bideractional
+		// Reference: http://www.cplusplus.com/reference/iterator/BidirectionalIterator/
+		STATIC_REQUIRE(std::is_default_constructible_v<Tensor::iterator>);
+		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
+		STATIC_REQUIRE(std::is_copy_assignable_v<Tensor::iterator>);
+		STATIC_REQUIRE(std::is_destructible_v<Tensor::iterator>);
+		CHECK(t.begin() != t.end());
+		CHECK(t.begin() == t.begin());
+		CHECK((*t.begin()).shape() == Shape{4});
+		CHECK(t.begin()->shape() == Shape{4});
+		auto it1 = t.begin(), it2 = t.begin();
+		it1++;
+		++it2;
+		CHECK(it1 == it2);
+		--it1;
+		it2--;
+		CHECK(it1 == it2);
+
+		swap(*t.begin(), *q.begin());
+		CHECK(t[{0}].isSame(zeros({4})));
+
+		int num_iteration = 0;
+		for(auto s : t) {
+			CHECK(s.shape() == Shape({4}));
+			s.assign(constant({4}, 42));
+			num_iteration += 1;
+		}
+		CHECK(num_iteration == t.shape()[0]);
+		CHECK(t.sum().item<int>() == 42*t.size());
 	}
 }
 
