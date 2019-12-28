@@ -311,8 +311,8 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		STATIC_REQUIRE(std::is_destructible_v<Tensor::iterator>);
 
 		// TODO: Make us pass the STL test
-		// using iterator_tag = std::iterator_traits<Tensor::iterator>::iterator_category;
-		// STATIC_REQUIRE(std::is_same_v<iterator_tag, std::random_access_iterator_tag>);
+		using iterator_tag = std::iterator_traits<Tensor::iterator>::iterator_category;
+		STATIC_REQUIRE(std::is_same_v<iterator_tag, std::bidirectional_iterator_tag>);
 		CHECK(t.begin() != t.end());
 		CHECK(t.begin() == t.begin());
 		CHECK((*t.begin()).shape() == Shape{4});
