@@ -42,7 +42,7 @@ struct ETALER_EXPORT SpatialPooler
 	size_t globalDensity() const { return global_density_; }
 
 	void setBoostingFactor(float f) { boost_factor_ = f; }
-	float boostFactor() { return boost_factor_; }
+	float boostFactor() const { return boost_factor_; }
 
 	Tensor connections() const {return connections_;}
 	Tensor permanences() const {return permanences_;}
