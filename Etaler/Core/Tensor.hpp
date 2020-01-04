@@ -42,7 +42,7 @@ struct ETALER_EXPORT TensorIterator
 	ThisIterator operator++(int) {ThisIterator retval = *this; ++(*this); return retval;}
 	ThisIterator& operator--() {offset_ -= 1; return *this;}
 	ThisIterator operator--(int) {ThisIterator retval = *this; --(*this); return retval;}
-	difference_type operator- (const ThisIterator& rhs) { return offset_ - rhs.offset_; }
+	difference_type operator- (const ThisIterator& rhs) const { return offset_ - rhs.offset_; }
 	ThisIterator operator+(intmax_t n) {return ThisIterator(t_,offset_+n);}
 	ThisIterator operator-(intmax_t n) {return ThisIterator(t_,offset_-n);}
 	value_type operator[](intmax_t n) { return *operator+(n); }

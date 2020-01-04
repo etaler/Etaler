@@ -339,6 +339,8 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(t.begin() == t.begin());
 		CHECK((*t.begin()).shape() == Shape{4});
 		CHECK(t.begin()->shape() == Shape{4});
+		CHECK(t.end() - t.begin() == t.shape()[0]);
+		CHECK(t.begin()[2].isSame(*t.back()) == true);
 		auto it1 = t.begin(), it2 = t.begin();
 		it1++;
 		++it2;
