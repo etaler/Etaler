@@ -969,6 +969,13 @@ TEST_CASE("Complex Tensor operations")
 
 		CHECK(std::find_if(a.begin(), a.end(), [&b](auto t){ return t.isSame(b); }) != a.end());
 	}
+
+	SECTION("transform") {
+		Tensor a = ones({12, 6});
+		Tensor b = ones({12, 6});
+		std::transform(a.begin(), a.end(), b.begin(), [](const auto& t){return zeros_like(t);});
+		CHECK(b.isSame(zeros_like(a)));
+	}
 }
 
 // TEST_CASE("Serealize")
