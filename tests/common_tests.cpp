@@ -937,10 +937,7 @@ TEST_CASE("Complex Tensor operations")
 		Tensor a = Tensor(v1);
 		Tensor b = Tensor(v2);
 
-		int inner_product = 0;
-		for(size_t i=0;i<a.size();i++)
-			inner_product += v1[i]*v2[i];
-		CHECK((a*b).sum().item<int>() == inner_product);
+		CHECK((a*b).sum().item<int>() == std::inner_product(v1.begin(), v1.end(), v2.begin(), 0));
 	}
 
 	SECTION("shuffle") {
@@ -952,6 +949,17 @@ TEST_CASE("Complex Tensor operations")
 		Tensor a = Tensor(v1).reshape({4,4});
 		std::shuffle(a.begin(), a.end(), rng);
 		CHECK(std::accumulate(v1.begin(), v1.end(), 0) == a.sum().item<int>());
+	}
+
+	SECTION("find_if") {
+		std::vector<int> v1 = {1, 8, 6, 7
+			, 3, 2, 5, 6
+			, 4, 3, 2, 7
+			, 9, 0 ,1, 1};
+		Tensor a = Tensor(v1).reshape({4,4});
+		Tensor b = a[{0}];
+
+		CHECK(std::find_if(a.begin(), a.end(), [&b](auto t){ return t.isSame(b); }) != a.end());
 	}
 }
 
