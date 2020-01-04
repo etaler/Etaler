@@ -22,7 +22,7 @@ template <typename T>
 struct ETALER_EXPORT TensorIterator
 {
 	// Iterator properties
-	using iterator_category = std::bidirectional_iterator_tag;
+	using iterator_category = std::random_access_iterator_tag;
 	using value_type = T;
 	using raw_value_type = std::remove_const_t<value_type>; // extra
 	using difference_type = intmax_t;
@@ -36,12 +36,20 @@ struct ETALER_EXPORT TensorIterator
 	value_type operator*() { return t_.view({offset_}); }
 	// Unfortunatelly returning a pointer is not doable
 	pointer operator->() { return std::make_unique<raw_value_type>(this->operator*()); }
-	bool operator==(ThisIterator rhs) const { return offset_ == rhs.offset_ && t_.pimpl() == rhs.t_.pimpl(); }
-	bool operator!=(ThisIterator rhs) const { return !(*this == rhs); }
+	bool operator==(const ThisIterator& rhs) const { return offset_ == rhs.offset_ && t_.pimpl() == rhs.t_.pimpl(); }
+	bool operator!=(const ThisIterator& rhs) const { return !(*this == rhs); }
 	ThisIterator& operator++() {offset_ += 1; return *this;}
 	ThisIterator operator++(int) {ThisIterator retval = *this; ++(*this); return retval;}
 	ThisIterator& operator--() {offset_ -= 1; return *this;}
 	ThisIterator operator--(int) {ThisIterator retval = *this; --(*this); return retval;}
+	difference_type operator- (const ThisIterator& rhs) { return offset_ - rhs.offset_; }
+	ThisIterator operator+(intmax_t n) {return ThisIterator(t_,offset_+n);}
+	ThisIterator operator-(intmax_t n) {return ThisIterator(t_,offset_-n);}
+	value_type operator[](intmax_t n) { return *operator+(n); }
+	bool operator< (const ThisIterator& rhs) const { return offset_ < rhs.offset_; }
+	bool operator> (const ThisIterator& rhs) const { return offset_ > rhs.offset_; }
+	bool operator<= (const ThisIterator& rhs) const { return offset_ <= rhs.offset_; }
+	bool operator>= (const ThisIterator& rhs) const { return offset_ >= rhs.offset_; }
 	value_type t_;
 	intmax_t offset_ = 0;
 };
@@ -68,6 +76,10 @@ struct ETALER_EXPORT Tensor
 		static_assert(dtype !=  DType::Unknown && "Cannot process this kind on data type");
 		pimpl_ = backend->createTensor(s, dtype, data);
 	}
+
+	template<typename T>
+	Tensor(const std::vector<T>& vec, Backend* backend=defaultBackend())
+		: Tensor(Shape{intmax_t(vec.size())}, vec.data()) {}
 
 	Tensor(int v) : Tensor({1}, &v) {}
 	Tensor(float v) : Tensor({1}, &v) {}

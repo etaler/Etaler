@@ -322,8 +322,8 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		Tensor q = zeros({3, 4});
 		STATIC_REQUIRE(std::is_same_v<Tensor::iterator::value_type, Tensor>);
 
-		// Tensor::iterator should be bideractional
-		// Reference: http://www.cplusplus.com/reference/iterator/BidirectionalIterator/
+		// Tensor::iterator should be ramdp,
+		// Reference: http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
 		STATIC_REQUIRE(std::is_default_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_assignable_v<Tensor::iterator>);
@@ -884,6 +884,37 @@ TEST_CASE("Type system")
 				}
 			}
 		}
+	}
+}
+
+// TODO: Should I count this as an integration test?
+// This test checks all components of Tensor works together properly
+TEST_CASE("Complex Tensor operations")
+{
+	SECTION("Vector inner product") {
+		std::vector<int> v1 = {1, 6, 7, 9, 15, 6};
+		std::vector<int> v2 = {3, 7, 8, -1, 6, 15};
+		REQUIRE(v1.size() == v2.size());
+		Tensor a = Tensor(v1);
+		Tensor b = Tensor(v2);
+
+		int inner_product = 0;
+		for(size_t i=0;i<a.size();i++)
+			inner_product += v1[i]*v2[i];
+		CHECK((a*b).sum().item<int>() == inner_product);
+	}
+
+	// RIXME: This failed
+	// SECTION("shuffle") {
+	// 	std::mt19937 rng;
+	// 	std::vector<int> v1 = {1, 8, 6, 7
+	// 		, 3, 2, 5, 6
+	// 		, 4, 3, 2, 7
+	// 		, 9, 0 ,1, 1};
+	// 	Tensor a = Tensor(v1).reshape({4,4});
+	// 	std::shuffle(a.begin(), a.end(), rng);
+	// 	CHECK(std::accumulate(v1.begin(), v1.end(), 0) == a.sum().item<int>());
+	// 	std::cout << a << std::endl;
 	}
 }
 

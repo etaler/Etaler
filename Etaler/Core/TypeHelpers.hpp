@@ -31,4 +31,12 @@ struct is_specialization<Ref<Args...>, Ref>: std::true_type {};
 template<template<typename...> class Ref, typename... Args>
 const bool is_specialization_v = is_specialization<Ref<Args...>, Ref>::value;
 
+template <typename T, typename = void>
+struct is_container : std::false_type {};
+
+template <typename T>
+struct is_container<T
+	, std::void_t<decltype(std::declval<T>().data())
+		, decltype(std::declval<T>().size())>> : std::true_type {};
+
 }
