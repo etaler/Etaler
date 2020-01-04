@@ -300,7 +300,12 @@ inline Tensor ravel(const Tensor& t)
 inline Tensor cellActivity(const Tensor& x, const Tensor& connections, const Tensor& permeances
 	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true)
 {
-	return x.backend()->cellActivity(x(), connections(), permeances(), connected_permeance, active_threshold, has_unconnected_synapse);
+	const Tensor& input = [&](){
+		if(x.dtype() == DType::Bool)
+			return x;
+		return x.cast(DType::Bool);
+	}();
+	return x.backend()->cellActivity(input(), connections(), permeances(), connected_permeance, active_threshold, has_unconnected_synapse);
 }
 
 inline void learnCorrilation(const Tensor& x, const Tensor& learn, const Tensor& connection
