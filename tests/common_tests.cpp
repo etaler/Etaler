@@ -818,6 +818,14 @@ TEST_CASE("Type system")
 			return true;
 		}();
 
+		SECTION("abs") {
+			CHECK(abs(ones({1}, DType::Bool)).dtype() == DType::Int32);
+			CHECK(abs(ones({1}, DType::Int32)).dtype() == DType::Int32);
+			CHECK(abs(ones({1}, DType::Float)).dtype() == DType::Float);
+			if(support_fp16)
+				CHECK(abs(ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+
 		SECTION("exp") {
 			CHECK(exp(ones({1}, DType::Bool)).dtype() == DType::Float);
 			CHECK(exp(ones({1}, DType::Int32)).dtype() == DType::Float);
