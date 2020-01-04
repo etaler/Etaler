@@ -76,6 +76,7 @@ struct ETALER_EXPORT CPUBackend : public Backend
 	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size, DType dtype=DType::Unknown) override;
 
 	//Unary Operations
+	virtual std::shared_ptr<TensorImpl> abs(const TensorImpl* x) override;
 	virtual std::shared_ptr<TensorImpl> exp(const TensorImpl* x) override;
 	virtual std::shared_ptr<TensorImpl> negate(const TensorImpl* x) override;
 	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x) override;

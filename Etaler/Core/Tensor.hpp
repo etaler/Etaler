@@ -244,6 +244,7 @@ struct ETALER_EXPORT Tensor
 	Tensor operator [] (svector<Range> r) { return view(r); }
 
 	Tensor sum(std::optional<intmax_t> dim=std::nullopt, DType dtype=DType::Unknown) const;
+	Tensor abs() const { return backend()->abs(pimpl()); }
 	bool isSame (const Tensor& other) const;
 
 	//Utils
@@ -388,11 +389,13 @@ inline Tensor concat(const svector<Tensor>& tensors, intmax_t dim=0) { return ca
 inline Tensor concatenate(const svector<Tensor>& tensors, intmax_t dim=0) { return cat(tensors, dim); }
 std::pair<Tensor, Tensor> brodcast_tensors(const Tensor& a, const Tensor& b);
 
+inline Tensor abs(const Tensor& x) { return x.abs(); }
 inline Tensor exp(const Tensor& x) { return x.exp(); }
 inline Tensor negate(const Tensor& x) { return x.negate(); }
 inline Tensor inverse(const Tensor& x) { return x.inverse(); }
 inline Tensor log(const Tensor& x) { return x.log(); }
 inline Tensor logical_not(const Tensor& x) { return x.logical_not(); }
+inline Tensor isclose(const Tensor& x, const Tensor& y, float rtol=1e-5f, float atol=1e-8f) { return abs(x-y) <= (atol + rtol * abs(y)); }
 
 inline Tensor add(const Tensor& x1, const Tensor& x2) { return x1.add(x2); }
 inline Tensor subtract(const Tensor& x1, const Tensor& x2) { return x1.subtract(x2); }

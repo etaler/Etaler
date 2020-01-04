@@ -682,6 +682,11 @@ void CPUBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, 
 	});
 }
 
+std::shared_ptr<TensorImpl> CPUBackend::abs(const TensorImpl* x)
+{
+	return uniaryOp(x, [](auto v){return std::abs(v);});
+}
+
 std::shared_ptr<TensorImpl> CPUBackend::exp(const TensorImpl* x)
 {
 	return uniaryOp(x, [](auto v){return std::exp(v);});
