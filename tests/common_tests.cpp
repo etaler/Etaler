@@ -103,6 +103,13 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(r.item<uint8_t>() == true);
 	}
 
+	SECTION("Create Tensor from vector") {
+		std::vector<int> v = {1, 2, 3, 4};
+		Tensor t = Tensor(v);
+		CHECK(t.size() == intmax_t(v.size()));
+		CHECK(t.dtype() == DType::Int);
+	}
+
 	SECTION("tensor like") {
 		Tensor t = ones({4,4});
 		Tensor q = ones_like(t);
@@ -904,7 +911,7 @@ TEST_CASE("Complex Tensor operations")
 		CHECK((a*b).sum().item<int>() == inner_product);
 	}
 
-	// RIXME: This failed
+	// FIXME: This failed
 	// SECTION("shuffle") {
 	// 	std::mt19937 rng;
 	// 	std::vector<int> v1 = {1, 8, 6, 7
@@ -915,7 +922,7 @@ TEST_CASE("Complex Tensor operations")
 	// 	std::shuffle(a.begin(), a.end(), rng);
 	// 	CHECK(std::accumulate(v1.begin(), v1.end(), 0) == a.sum().item<int>());
 	// 	std::cout << a << std::endl;
-	}
+	// }
 }
 
 // TEST_CASE("Serealize")
