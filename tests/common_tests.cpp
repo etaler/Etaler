@@ -212,6 +212,14 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(realize(r).isSame(pred));
 		}
 
+		SECTION("Indexing with negative values") {
+			Tensor q = t.view({3});
+			Tensor r;
+			CHECK_NOTHROW(r = t.view({-1}));
+			CHECK(r.has_value() == true);
+			CHECK(q.isSame(r));
+		}
+
 		SECTION("View of views") {
 			Tensor t = ones({4, 4});
 			Tensor v1 = t[{3}];

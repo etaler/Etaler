@@ -34,8 +34,7 @@ std::vector<size_t> category(const Tensor& t, size_t num_categories)
 	et_assert(t.size()%num_categories == 0);
 	et_assert(t.dtype() == DType::Bool);
 
-	std::vector<uint8_t> vec(t.size());
-	t.backend()->copyToHost(t.pimpl(), vec.data());
+	std::vector<uint8_t> vec = t.toHost<uint8_t>();
 
 	std::set<size_t> categories;
 	size_t bits_per_category = vec.size()/num_categories;

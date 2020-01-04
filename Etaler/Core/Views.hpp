@@ -15,14 +15,11 @@ struct Range
 {
 	Range() = default;
 	Range(intmax_t start)
-		: start_(start), stop_(start+1)
+		: start_(start), stop_(start+(start>=0?1:-1))
 	{}
 
-	Range(intmax_t start, intmax_t stop)
-		: start_(start), stop_(stop)
-	{}
-
-	Range(intmax_t start, intmax_t stop, intmax_t step)
+	Range(std::optional<intmax_t> start, intmax_t stop
+		, std::optional<intmax_t> step = std::nullopt)
 		: start_(start), stop_(stop), step_(step)
 	{}
 
@@ -48,7 +45,7 @@ inline Range range(intmax_t start, intmax_t end)
 
 inline Range range(intmax_t end)
 {
-	return Range(0, end);
+	return Range(std::nullopt, end);
 }
 
 inline Range range(intmax_t start, intmax_t stop, intmax_t step)

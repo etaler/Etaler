@@ -178,7 +178,7 @@ Tensor Tensor::view(svector<Range> ranges) const
 
 	auto resolve_index = [](intmax_t idx, intmax_t size) -> intmax_t {
 		if(idx < 0)
-			return size-idx;
+			return size+idx;
 		return idx;
 	};
 
@@ -202,22 +202,22 @@ Tensor Tensor::view(svector<Range> ranges) const
 
 		intmax_t start = r.start().value_or(0);
 		intmax_t stop = r.stop().value_or(dim_size);
-		intmax_t step = r.step().value_or(1);
+
+		intmax_t real_start = resolve_index(start, dim_size);
+		intmax_t real_stop = resolve_index(stop, dim_size);
+		intmax_t step = r.step().value_or(real_stop>real_start?1:-1);
+		intmax_t size = (std::abs(real_stop - real_start) - 1) / std::abs(step) + 1;
 
 		// Indexing validations
+		if(is_index_valid(stop, dim_size+1) == false)
+			throw EtError("Stopping index " + std::to_string(stop) + " is out of range in dimension " + std::to_string(i));
 		if(step == 0)
 			throw EtError("Error: Step size is zero in dimension " + std::to_string(i));
 		if(is_index_valid(start, dim_size) == false)
 			throw EtError("Starting index " + std::to_string(start) + " is out of range in dimension " + std::to_string(i));
-		if(is_index_valid(stop, dim_size+1) == false)
-			throw EtError("Stopping index " + std::to_string(stop) + " is out of range in dimension " + std::to_string(i));
-
-		intmax_t real_start = resolve_index(start, dim_size);
-		intmax_t real_stop = resolve_index(stop, dim_size);
-		intmax_t size = (real_stop - real_start - 1) / step + 1;
-
 		if((real_stop - real_start) * step < 0)
 			throw EtError("Step is going in the wrong direction. Will cause infinate loop");
+
 		viewed_strides[i] *= step;
 
 		offset.push_back(real_start);

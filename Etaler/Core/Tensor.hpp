@@ -31,18 +31,18 @@ struct ETALER_EXPORT TensorIterator
 
 	using ThisIterator = TensorIterator<T>;
 	TensorIterator() = default;
-	TensorIterator(reference t, intmax_t offset = 0) : t_(&t), offset_(offset)
+	TensorIterator(reference t, intmax_t offset = 0) : t_(t), offset_(offset)
 	{static_assert(std::is_same_v<raw_value_type, Tensor>); }
-	value_type operator*() { return t_->view({offset_}); }
+	value_type operator*() { return t_.view({offset_}); }
 	// Unfortunatelly returning a pointer is not doable
-	pointer operator->() { return std::make_unique<raw_value_type>(*(*this)); }
-	bool operator==(ThisIterator rhs) const { return offset_ == rhs.offset_ && t_ == rhs.t_; }
+	pointer operator->() { return std::make_unique<raw_value_type>(this->operator*()); }
+	bool operator==(ThisIterator rhs) const { return offset_ == rhs.offset_ && t_.pimpl() == rhs.t_.pimpl(); }
 	bool operator!=(ThisIterator rhs) const { return !(*this == rhs); }
 	ThisIterator& operator++() {offset_ += 1; return *this;}
 	ThisIterator operator++(int) {ThisIterator retval = *this; ++(*this); return retval;}
 	ThisIterator& operator--() {offset_ -= 1; return *this;}
 	ThisIterator operator--(int) {ThisIterator retval = *this; --(*this); return retval;}
-	value_type* t_ = nullptr; // Using a pointer because Tensor is a incomplete type here
+	value_type t_;
 	intmax_t offset_ = 0;
 };
 
@@ -300,7 +300,12 @@ inline Tensor ravel(const Tensor& t)
 inline Tensor cellActivity(const Tensor& x, const Tensor& connections, const Tensor& permeances
 	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse=true)
 {
-	return x.backend()->cellActivity(x(), connections(), permeances(), connected_permeance, active_threshold, has_unconnected_synapse);
+	const Tensor& input = [&](){
+		if(x.dtype() == DType::Bool)
+			return x;
+		return x.cast(DType::Bool);
+	}();
+	return x.backend()->cellActivity(input(), connections(), permeances(), connected_permeance, active_threshold, has_unconnected_synapse);
 }
 
 inline void learnCorrilation(const Tensor& x, const Tensor& learn, const Tensor& connection
