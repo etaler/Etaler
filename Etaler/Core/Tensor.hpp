@@ -116,7 +116,7 @@ struct ETALER_EXPORT Tensor
 			return realize().toHost<T>();
 		if(dtype() != typeToDType<T>()) {
 			throw EtError("toHost() failed. Requested type and dtype mismatch. " + demangle(typeid(T).name())
-				+ " requested but " + to_ctype_string(dtype()) + "is stored.");
+				+ " requested but " + to_ctype_string(dtype()) + " is stored.");
 		}
 		std::vector<T> res(size());
 		backend()->copyToHost(pimpl(), res.data());
@@ -203,6 +203,9 @@ struct ETALER_EXPORT Tensor
 	Tensor lesser(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->lesser(a(), b()); }
 	Tensor logical_and(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_and(a(), b()); }
 	Tensor logical_or(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_or(a(), b()); }
+
+	inline bool any() const { return cast(DType::Bool).sum(std::nullopt, DType::Bool).item<uint8_t>(); }
+	inline bool all() const { return cast(DType::Bool).sum(std::nullopt).item<int32_t>() == int32_t(size()); }
 
 	Tensor operator- () const {return negate();}
 	Tensor operator+ () const {return *this;}

@@ -293,6 +293,17 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			//Check a subset of weather the result is correct
 			CHECK(t[{2, 2}].item<int>() == 11);
 		}
+
+		SECTION("all/any test") {
+			CHECK(ones({3}).any() == true);
+			CHECK(zeros({3}).any() == false);
+			CHECK(ones({3}).all() == true);
+			CHECK(zeros({3}).all() == false);
+			CHECK((ones({7}) == zeros({7})).all() == false);
+			CHECK((ones({7}) == zeros({7})).any() == false);
+			CHECK((ones({4,4}) == t).any() == true);
+			CHECK((ones({4,4}) == t).all() == false);
+		}
 	}
 
 	SECTION("item") {
