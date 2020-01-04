@@ -391,6 +391,9 @@ inline Tensor lesser(const Tensor& x1, const Tensor& x2) { return x1.lesser(x2);
 inline Tensor logical_and(const Tensor& x1, const Tensor& x2) { return x1.logical_and(x2); }
 inline Tensor logical_or(const Tensor& x1, const Tensor& x2) { return x1.logical_or(x2); }
 
+inline bool all(const Tensor& t) { return t.all(); }
+inline bool any(const Tensor& t) { return t.any(); }
+
 inline Tensor zeros_like(const Tensor& x) { return zeros(x.shape(), x.dtype(), x.backend()); }
 inline Tensor ones_like(const Tensor& x) { return ones(x.shape(), x.dtype(), x.backend()); }
 }
