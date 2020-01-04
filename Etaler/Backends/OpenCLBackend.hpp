@@ -123,6 +123,7 @@ struct ETALER_EXPORT OpenCLBackend : public Backend
 	virtual void assign(TensorImpl* dest, const TensorImpl* src) override;
 	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size, DType dtype=DType::Unknown) override;
 
+	virtual std::shared_ptr<TensorImpl> abs(const TensorImpl* x) override;
 	virtual std::shared_ptr<TensorImpl> exp(const TensorImpl* x) override;
 	virtual std::shared_ptr<TensorImpl> negate(const TensorImpl* x) override;
 	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x) override;

@@ -991,6 +991,18 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, c
 	return res;
 }
 
+std::shared_ptr<TensorImpl> OpenCLBackend::abs(const TensorImpl* x)
+{
+	DType result_type = [&x](){
+		auto dtype = x->dtype();
+		if(dtype == DType::Bool)
+			return DType::Int32;
+		return dtype;
+	}();
+	const char* func = (result_type == DType::Float || result_type == DType::Half ? "#define f(x) (fabs((ResType)x))" : "#define f(x) (abs((ResType)x))");
+	return applyUnaryOp(x, func, result_type);
+}
+
 std::shared_ptr<TensorImpl> OpenCLBackend::exp(const TensorImpl* x)
 {
 	DType result_type = x->dtype() == DType::Half ? DType::Half : DType::Float;

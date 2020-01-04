@@ -46,6 +46,7 @@ struct ETALER_EXPORT Backend : public std::enable_shared_from_this<Backend>
 	virtual std::shared_ptr<TensorImpl> sum(const TensorImpl* x, size_t chunk_size, DType dtype=DType::Unknown) { throw notImplemented("sum");}
 
 	//Unary operations
+	virtual std::shared_ptr<TensorImpl> abs(const TensorImpl* x) { throw notImplemented("abs");}
 	virtual std::shared_ptr<TensorImpl> exp(const TensorImpl* x) { throw notImplemented("exp");}
 	virtual std::shared_ptr<TensorImpl> negate(const TensorImpl* x) { throw notImplemented("negate");}
 	virtual std::shared_ptr<TensorImpl> inverse(const TensorImpl* x) { throw notImplemented("inverse");}

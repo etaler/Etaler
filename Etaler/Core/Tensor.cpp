@@ -174,7 +174,7 @@ Tensor Tensor::view(svector<Range> ranges) const
 		throw EtError("Cannot view a tensor of " + std::to_string(dimentions()) + " with " + std::to_string(ranges.size()) + " dimentions");
 
 	while(ranges.size() != dimentions())
-		ranges.push_back(all());
+		ranges.push_back(et::all());
 
 	auto resolve_index = [](intmax_t idx, intmax_t size) -> intmax_t {
 		if(idx < 0)
@@ -339,7 +339,7 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 	intmax_t pos = 0;
 	svector<Range> ranges;
 	for(size_t i=0;i<res_shape.size();i++)
-		ranges.push_back(all());
+		ranges.push_back(et::all());
 
 	for(const auto& t : tensors) {
 		ranges[dim] = Range(pos, pos+t.shape()[dim]);
