@@ -216,8 +216,8 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			Tensor q = t.view({3});
 			Tensor r;
 			CHECK_NOTHROW(r = t.view({-1}));
-			if(r.has_value())
-				CHECK(q.isSame(r));
+			CHECK(r.has_value() == true);
+			CHECK(q.isSame(r));
 		}
 
 		SECTION("View of views") {
