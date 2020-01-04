@@ -361,6 +361,36 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(num_iteration == t.shape()[0]);
 		CHECK(t.sum().item<int>() == 42*t.size());
 	}
+
+	SECTION("swapping Tensor") {
+		std::vector<int> v1 = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10 , 11, 12};
+		std::vector<int> v2 = {11, 12, 13, 14, 15, 16, 17, 18, 19, 20 , 21, 22};
+		Tensor t = Tensor(v1).reshape({3, 4});
+		Tensor q = Tensor(v2).reshape({3, 4});
+		Tensor t_old = t.copy();
+		Tensor q_old = q.copy();
+
+		SECTION("swap") {
+			swap(t, q);
+			CHECK(t.isSame(q_old));
+			CHECK(q.isSame(t_old));
+		}
+
+		SECTION("swapping views") {
+			swap(q[{1}], t[{2}]);
+			CHECK(t[{2}].isSame(q_old[{1}]));
+			CHECK(q[{1}].isSame(t_old[{2}]));
+		}
+
+		SECTION("swaping itself") {
+			swap(t[{0}], t[{0}]);
+			REQUIRE(t[{0}].isSame(t_old[{0}]));
+
+			swap(t[{0}], t[{1}]);
+			REQUIRE(t[{0}].isSame(t_old[{1}]));
+			REQUIRE(t[{1}].isSame(t_old[{0}]));
+		}
+	}
 }
 
 TEST_CASE("Testing Encoders", "[Encoder]")
@@ -913,18 +943,16 @@ TEST_CASE("Complex Tensor operations")
 		CHECK((a*b).sum().item<int>() == inner_product);
 	}
 
-	// FIXME: This failed
-	// SECTION("shuffle") {
-	// 	std::mt19937 rng;
-	// 	std::vector<int> v1 = {1, 8, 6, 7
-	// 		, 3, 2, 5, 6
-	// 		, 4, 3, 2, 7
-	// 		, 9, 0 ,1, 1};
-	// 	Tensor a = Tensor(v1).reshape({4,4});
-	// 	std::shuffle(a.begin(), a.end(), rng);
-	// 	CHECK(std::accumulate(v1.begin(), v1.end(), 0) == a.sum().item<int>());
-	// 	std::cout << a << std::endl;
-	// }
+	SECTION("shuffle") {
+		std::mt19937 rng;
+		std::vector<int> v1 = {1, 8, 6, 7
+			, 3, 2, 5, 6
+			, 4, 3, 2, 7
+			, 9, 0 ,1, 1};
+		Tensor a = Tensor(v1).reshape({4,4});
+		std::shuffle(a.begin(), a.end(), rng);
+		CHECK(std::accumulate(v1.begin(), v1.end(), 0) == a.sum().item<int>());
+	}
 }
 
 // TEST_CASE("Serealize")
