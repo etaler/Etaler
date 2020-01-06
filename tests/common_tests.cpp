@@ -220,6 +220,14 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(realize(r).isSame(pred));
 		}
 
+		SECTION("Indexing a column") {
+			Tensor q = t.view({all(), 0});
+			int arr[] = {0, 4, 8, 12};
+			Tensor r = Tensor({4}, arr);
+			CHECK(q.shape() == Shape({4}));
+			CHECK(r.isSame(q));
+		}
+
 		SECTION("Indexing with negative values") {
 			Tensor q = t.view({3});
 			Tensor r;
@@ -286,7 +294,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		}
 
 		SECTION("subscription operator") {
-			svector<Range> r = {range(2)};
+			IndexList r = {range(2)};
 			//The [] operator should work exactly like the view() function
 			CHECK(t[r].isSame(t.view(r)));
 		}
@@ -953,6 +961,15 @@ TEST_CASE("Complex Tensor operations")
 		Tensor b = Tensor(v2);
 
 		CHECK((a*b).sum().item<int>() == std::inner_product(v1.begin(), v1.end(), v2.begin(), 0));
+	}
+
+	SECTION("assign column to row") {
+		std::vector<int> v2 = {9, 0, 1, 1};
+		Tensor b = Tensor(v2);
+
+		Tensor t = a.copy();
+		t[{all(), 1}] = a[{3}];
+		CHECK(t[{all(), 1}].isSame(b));
 	}
 
 	SECTION("shuffle") {

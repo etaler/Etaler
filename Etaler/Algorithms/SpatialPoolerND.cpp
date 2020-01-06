@@ -35,12 +35,12 @@ SpatialPoolerND::SpatialPoolerND(const Shape& input_shape, size_t kernel_size, s
 	permanences_ = Tensor(output_shape+potential_pool_size, DType::Float, b);
 
 	for(size_t i=0;i<(size_t)output_shape.volume();i++) {
-		svector<Range> write_loc;
+		IndexList write_loc;
 		Shape loc = foldIndex(i, output_shape);
 		for(size_t j=0;j<output_shape.size();j++)
 			write_loc.push_back(loc[j]);
 
-		svector<Range> read_loc(loc.size());
+		IndexList read_loc(loc.size());
 		for(size_t j=0;j<loc.size();j++) {
 			intmax_t pos = loc[j]*stride;
 			read_loc[j] = range(pos, pos+kernel_size);

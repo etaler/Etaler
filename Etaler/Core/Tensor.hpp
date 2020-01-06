@@ -62,6 +62,8 @@ Tensor ETALER_EXPORT brodcast_to(const Tensor& t, Shape s);
 ETALER_EXPORT std::ostream& operator<< (std::ostream& os, const Tensor& t);
 std::string to_string(const Tensor& t);
 
+using IndexList = svector<std::variant<Range, intmax_t, int, size_t, unsigned int>>;
+
 struct ETALER_EXPORT Tensor
 {
 	Tensor() = default;
@@ -144,7 +146,7 @@ struct ETALER_EXPORT Tensor
 	Tensor copy() const;
 
 	//View/Indexing
-	Tensor view(svector<Range> ranges) const;
+	Tensor view(const IndexList& ranges) const;
 
 	Tensor reshape(Shape shape) const
 	{
@@ -249,7 +251,7 @@ struct ETALER_EXPORT Tensor
 	Tensor operator!= (const Tensor& other) const {return !equal(other);}
 
 	//Subscription operator
-	Tensor operator [] (svector<Range> r) { return view(r); }
+	Tensor operator [] (const IndexList& r) { return view(r); }
 
 	Tensor sum(std::optional<intmax_t> dim=std::nullopt, DType dtype=DType::Unknown) const;
 	Tensor abs() const { return backend()->abs(pimpl()); }
