@@ -1000,6 +1000,13 @@ TEST_CASE("Complex Tensor operations")
 		CHECK(q.isSame(a_sum));
 		CHECK(t.isSame(q)); // Should be communicative
 	}
+
+	SECTION("generate") {
+		// Again, you should never do this. But you should be able to.
+		Tensor t  = Tensor({4, 4}, DType::Int);
+		std::generate(t.begin(), t.end(), [n = 0, &v1]() mutable {return Tensor({4}, v1.data()+(n++)*4);});
+		CHECK(t.isSame(a));
+	}
 }
 
 // TEST_CASE("Serealize")

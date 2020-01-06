@@ -168,7 +168,7 @@ bool Tensor::isSame(const Tensor& other) const
 	return (*this == other).sum().item<int32_t>() == (int32_t)size();
 }
 
-Tensor Tensor::view(const svector<std::variant<Range, intmax_t, int, size_t, unsigned int>>& rgs) const
+Tensor Tensor::view(const IndexList& rgs) const
 {
 	auto ranges = rgs;
 	if(ranges.size() > dimentions())
