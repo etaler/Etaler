@@ -594,10 +594,8 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 		throw EtError("Shape mismatch in tensor assignment. Shape "
 			+ to_string(dest->shape()) + " and " + to_string(src->shape()));
 
-	auto source = realize(src);
-
-	if(dest->dtype() != source->dtype())
-		source = cast(source.get(), dest->dtype());
+	if(dest->dtype() != src->dtype())
+		assign(dest, cast(src, dest->dtype()).get());
 
 	dispatch(dest->dtype(), [&](auto v) {
 		using T = decltype(v);
