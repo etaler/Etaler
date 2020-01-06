@@ -45,6 +45,8 @@ struct ETALER_EXPORT TensorIterator
 	difference_type operator- (const ThisIterator& rhs) const { return offset_ - rhs.offset_; }
 	ThisIterator operator+(intmax_t n) {return ThisIterator(t_,offset_+n);}
 	ThisIterator operator-(intmax_t n) {return ThisIterator(t_,offset_-n);}
+	ThisIterator& operator+=(intmax_t n) { offset_+=n; return *this; }
+	ThisIterator& operator-=(intmax_t n) { offset_-=n; return *this; }
 	value_type operator[](intmax_t n) { return *operator+(n); }
 	bool operator< (const ThisIterator& rhs) const { return offset_ < rhs.offset_; }
 	bool operator> (const ThisIterator& rhs) const { return offset_ > rhs.offset_; }
@@ -59,6 +61,8 @@ Tensor ETALER_EXPORT brodcast_to(const Tensor& t, Shape s);
 
 ETALER_EXPORT std::ostream& operator<< (std::ostream& os, const Tensor& t);
 std::string to_string(const Tensor& t);
+
+using IndexList = svector<std::variant<Range, intmax_t, int, size_t, unsigned int>>;
 
 struct ETALER_EXPORT Tensor
 {
@@ -142,7 +146,7 @@ struct ETALER_EXPORT Tensor
 	Tensor copy() const;
 
 	//View/Indexing
-	Tensor view(svector<Range> ranges) const;
+	Tensor view(const IndexList& ranges) const;
 
 	Tensor reshape(Shape shape) const
 	{
@@ -220,6 +224,12 @@ struct ETALER_EXPORT Tensor
 	inline bool any() const { return cast(DType::Bool).sum(std::nullopt, DType::Bool).item<uint8_t>(); }
 	inline bool all() const { return cast(DType::Bool).sum(std::nullopt).item<int32_t>() == int32_t(size()); }
 
+	// Neumeric operations
+	Tensor operator+= (const Tensor& other) { *this = *this + other; return *this; }
+	Tensor operator-= (const Tensor& other) { *this = *this - other; return *this; }
+	Tensor operator*= (const Tensor& other) { *this = *this * other; return *this; }
+	Tensor operator/= (const Tensor& other) { *this = *this / other; return *this; }
+
 	Tensor operator- () const {return negate();}
 	Tensor operator+ () const {return *this;}
 	Tensor operator! () const {return logical_not();}
@@ -241,7 +251,7 @@ struct ETALER_EXPORT Tensor
 	Tensor operator!= (const Tensor& other) const {return !equal(other);}
 
 	//Subscription operator
-	Tensor operator [] (svector<Range> r) { return view(r); }
+	Tensor operator [] (const IndexList& r) { return view(r); }
 
 	Tensor sum(std::optional<intmax_t> dim=std::nullopt, DType dtype=DType::Unknown) const;
 	Tensor abs() const { return backend()->abs(pimpl()); }

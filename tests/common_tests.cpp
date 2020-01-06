@@ -9,6 +9,7 @@
 #include <Etaler/Algorithms/SDRClassifer.hpp>
 
 #include <numeric>
+#include <execution>
 
 using namespace et;
 
@@ -219,6 +220,14 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(realize(r).isSame(pred));
 		}
 
+		SECTION("Indexing a column") {
+			Tensor q = t.view({all(), 0});
+			int arr[] = {0, 4, 8, 12};
+			Tensor r = Tensor({4}, arr);
+			CHECK(q.shape() == Shape({4}));
+			CHECK(r.isSame(q));
+		}
+
 		SECTION("Indexing with negative values") {
 			Tensor q = t.view({3});
 			Tensor r;
@@ -285,7 +294,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		}
 
 		SECTION("subscription operator") {
-			svector<Range> r = {range(2)};
+			IndexList r = {range(2)};
 			//The [] operator should work exactly like the view() function
 			CHECK(t[r].isSame(t.view(r)));
 		}
@@ -938,6 +947,12 @@ TEST_CASE("Type system")
 // This test checks all components of Tensor works together properly
 TEST_CASE("Complex Tensor operations")
 {
+	std::vector<int> v1 = {1, 8, 6, 7
+			, 3, 2, 5, 6
+			, 4, 3, 2, 7
+			, 9, 0 ,1, 1};
+	Tensor a = Tensor(v1).reshape({4,4});
+
 	SECTION("Vector inner product") {
 		std::vector<int> v1 = {1, 6, 7, 9, 15, 6};
 		std::vector<int> v2 = {3, 7, 8, -1, 6, 15};
@@ -948,25 +963,23 @@ TEST_CASE("Complex Tensor operations")
 		CHECK((a*b).sum().item<int>() == std::inner_product(v1.begin(), v1.end(), v2.begin(), 0));
 	}
 
+	SECTION("assign column to row") {
+		std::vector<int> v2 = {9, 0, 1, 1};
+		Tensor b = Tensor(v2);
+
+		Tensor t = a.copy();
+		t[{all(), 1}] = a[{3}];
+		CHECK(t[{all(), 1}].isSame(b));
+	}
+
 	SECTION("shuffle") {
 		std::mt19937 rng;
-		std::vector<int> v1 = {1, 8, 6, 7
-			, 3, 2, 5, 6
-			, 4, 3, 2, 7
-			, 9, 0 ,1, 1};
-		Tensor a = Tensor(v1).reshape({4,4});
 		std::shuffle(a.begin(), a.end(), rng);
 		CHECK(std::accumulate(v1.begin(), v1.end(), 0) == a.sum().item<int>());
 	}
 
 	SECTION("find_if") {
-		std::vector<int> v1 = {1, 8, 6, 7
-			, 3, 2, 5, 6
-			, 4, 3, 2, 7
-			, 9, 0 ,1, 1};
-		Tensor a = Tensor(v1).reshape({4,4});
 		Tensor b = a[{0}];
-
 		CHECK(std::find_if(a.begin(), a.end(), [&b](auto t){ return t.isSame(b); }) != a.end());
 	}
 
@@ -975,6 +988,17 @@ TEST_CASE("Complex Tensor operations")
 		Tensor b = ones({12, 6});
 		std::transform(a.begin(), a.end(), b.begin(), [](const auto& t){return zeros_like(t);});
 		CHECK(b.isSame(zeros_like(a)));
+	}
+
+	SECTION("accumulate") {
+		// Test summing along the first dimension. Making sure iterator and sum() works
+		// Tho you should always use the sum() function instead of accumulate or reduce
+		Tensor t = std::accumulate(a.begin(), a.end(), zeros({a.shape()[1]}));
+		Tensor q = std::reduce(std::execution::par, a.begin(), a.end(), zeros({a.shape()[1]}));
+		Tensor a_sum = a.sum(0);
+		CHECK(t.isSame(a_sum));
+		CHECK(q.isSame(a_sum));
+		CHECK(t.isSame(q)); // Should be communicative
 	}
 }
 

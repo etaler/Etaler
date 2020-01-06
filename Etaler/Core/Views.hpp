@@ -14,10 +14,6 @@ namespace et
 struct Range
 {
 	Range() = default;
-	Range(intmax_t start)
-		: start_(start), stop_(start+(start>=0?1:-1))
-	{}
-
 	Range(std::optional<intmax_t> start, intmax_t stop
 		, std::optional<intmax_t> step = std::nullopt)
 		: start_(start), stop_(stop), step_(step)

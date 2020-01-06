@@ -168,8 +168,9 @@ bool Tensor::isSame(const Tensor& other) const
 	return (*this == other).sum().item<int32_t>() == (int32_t)size();
 }
 
-Tensor Tensor::view(svector<Range> ranges) const
+Tensor Tensor::view(const svector<std::variant<Range, intmax_t, int, size_t, unsigned int>>& rgs) const
 {
+	auto ranges = rgs;
 	if(ranges.size() > dimentions())
 		throw EtError("Cannot view a tensor of " + std::to_string(dimentions()) + " with " + std::to_string(ranges.size()) + " dimentions");
 
@@ -196,16 +197,20 @@ Tensor Tensor::view(svector<Range> ranges) const
 
 	assert(viewed_strides.size() == dimentions());
 
-	for(size_t i=0;i<dimentions();i++) {
-		const Range& r = ranges[i];
+	for(size_t i=0;i<dimentions();i++) { std::visit([&](auto index_range) { // <- make the code neater
+		const auto& r = index_range;
 		intmax_t dim_size = shape()[i];
 
-		intmax_t start = r.start().value_or(0);
-		intmax_t stop = r.stop().value_or(dim_size);
+		// Try to resolve the indexing details
+		auto [start, stop, step, keep_dim] = [&r, dim_size]() -> std::tuple<intmax_t, intmax_t, intmax_t, bool> {
+			if constexpr(std::is_same_v<std::decay_t<decltype(r)>, Range> == true)
+				return {r.start().value_or(0), r.stop().value_or(dim_size), r.step().value_or(1), true};
+			else // is a integer
+				return {r, r+1, (r<0?-1:1), false};
+		}();
 
 		intmax_t real_start = resolve_index(start, dim_size);
 		intmax_t real_stop = resolve_index(stop, dim_size);
-		intmax_t step = r.step().value_or(real_stop>real_start?1:-1);
 		intmax_t size = (std::abs(real_stop - real_start) - 1) / std::abs(step) + 1;
 
 		// Indexing validations
@@ -221,11 +226,11 @@ Tensor Tensor::view(svector<Range> ranges) const
 		viewed_strides[i] *= step;
 
 		offset.push_back(real_start);
-		if(size != 1 || result_shape.empty() == false) { //Ignore heading 1 dimentions
+		if(keep_dim) {
 			result_shape.push_back(size);
 			result_stride.push_back(viewed_strides[i]);
 		}
-	}
+	}, ranges[i]); }
 
 	//If all dims are 1, thus no shape. Give it a shape
 	if(result_shape.empty() == true) {
@@ -337,7 +342,7 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 	Tensor res = Tensor(res_shape, base_dtype, base_backend);
 	
 	intmax_t pos = 0;
-	svector<Range> ranges;
+	IndexList ranges;
 	for(size_t i=0;i<res_shape.size();i++)
 		ranges.push_back(et::all());
 
