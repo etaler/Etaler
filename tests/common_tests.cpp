@@ -9,6 +9,7 @@
 #include <Etaler/Algorithms/SDRClassifer.hpp>
 
 #include <numeric>
+#include <execution>
 
 using namespace et;
 
@@ -938,6 +939,12 @@ TEST_CASE("Type system")
 // This test checks all components of Tensor works together properly
 TEST_CASE("Complex Tensor operations")
 {
+	std::vector<int> v1 = {1, 8, 6, 7
+			, 3, 2, 5, 6
+			, 4, 3, 2, 7
+			, 9, 0 ,1, 1};
+	Tensor a = Tensor(v1).reshape({4,4});
+
 	SECTION("Vector inner product") {
 		std::vector<int> v1 = {1, 6, 7, 9, 15, 6};
 		std::vector<int> v2 = {3, 7, 8, -1, 6, 15};
@@ -950,23 +957,12 @@ TEST_CASE("Complex Tensor operations")
 
 	SECTION("shuffle") {
 		std::mt19937 rng;
-		std::vector<int> v1 = {1, 8, 6, 7
-			, 3, 2, 5, 6
-			, 4, 3, 2, 7
-			, 9, 0 ,1, 1};
-		Tensor a = Tensor(v1).reshape({4,4});
 		std::shuffle(a.begin(), a.end(), rng);
 		CHECK(std::accumulate(v1.begin(), v1.end(), 0) == a.sum().item<int>());
 	}
 
 	SECTION("find_if") {
-		std::vector<int> v1 = {1, 8, 6, 7
-			, 3, 2, 5, 6
-			, 4, 3, 2, 7
-			, 9, 0 ,1, 1};
-		Tensor a = Tensor(v1).reshape({4,4});
 		Tensor b = a[{0}];
-
 		CHECK(std::find_if(a.begin(), a.end(), [&b](auto t){ return t.isSame(b); }) != a.end());
 	}
 
@@ -975,6 +971,17 @@ TEST_CASE("Complex Tensor operations")
 		Tensor b = ones({12, 6});
 		std::transform(a.begin(), a.end(), b.begin(), [](const auto& t){return zeros_like(t);});
 		CHECK(b.isSame(zeros_like(a)));
+	}
+
+	SECTION("accumulate") {
+		// Test summing along the first dimension. Making sure iterator and sum() works
+		// Tho you should always use the sum() function instead of accumulate or reduce
+		Tensor t = std::accumulate(a.begin(), a.end(), zeros({a.shape()[1]}));
+		Tensor q = std::reduce(std::execution::par, a.begin(), a.end(), zeros({a.shape()[1]}));
+		Tensor a_sum = a.sum(0);
+		CHECK(t.isSame(a_sum));
+		CHECK(q.isSame(a_sum));
+		CHECK(t.isSame(q)); // Should be communicative
 	}
 }
 

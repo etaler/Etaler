@@ -45,6 +45,8 @@ struct ETALER_EXPORT TensorIterator
 	difference_type operator- (const ThisIterator& rhs) const { return offset_ - rhs.offset_; }
 	ThisIterator operator+(intmax_t n) {return ThisIterator(t_,offset_+n);}
 	ThisIterator operator-(intmax_t n) {return ThisIterator(t_,offset_-n);}
+	ThisIterator& operator+=(intmax_t n) { offset_+=n; return *this; }
+	ThisIterator& operator-=(intmax_t n) { offset_-=n; return *this; }
 	value_type operator[](intmax_t n) { return *operator+(n); }
 	bool operator< (const ThisIterator& rhs) const { return offset_ < rhs.offset_; }
 	bool operator> (const ThisIterator& rhs) const { return offset_ > rhs.offset_; }
@@ -219,6 +221,12 @@ struct ETALER_EXPORT Tensor
 
 	inline bool any() const { return cast(DType::Bool).sum(std::nullopt, DType::Bool).item<uint8_t>(); }
 	inline bool all() const { return cast(DType::Bool).sum(std::nullopt).item<int32_t>() == int32_t(size()); }
+
+	// Neumeric operations
+	Tensor operator+= (const Tensor& other) { *this = *this + other; return *this; }
+	Tensor operator-= (const Tensor& other) { *this = *this - other; return *this; }
+	Tensor operator*= (const Tensor& other) { *this = *this * other; return *this; }
+	Tensor operator/= (const Tensor& other) { *this = *this / other; return *this; }
 
 	Tensor operator- () const {return negate();}
 	Tensor operator+ () const {return *this;}
