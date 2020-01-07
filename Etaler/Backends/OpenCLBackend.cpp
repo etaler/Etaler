@@ -642,29 +642,26 @@ std::optional<cl::Buffer> OpenCLBackend::toSparse(const TensorImpl* x)
 static std::string jitStridedView(const TensorImpl* x, size_t id)
 {
 	std::string func = R"(
-int location_func$ID(int location)
+int location_func$ID(int index)
 {
 	int shape_stride[] = $SHAPE_STRIDE;
 	int stride[] = $STRIDE;
 	int offset = $OFFSET;
-	int ndpos[$DIMS];
-	int loc = location;
+	int curr_idx = index;
+	int sum = 0;
 	for(int i=0;i<$DIMS;i++) {
 		int s = shape_stride[i];
-		ndpos[i] = loc / s;
-		loc %= s;
+		int ndpos = curr_idx / s;
+		sum += ndpos * stride[i];
+		curr_idx %= s;
 	}
-	int sum = 0;
-	for(int i=0;i<$DIMS;i++)
-		sum += ndpos[i]*stride[i];
 	return sum + offset;
 }
 )";
-	replaceAll(func, "$ID", std::to_string(id));
 	const auto shape_stride = shapeToStride(x->shape());
+	replaceAll(func, "$ID", std::to_string(id));
 	replaceAll(func, "$SHAPE_STRIDE", to_string(shape_stride));
 	replaceAll(func, "$DIMS", std::to_string(x->dimentions()));
-
 	replaceAll(func, "$STRIDE", to_string(x->stride()));
 	replaceAll(func, "$OFFSET", std::to_string(x->offset()));
 	return func;
