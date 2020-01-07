@@ -211,15 +211,15 @@ struct ETALER_EXPORT Tensor
 	Tensor log() const { return backend()->log(pimpl()); }
 	Tensor logical_not() const { return backend()->logical_not(pimpl()); }
 
-	Tensor add(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->add(a(), b()); }
-	Tensor subtract(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->subtract(a(), b()); }
-	Tensor mul(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->mul(a(), b()); }
-	Tensor div(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->div(a(), b()); }
-	Tensor equal(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->equal(a(), b()); }
-	Tensor greater(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->greater(a(), b()); }
-	Tensor lesser(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->lesser(a(), b()); }
-	Tensor logical_and(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_and(a(), b()); }
-	Tensor logical_or(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_or(a(), b()); }
+	Tensor add(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->add(a.pimpl(), b.pimpl()); }
+	Tensor subtract(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->subtract(a.pimpl(), b.pimpl()); }
+	Tensor mul(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->mul(a.pimpl(), b.pimpl()); }
+	Tensor div(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->div(a.pimpl(), b.pimpl()); }
+	Tensor equal(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->equal(a.pimpl(), b.pimpl()); }
+	Tensor greater(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->greater(a.pimpl(), b.pimpl()); }
+	Tensor lesser(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->lesser(a.pimpl(), b.pimpl()); }
+	Tensor logical_and(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_and(a.pimpl(), b.pimpl()); }
+	Tensor logical_or(const Tensor& other) const { auto [a, b] = brodcast(other); return backend()->logical_or(a.pimpl(), b.pimpl()); }
 
 	inline bool any() const { return cast(DType::Bool).sum(std::nullopt, DType::Bool).item<uint8_t>(); }
 	inline bool all() const { return cast(DType::Bool).sum(std::nullopt).item<int32_t>() == int32_t(size()); }
@@ -252,14 +252,14 @@ struct ETALER_EXPORT Tensor
 
 	//Subscription operator
 	Tensor operator [] (const IndexList& r) { return view(r); }
+	template <typename ... Args>
+	Tensor operator () (Args ... args) { return view({args ...}); }
 
 	Tensor sum(std::optional<intmax_t> dim=std::nullopt, DType dtype=DType::Unknown) const;
 	Tensor abs() const { return backend()->abs(pimpl()); }
 	bool isSame (const Tensor& other) const;
 
 	//Utils
-	TensorImpl* operator () () {return pimpl();}
-	const TensorImpl* operator () () const {return pimpl();}
 
 	using iterator = TensorIterator<Tensor>;
 	using const_iterator = TensorIterator<const Tensor>;
@@ -332,18 +332,18 @@ inline Tensor cellActivity(const Tensor& x, const Tensor& connections, const Ten
 			return x;
 		return x.cast(DType::Bool);
 	}();
-	return x.backend()->cellActivity(input(), connections(), permeances(), connected_permeance, active_threshold, has_unconnected_synapse);
+	return x.backend()->cellActivity(input.pimpl(), connections.pimpl(), permeances.pimpl(), connected_permeance, active_threshold, has_unconnected_synapse);
 }
 
 inline void learnCorrilation(const Tensor& x, const Tensor& learn, const Tensor& connection
 	, Tensor& permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse=true)
 {
-	x.backend()->learnCorrilation(x(), learn(), connection(), permeances(), perm_inc, perm_dec, has_unconnected_synapse);
+	x.backend()->learnCorrilation(x.pimpl(), learn.pimpl(), connection.pimpl(), permeances.pimpl(), perm_inc, perm_dec, has_unconnected_synapse);
 }
 
 inline Tensor globalInhibition(const Tensor& x, float fraction)
 {
-	return x.backend()->globalInhibition(x(), fraction);
+	return x.backend()->globalInhibition(x.pimpl(), fraction);
 }
 
 Tensor inline cast(const Tensor& x, DType dtype)
@@ -358,27 +358,27 @@ inline Tensor copy(const Tensor& x)
 
 inline void sortSynapse(Tensor& connection, Tensor& permeances)
 {
-	connection.backend()->sortSynapse(connection(), permeances());
+	connection.backend()->sortSynapse(connection.pimpl(), permeances.pimpl());
 }
 
 inline Tensor burst(const Tensor& x, const Tensor& s)
 {
-	return x.backend()->burst(x(), s());
+	return x.backend()->burst(x.pimpl(), s.pimpl());
 }
 
 inline Tensor reverseBurst(const Tensor& x)
 {
-	return x.backend()->reverseBurst(x());
+	return x.backend()->reverseBurst(x.pimpl());
 }
 
 inline void growSynapses(const Tensor& x, const Tensor& y, Tensor& connections, Tensor& permeances, float init_perm)
 {
-	x.backend()->growSynapses(x(), y(), connections(), permeances(), init_perm);
+	x.backend()->growSynapses(x.pimpl(), y.pimpl(), connections.pimpl(), permeances.pimpl(), init_perm);
 }
 
 inline void decaySynapses(Tensor& connections, Tensor& permeances, float threshold)
 {
-	connections.backend()->decaySynapses(connections(), permeances(), threshold);
+	connections.backend()->decaySynapses(connections.pimpl(), permeances.pimpl(), threshold);
 }
 
 inline void assign(Tensor& x, const Tensor& y)
