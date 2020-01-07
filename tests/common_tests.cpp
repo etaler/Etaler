@@ -994,11 +994,8 @@ TEST_CASE("Complex Tensor operations")
 		// Test summing along the first dimension. Making sure iterator and sum() works
 		// Tho you should always use the sum() function instead of accumulate or reduce
 		Tensor t = std::accumulate(a.begin(), a.end(), zeros({a.shape()[1]}));
-		Tensor q = std::reduce(std::execution::par, a.begin(), a.end(), zeros({a.shape()[1]}));
 		Tensor a_sum = a.sum(0);
 		CHECK(t.isSame(a_sum));
-		CHECK(q.isSame(a_sum));
-		CHECK(t.isSame(q)); // Should be communicative
 	}
 
 	SECTION("generate") {
