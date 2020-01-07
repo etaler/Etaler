@@ -164,6 +164,22 @@ inline Shape foldIndex(size_t index, const ShapeType& shape)
 	return res;
 }
 
+static inline intmax_t convResultSize(intmax_t input, intmax_t kernel, intmax_t stride=1)
+{
+	return (input/kernel)/stride+1;
+}
+
+inline Shape convResultShape(const Shape& input, const Shape& kernel, const Shape& stride)
+{
+	assert(inptut.size() == kernel.size());
+	assert(inptut.size() == stirde.size());
+
+	Shape res(input.size());
+	for(size_t i=0;i<input.size();i++) 
+		res[i] = convResultSize(input[i], kernel[i], stride[i]);
+	return res;
+}
+
 }
 
 //Print Shape at the prompt

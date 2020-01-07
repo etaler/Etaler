@@ -18,37 +18,8 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 	, float global_density, float boost_factor, Backend* b)
 	: global_density_(global_density), boost_factor_(boost_factor), input_shape_(input_shape), output_shape_(output_shape)
 {
-	if(potential_pool_pct > 1 || potential_pool_pct < 0)
-		throw EtError("potential_pool_pct must be between 0~1, but get" + std::to_string(potential_pool_pct));
-
-	size_t input_cell_num = input_shape.volume();
-	size_t potential_pool_size = std::max((size_t)(input_cell_num*potential_pool_pct), size_t{1});
-
-	//Initalize potential pool
-	pcg64 rng(seed);
-	std::vector<size_t> all_input_cell = vector_range(0, input_cell_num);
-
-	std::vector<int32_t> connections(output_shape.volume()*potential_pool_size, -1);
-	std::vector<float> permanences(output_shape.volume()*potential_pool_size);
-
-	auto clamp = [](float x){return std::min(1.f, std::max(x, 0.f));};
-	for(intmax_t i=0;i<output_shape.volume();i++) {
-		std::shuffle(all_input_cell.begin(), all_input_cell.end(), rng);
-		std::sort(all_input_cell.begin(), all_input_cell.begin()+potential_pool_size);
-		std::normal_distribution<float> dist(connected_permanence_, 1);
-
-		for(size_t j=0;j<potential_pool_size;j++) {
-			connections[i*potential_pool_size+j] = all_input_cell[j];
-			permanences[i*potential_pool_size+j] = clamp(dist(rng));
-		}
-	}
-
-	if(boost_factor != 0)
-		average_activity_ = constant(input_shape, global_density);
-
-	Shape s = output_shape + potential_pool_size;
-	connections_ = Tensor(s, connections.data(), b);
-	permanences_ = Tensor(s, permanences.data(), b);
+	std::tie(connections_, permanences_) = F::gusianRandomSynapse(input_shape, output_shape, potential_pool_pct
+		, 0.11, 1, seed, b);
 	average_activity_ = constant(output_shape, global_density);
 }
 

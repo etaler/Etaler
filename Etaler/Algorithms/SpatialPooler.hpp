@@ -10,6 +10,7 @@
 #include "Etaler/Core/Tensor.hpp"
 #include "Etaler/Core/Serialize.hpp"
 #include "Etaler/Core/DefaultBackend.hpp"
+#include "Synapse.hpp"
 
 #include "Etaler_export.h"
 
