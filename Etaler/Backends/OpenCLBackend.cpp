@@ -30,6 +30,30 @@ inline intmax_t selectWorkSize(intmax_t max, intmax_t mul_of, intmax_t size)
 	return std::min((intmax_t)max, round(size));
 }
 
+#define OPENCL_TENSOR_MAX_DIMS 32
+typedef struct __attribute__ ((packed)) _OpenCLView
+{
+        int stride[OPENCL_TENSOR_MAX_DIMS];
+        int shape_stride[OPENCL_TENSOR_MAX_DIMS];
+        int offset;
+        int dims;
+} OpenCLView;
+
+static void makeOpenCLView(const TensorImpl* x, OpenCLView* v)
+{
+	int dims = int(x->dimentions());
+	et_assert(dims <= OPENCL_TENSOR_MAX_DIMS, "Too much dimensions for OpenCL backend.");
+	auto stride = x->stride();
+	auto shape_stride = shapeToStride(x->shape());
+	for(int i=0;i<dims;i++) {
+		v->stride[i] = stride[i];
+		v->shape_stride[i] = shape_stride[i];
+	}
+	v->offset = x->offset();
+	v->dims = dims;
+}
+
+
 
 template <typename T>
 std::string str(T&& s)
@@ -380,7 +404,7 @@ void OpenCLBackend::sync() const
 
 std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 {
-	requireProperties(x, this, IsContingous());
+	requireProperties(x, this, IsPlain());
 	size_t buf_size = x->size()*dtypeToSize(x->dtype());
 	cl::Buffer buf = allocBuffer(buf_size);
 	const cl::Buffer& src = std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer();
@@ -667,86 +691,15 @@ int location_func$ID(int index)
 	return func;
 }
 
-static std::vector<std::string> jitCopyFromView(const TensorImpl* x)
-{
-	std::vector<std::string> convertion;
-	convertion.push_back(jitStridedView(x, 0));
-
-	std::string func = R"(
-#define Type $TYPE
-kernel void copy(global Type* restrict x, global Type* restrict y)
-{
-	int global_id = get_global_id(0);
-	int global_size = get_global_size(0);
-	for(int i=global_id;i<$SIZE;i+=global_size) {
-		int position = location_func0(i);
-		y[i] = x[position];
-	}
-}
-)";
-
-	auto s = shapeToStride(x->shape());
-
-	std::string type = to_ctype_string(x->dtype());
-	replaceAll(func, "$TYPE", type);
-	replaceAll(func, "$SIZE", std::to_string(x->size()));
-	convertion.push_back(func);
-	return convertion;
-}
-
-static std::vector<std::string> jitCopyToView(const TensorImpl* x)
-{
-	std::vector<std::string> convertion;
-	convertion.push_back(jitStridedView(x, 0));
-
-	std::string func = R"(
-#define Type $TYPE
-kernel void copy(global Type* restrict x, global Type* restrict y)
-{
-	int global_id = get_global_id(0);
-	int global_size = get_global_size(0);
-	for(int i=global_id;i<$SIZE;i+=global_size) {
-		int position = location_func0(i);
-		y[position] = x[i];
-	}
-}
-)";
-
-	auto s = shapeToStride(x->shape());
-
-	std::string type = to_ctype_string(x->dtype());
-	replaceAll(func, "$TYPE", type);
-	replaceAll(func, "$SIZE", std::to_string(x->size()));
-	convertion.push_back(func);
-	return convertion;
-}
-
 std::shared_ptr<TensorImpl> OpenCLBackend::realize(const TensorImpl* x)
 {
 	requireProperties(x, this);
 	if(x->isplain() == true)
 		return copy(x);
-
-	std::vector<std::string> conversion = jitCopyFromView(x);
-
-	kernel_manager_.compileKernel(conversion, "__copy", {"copy"});
-	cl::Kernel k = kernel_manager_.kernel("__copy", "copy");
-
-	cl::Buffer buf = allocBuffer(x->size()*dtypeToSize(x->dtype()));
-	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer());
-	k.setArg(1, buf);
-
-	size_t local_size = 128;
-	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, x->size())), cl::NDRange(local_size));
-	if(err != CL_SUCCESS)
-		throw EtError("OpenCL kernel execution failed. Code " + str(err));
-
-	//for(auto s : conversion)
-	//	std::cout << s << std::endl;
-
-	kernel_manager_.remove("__copy");//We are unlikely to use this kernel again?
-
-	return createTensor(x->shape(), x->dtype(), buf);
+	
+	auto res = createTensor(x->shape(), x->dtype());
+	assign(res.get(), x);
+	return res;
 }
 
 
@@ -760,25 +713,30 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 			+ to_string(dest->shape()) + " and " + to_string(src->shape()));
 	}
 
-	auto source = realize(src);
+	auto param_hash = hashify(dest->dtype(), src->dtype());
+	auto program_name = "copy"+param_hash;
+	if(kernel_manager_.exists(program_name) == false) {
+		auto args = "-DINPUT_TYPE="+to_ctype_string(src->dtype())+" -DOUTPUT_TYPE="+to_ctype_string(dest->dtype());
+		kernel_manager_.compileFromFile("copy.cl", program_name, {"copy"}, false, args);
+	}
+	cl::Kernel k = kernel_manager_.kernel(program_name, "copy");
 
-	if(dest->dtype() != source->dtype())
-		source = cast(source.get(), dest->dtype());
+	OpenCLView input_view;
+	OpenCLView output_view;
+	makeOpenCLView(src, &input_view);
+	makeOpenCLView(dest, &output_view);
 
-	std::vector<std::string> conversion = jitCopyToView(dest);
+	k.setArg(0, std::static_pointer_cast<OpenCLBuffer>(dest->buffer())->buffer());
+	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(src->buffer())->buffer());
+	k.setArg(2, output_view);
+	k.setArg(3, input_view);
+	k.setArg(4, int(src->size()));
 
-	kernel_manager_.compileKernel(conversion, "__copy", {"copy"});
-	cl::Kernel k = kernel_manager_.kernel("__copy", "copy");
-
-	k.setArg(0, std::static_pointer_cast<const OpenCLBuffer>(source->buffer())->buffer());
-	k.setArg(1, std::static_pointer_cast<const OpenCLBuffer>(dest->buffer())->buffer());
 
 	size_t local_size = 128;
-	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, source->size())), cl::NDRange(local_size));
+	cl_int err = queue_.enqueueNDRangeKernel(k, cl::NullRange, cl::NDRange(selectWorkSize(4096, local_size, src->size())), cl::NDRange(local_size));
 	if(err != CL_SUCCESS)
 		throw EtError("OpenCL kernel execution failed. Code " + str(err));
-
-	kernel_manager_.remove("__copy");//We are unlikely to use this kernel again?
 }
 
 std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
