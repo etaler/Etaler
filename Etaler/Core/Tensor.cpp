@@ -9,9 +9,10 @@ size_t g_print_threshold = 1000;
 size_t g_truncate_size = 3;
 
 template <typename T>
-static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, size_t depth, size_t maxDepth, size_t maxLength=0, bool truncate=false) noexcept
+static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, size_t depth, size_t max_depth, size_t max_length=0, bool truncate=false) noexcept
 {
-	auto floatToStr = [](float val) {
+	// Not using std::to_string because std::to_string(0.f) returns "0.00000"
+	auto toStr = [](float val) {
 		std::stringstream ss;
 		ss << val;
 		return ss.str();
@@ -21,22 +22,22 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 	if(depth == 0) {
 		//Calculatet the max character of printing a single element needs
 		for(int i=0;i<shape.volume();i++)
-			maxLength = std::max(maxLength, floatToStr(arr[i]).size());
+			max_length = std::max(max_length, toStr(arr[i]).size());
 	}
 
-	std::string truncate_symbol = "....";
+	const std::string truncate_symbol = "....";
 
 	//If at the the last dimention, print the content of the tensor
 	if(shape.size() == 1) {
 		os << "{ ";
 		intmax_t size = shape[0];
-		intmax_t max_line_content = intmax_t((80-depth*2-4)/(maxLength+2));
+		intmax_t max_line_content = intmax_t((80-depth*2-4)/(max_length+2));
 
 		//Print the full content
 		if(size <= max_line_content || !truncate) {
 			for(intmax_t i=0;i<size;i++) {
-				std::string str = floatToStr(arr[i]);
-				size_t padding_len = maxLength - str.size();
+				std::string str = toStr(arr[i]);
+				size_t padding_len = max_length - str.size();
 				os << str << std::string(padding_len, ' ') << (i==size-1 ? "" : ", ");
 			}
 		}
@@ -44,8 +45,8 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 		else {
 			//The first half
 			for(intmax_t i=0;i<max_line_content/2;i++) {
-				std::string str = floatToStr(arr[i]);
-				size_t padding_len = maxLength - str.size();
+				std::string str = toStr(arr[i]);
+				size_t padding_len = max_length - str.size();
 				os << str << std::string(padding_len, ' ') << ", ";
 			}
 
@@ -54,8 +55,8 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 
 			//The second half
 			for(intmax_t i=size-max_line_content/2;i<size;i++) {
-				std::string str = floatToStr(arr[i]);
-				size_t padding_len = maxLength - str.size();
+				std::string str = toStr(arr[i]);
+				size_t padding_len = max_length - str.size();
 				os << str << std::string(padding_len, ' ') << (i==size-1 ? "" : ", ");
 			}
 		}
@@ -64,48 +65,50 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 		return 1;
 	}
 
+	// Otherwise (we aren't in the last dimension)
+	// print the curly braces recursively
 	intmax_t size = shape[0];
 	shape.erase(shape.begin());
 	intmax_t vol = shape.volume();
 
-	size_t val = 0;
+	size_t ret_depth = 0; // TODO: Do we really need this? Should be deterministic?
 	os << "{";
 
 	if(size < 2*intmax_t(g_truncate_size) || !truncate) {
 		//The full version
 		for(intmax_t i=0;i<size;i++) {
 			//Print the data recursivelly
-			val = prettyPrintTensor(os, arr+i*vol, shape, depth+1, maxDepth, maxLength, truncate);
+			ret_depth = prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_depth, max_length, truncate);
 			if(i != size-1)
-				os << ", " << std::string(val, '\n') << (i==size-1 ? std::string("") : std::string(maxDepth-val, ' '));
+				os << ", " << std::string(ret_depth, '\n') << (i==size-1 ? std::string("") : std::string(max_depth-ret_depth, ' '));
 		}
 	}
 	else {
 		//The first half
 		for(intmax_t i=0;i<intmax_t(g_truncate_size);i++) {
 			//Print the data recursivelly
-			val = prettyPrintTensor(os, arr+i*vol, shape, depth+1, maxDepth, maxLength, truncate);
+			ret_depth = prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_depth, max_length, truncate);
 			if(i != size-1)
-				os << ", " << std::string(val, '\n') << std::string(maxDepth-val, ' ');
+				os << ", " << std::string(ret_depth, '\n') << std::string(max_depth-ret_depth, ' ');
 		}
 
 		//seperator
-		os << truncate_symbol << '\n' << std::string(maxDepth-val, ' ');
+		os << truncate_symbol << '\n' << std::string(max_depth-ret_depth, ' ');
 
 		//The second half
 		for(intmax_t i=size-intmax_t(g_truncate_size);i<size;i++) {
 			//Print the data recursivelly
-			val = prettyPrintTensor(os, arr+i*vol, shape, depth+1, maxDepth, maxLength, truncate);
+			ret_depth = prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_depth, max_length, truncate);
 			if(i != size-1)
-				os << ", " << std::string(val, '\n') << (i==size-1 ? std::string("") : std::string(maxDepth-val, ' '));
+				os << ", " << std::string(ret_depth, '\n') << (i==size-1 ? std::string("") : std::string(max_depth-ret_depth, ' '));
 		}
 	}
 	os << "}";
 
-	return val+1;//return the current depth from the back
+	return ret_depth+1;//return the current depth from the back
 }
 
-static void printNDArray(std::ostream& os, const void* ptr, Shape shape, DType dtype)
+static void printTensor(std::ostream& os, const void* ptr, Shape shape, DType dtype)
 {
 	bool truncate = size_t(shape.volume()) > g_print_threshold;
 	if(dtype == DType::Float)
@@ -127,17 +130,17 @@ std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 		return os;
 	}
 
-	Tensor q = realize(t);
+	Tensor q = ravel(t);
 
 	const void* ptr = q.data();
 	if(ptr == nullptr) {
 		void* buffer = malloc(q.size()*dtypeToSize(q.dtype()));
 		q.backend()->copyToHost(q.pimpl(), buffer);
-		printNDArray(os, buffer, q.shape(), q.dtype());
+		printTensor(os, buffer, q.shape(), q.dtype());
 		free(buffer);
 	}
 	else {
-		printNDArray(os, ptr, q.shape(), q.dtype());
+		printTensor(os, ptr, q.shape(), q.dtype());
 	}
 
 	return os;
@@ -168,7 +171,7 @@ bool Tensor::isSame(const Tensor& other) const
 	return (*this == other).sum().item<int32_t>() == (int32_t)size();
 }
 
-Tensor Tensor::view(const svector<std::variant<Range, intmax_t, int, size_t, unsigned int>>& rgs) const
+Tensor Tensor::view(const IndexList& rgs) const
 {
 	auto ranges = rgs;
 	if(ranges.size() > dimentions())
@@ -194,6 +197,7 @@ Tensor Tensor::view(const svector<std::variant<Range, intmax_t, int, size_t, uns
 	Shape viewed_strides = pimpl_->stride();
 	Shape result_stride;
 	offset.reserve(dimentions());
+	result_shape.reserve(dimentions());
 
 	assert(viewed_strides.size() == dimentions());
 
@@ -347,7 +351,7 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 		ranges.push_back(et::all());
 
 	for(const auto& t : tensors) {
-		ranges[dim] = Range(pos, pos+t.shape()[dim]);
+		ranges[dim] = range(pos, pos+t.shape()[dim]);
 		res.view(ranges) = t;
 		pos = pos + t.shape()[dim];
 	}
