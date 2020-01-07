@@ -1,7 +1,7 @@
 # Python bindings
 
 ## PyEtaler
-[PyEtaler](https://guthub.com/etaler/pyetaler) is the offical binding for Etaler. We try to keep the Python API as close to the C++ one as possible. So you can use the C++ document as the Python document. With that said, some functions are changed in the binding to make it more Pythonic.
+[PyEtaler](https://github.com/etaler/pyetaler) is the offical binding for Etaler. We try to keep the Python API as close to the C++ one as possible. So you can use the C++ document as the Python document. With that said, some functions are changed in the binding to make it more Pythonic.
 
 ```python
 >>> from etaler import et

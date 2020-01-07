@@ -9,7 +9,6 @@
 #include <Etaler/Algorithms/SDRClassifer.hpp>
 
 #include <numeric>
-#include <execution>
 
 using namespace et;
 
