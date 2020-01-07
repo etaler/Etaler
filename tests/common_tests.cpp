@@ -9,6 +9,7 @@
 #include <Etaler/Algorithms/SDRClassifer.hpp>
 
 #include <numeric>
+#include <execution>
 
 using namespace et;
 
@@ -101,6 +102,13 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(r.dtype() == DType::Bool);
 		CHECK(r.shape() == Shape({1}));
 		CHECK(r.item<uint8_t>() == true);
+	}
+
+	SECTION("Create Tensor from vector") {
+		std::vector<int> v = {1, 2, 3, 4};
+		Tensor t = Tensor(v);
+		CHECK(t.size() == intmax_t(v.size()));
+		CHECK(t.dtype() == DType::Int);
 	}
 
 	SECTION("tensor like") {
@@ -212,6 +220,22 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(realize(r).isSame(pred));
 		}
 
+		SECTION("Indexing a column") {
+			Tensor q = t.view({all(), 0});
+			int arr[] = {0, 4, 8, 12};
+			Tensor r = Tensor({4}, arr);
+			CHECK(q.shape() == Shape({4}));
+			CHECK(r.isSame(q));
+		}
+
+		SECTION("Indexing with negative values") {
+			Tensor q = t.view({3});
+			Tensor r;
+			CHECK_NOTHROW(r = t.view({-1}));
+			CHECK(r.has_value() == true);
+			CHECK(q.isSame(r));
+		}
+
 		SECTION("View of views") {
 			Tensor t = ones({4, 4});
 			Tensor v1 = t[{3}];
@@ -270,7 +294,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		}
 
 		SECTION("subscription operator") {
-			svector<Range> r = {range(2)};
+			IndexList r = {range(2)};
 			//The [] operator should work exactly like the view() function
 			CHECK(t[r].isSame(t.view(r)));
 		}
@@ -284,6 +308,17 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			t[{2}] = t[{2}] + 1;
 			//Check a subset of weather the result is correct
 			CHECK(t[{2, 2}].item<int>() == 11);
+		}
+
+		SECTION("all/any test") {
+			CHECK(ones({3}).any() == true);
+			CHECK(zeros({3}).any() == false);
+			CHECK(ones({3}).all() == true);
+			CHECK(zeros({3}).all() == false);
+			CHECK((ones({7}) == zeros({7})).all() == false);
+			CHECK((ones({7}) == zeros({7})).any() == false);
+			CHECK((ones({4,4}) == t).any() == true);
+			CHECK((ones({4,4}) == t).all() == false);
 		}
 	}
 
@@ -303,8 +338,8 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		Tensor q = zeros({3, 4});
 		STATIC_REQUIRE(std::is_same_v<Tensor::iterator::value_type, Tensor>);
 
-		// Tensor::iterator should be bideractional
-		// Reference: http://www.cplusplus.com/reference/iterator/BidirectionalIterator/
+		// Tensor::iterator should be ramdp,
+		// Reference: http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
 		STATIC_REQUIRE(std::is_default_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_assignable_v<Tensor::iterator>);
@@ -317,6 +352,8 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(t.begin() == t.begin());
 		CHECK((*t.begin()).shape() == Shape{4});
 		CHECK(t.begin()->shape() == Shape{4});
+		CHECK(t.end() - t.begin() == t.shape()[0]);
+		CHECK(t.begin()[2].isSame(*t.back()) == true);
 		auto it1 = t.begin(), it2 = t.begin();
 		it1++;
 		++it2;
@@ -336,6 +373,36 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		}
 		CHECK(num_iteration == t.shape()[0]);
 		CHECK(t.sum().item<int>() == 42*t.size());
+	}
+
+	SECTION("swapping Tensor") {
+		std::vector<int> v1 = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10 , 11, 12};
+		std::vector<int> v2 = {11, 12, 13, 14, 15, 16, 17, 18, 19, 20 , 21, 22};
+		Tensor t = Tensor(v1).reshape({3, 4});
+		Tensor q = Tensor(v2).reshape({3, 4});
+		Tensor t_old = t.copy();
+		Tensor q_old = q.copy();
+
+		SECTION("swap") {
+			swap(t, q);
+			CHECK(t.isSame(q_old));
+			CHECK(q.isSame(t_old));
+		}
+
+		SECTION("swapping views") {
+			swap(q[{1}], t[{2}]);
+			CHECK(t[{2}].isSame(q_old[{1}]));
+			CHECK(q[{1}].isSame(t_old[{2}]));
+		}
+
+		SECTION("swaping itself") {
+			swap(t[{0}], t[{0}]);
+			REQUIRE(t[{0}].isSame(t_old[{0}]));
+
+			swap(t[{0}], t[{1}]);
+			REQUIRE(t[{0}].isSame(t_old[{1}]));
+			REQUIRE(t[{1}].isSame(t_old[{0}]));
+		}
 	}
 }
 
@@ -764,6 +831,14 @@ TEST_CASE("Type system")
 			return true;
 		}();
 
+		SECTION("abs") {
+			CHECK(abs(ones({1}, DType::Bool)).dtype() == DType::Int32);
+			CHECK(abs(ones({1}, DType::Int32)).dtype() == DType::Int32);
+			CHECK(abs(ones({1}, DType::Float)).dtype() == DType::Float);
+			if(support_fp16)
+				CHECK(abs(ones({1}, DType::Half)).dtype() == DType::Half);
+		}
+
 		SECTION("exp") {
 			CHECK(exp(ones({1}, DType::Bool)).dtype() == DType::Float);
 			CHECK(exp(ones({1}, DType::Int32)).dtype() == DType::Float);
@@ -869,6 +944,72 @@ TEST_CASE("Type system")
 				}
 			}
 		}
+	}
+}
+
+// TODO: Should I count this as an integration test?
+// This test checks all components of Tensor works together properly
+TEST_CASE("Complex Tensor operations")
+{
+	std::vector<int> v1 = {1, 8, 6, 7
+			, 3, 2, 5, 6
+			, 4, 3, 2, 7
+			, 9, 0 ,1, 1};
+	Tensor a = Tensor(v1).reshape({4,4});
+
+	SECTION("Vector inner product") {
+		std::vector<int> v1 = {1, 6, 7, 9, 15, 6};
+		std::vector<int> v2 = {3, 7, 8, -1, 6, 15};
+		REQUIRE(v1.size() == v2.size());
+		Tensor a = Tensor(v1);
+		Tensor b = Tensor(v2);
+
+		CHECK((a*b).sum().item<int>() == std::inner_product(v1.begin(), v1.end(), v2.begin(), 0));
+	}
+
+	SECTION("assign column to row") {
+		std::vector<int> v2 = {9, 0, 1, 1};
+		Tensor b = Tensor(v2);
+
+		Tensor t = a.copy();
+		t[{all(), 1}] = a[{3}];
+		CHECK(t[{all(), 1}].isSame(b));
+	}
+
+	SECTION("shuffle") {
+		std::mt19937 rng;
+		std::shuffle(a.begin(), a.end(), rng);
+		CHECK(std::accumulate(v1.begin(), v1.end(), 0) == a.sum().item<int>());
+	}
+
+	SECTION("find_if") {
+		Tensor b = a[{0}];
+		CHECK(std::find_if(a.begin(), a.end(), [&b](auto t){ return t.isSame(b); }) != a.end());
+	}
+
+	SECTION("transform") {
+		Tensor a = ones({12, 6});
+		Tensor b = ones({12, 6});
+		std::transform(a.begin(), a.end(), b.begin(), [](const auto& t){return zeros_like(t);});
+		CHECK(b.isSame(zeros_like(a)));
+	}
+
+	SECTION("accumulate") {
+		// Test summing along the first dimension. Making sure iterator and sum() works
+		// Tho you should always use the sum() function instead of accumulate or reduce
+		Tensor t = std::accumulate(a.begin(), a.end(), zeros({a.shape()[1]}));
+		Tensor q = std::reduce(std::execution::par, a.begin(), a.end(), zeros({a.shape()[1]}));
+		Tensor a_sum = a.sum(0);
+		CHECK(t.isSame(a_sum));
+		CHECK(q.isSame(a_sum));
+		CHECK(t.isSame(q)); // Should be communicative
+	}
+
+	SECTION("generate") {
+		// Again, you should never do this. But you should be able to.
+		Tensor t  = Tensor({4, 4}, DType::Int);
+		std::generate(t.begin(), t.end(), [n = 0, &v1]() mutable {return Tensor({4}, v1.data()+(n++)*4);});
+		CHECK(t.isSame(a));
 	}
 }
 

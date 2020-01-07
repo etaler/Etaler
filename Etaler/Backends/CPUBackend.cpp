@@ -594,10 +594,8 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 		throw EtError("Shape mismatch in tensor assignment. Shape "
 			+ to_string(dest->shape()) + " and " + to_string(src->shape()));
 
-	auto source = realize(src);
-
-	if(dest->dtype() != source->dtype())
-		source = cast(source.get(), dest->dtype());
+	if(dest->dtype() != src->dtype())
+		assign(dest, cast(src, dest->dtype()).get());
 
 	dispatch(dest->dtype(), [&](auto v) {
 		using T = decltype(v);
@@ -680,6 +678,11 @@ void CPUBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, 
 	dispatch<type_list_t<float, half>>(permeances->dtype(), [&](auto v) {
 		detail::decaySynapses<decltype(v)>(connections, permeances, threshold, this);
 	});
+}
+
+std::shared_ptr<TensorImpl> CPUBackend::abs(const TensorImpl* x)
+{
+	return uniaryOp(x, [](auto v){return std::abs(v);});
 }
 
 std::shared_ptr<TensorImpl> CPUBackend::exp(const TensorImpl* x)
