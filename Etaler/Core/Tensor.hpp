@@ -420,6 +420,10 @@ inline Tensor logical_or(const Tensor& x1, const Tensor& x2) { return x1.logical
 inline bool all(const Tensor& t) { return t.all(); }
 inline bool any(const Tensor& t) { return t.any(); }
 
+template <typename ... Args>
+inline Tensor view(const Tensor& t, Args... args) { return t.view({args...}); }
+inline Tensor dynamic_view(const Tensor& t, const IndexList& indices) { return t.view(indices); }
+
 inline Tensor zeros_like(const Tensor& x) { return zeros(x.shape(), x.dtype(), x.backend()); }
 inline Tensor ones_like(const Tensor& x) { return ones(x.shape(), x.dtype(), x.backend()); }
 }

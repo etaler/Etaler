@@ -319,6 +319,14 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK((ones({4,4}) == t).any() == true);
 			CHECK((ones({4,4}) == t).all() == false);
 		}
+
+		SECTION("xtensor style views") {
+			CHECK(view(t, 2).isSame(t.view({2})));
+
+			IndexList lst;
+			lst.push_back(3);
+			CHECK(dynamic_view(t, lst).isSame(t.view({3})));
+		}
 	}
 
 	SECTION("item") {
