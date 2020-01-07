@@ -9,7 +9,6 @@
 #include <Etaler/Algorithms/SDRClassifer.hpp>
 
 #include <numeric>
-#include <execution>
 
 using namespace et;
 
@@ -319,6 +318,14 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK((ones({7}) == zeros({7})).any() == false);
 			CHECK((ones({4,4}) == t).any() == true);
 			CHECK((ones({4,4}) == t).all() == false);
+		}
+
+		SECTION("xtensor style views") {
+			CHECK(view(t, 2).isSame(t.view({2})));
+
+			IndexList lst;
+			lst.push_back(3);
+			CHECK(dynamic_view(t, lst).isSame(t.view({3})));
 		}
 	}
 
@@ -994,11 +1001,8 @@ TEST_CASE("Complex Tensor operations")
 		// Test summing along the first dimension. Making sure iterator and sum() works
 		// Tho you should always use the sum() function instead of accumulate or reduce
 		Tensor t = std::accumulate(a.begin(), a.end(), zeros({a.shape()[1]}));
-		Tensor q = std::reduce(std::execution::par, a.begin(), a.end(), zeros({a.shape()[1]}));
 		Tensor a_sum = a.sum(0);
 		CHECK(t.isSame(a_sum));
-		CHECK(q.isSame(a_sum));
-		CHECK(t.isSame(q)); // Should be communicative
 	}
 
 	SECTION("generate") {
