@@ -665,6 +665,19 @@ std::optional<cl::Buffer> OpenCLBackend::toSparse(const TensorImpl* x)
 
 static std::string jitStridedView(const TensorImpl* x, size_t id)
 {
+	// If possible, do the easy route
+	if(x->iscontiguous()) {
+		std::string func = R"(
+		int location_func$ID(int index) {
+			return index + $OFFSET;	
+		}
+		)";
+		replaceAll(func, "$ID", std::to_string(id));
+		replaceAll(func, "$OFFSET", std::to_string(x->offset()));
+		return func;
+	}
+
+	// Otherwise go the complex one
 	std::string func = R"(
 int location_func$ID(int index)
 {
