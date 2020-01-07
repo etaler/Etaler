@@ -644,31 +644,29 @@ static std::string jitStridedView(const TensorImpl* x, size_t id)
 	std::string func = R"(
 int location_func$ID(int location)
 {
-	int in_stride[] = $IN_STRIDE;
+	int shape_stride[] = $SHAPE_STRIDE;
 	int stride[] = $STRIDE;
-	int bias = $BIAS;
-	int ndpos[$DIMS] = {0};
+	int offset = $OFFSET;
+	int ndpos[$DIMS];
 	int loc = location;
-	for(int i=0;i<$IN_DIMS;i++) {
-		int s = in_stride[i];
-		ndpos[$DIMS - $IN_DIMS + i] = loc / s;
+	for(int i=0;i<$DIMS;i++) {
+		int s = shape_stride[i];
+		ndpos[i] = loc / s;
 		loc %= s;
 	}
 	int sum = 0;
 	for(int i=0;i<$DIMS;i++)
 		sum += ndpos[i]*stride[i];
-	sum += bias;
-	return sum;
+	return sum + offset;
 }
 )";
 	replaceAll(func, "$ID", std::to_string(id));
-	auto in_strides = shapeToStride(x->shape());
-	replaceAll(func, "$IN_STRIDE", to_string(in_strides));
-	replaceAll(func, "$IN_DIMS", std::to_string(in_strides.size()));
-	replaceAll(func, "$DIMS", std::to_string(std::max(x->dimentions(), x->stride().size())));
+	const auto shape_stride = shapeToStride(x->shape());
+	replaceAll(func, "$SHAPE_STRIDE", to_string(shape_stride));
+	replaceAll(func, "$DIMS", std::to_string(x->dimentions()));
 
 	replaceAll(func, "$STRIDE", to_string(x->stride()));
-	replaceAll(func, "$BIAS", std::to_string(x->offset()));
+	replaceAll(func, "$OFFSET", std::to_string(x->offset()));
 	return func;
 }
 

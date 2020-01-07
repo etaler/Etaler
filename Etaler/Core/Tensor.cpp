@@ -93,7 +93,7 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 		}
 
 		//seperator
-		os << truncate_symbol << '\n' << std::string(max_depth-val, ' ');
+		os << truncate_symbol << '\n' << std::string(max_depth-ret_depth, ' ');
 
 		//The second half
 		for(intmax_t i=size-intmax_t(g_truncate_size);i<size;i++) {
