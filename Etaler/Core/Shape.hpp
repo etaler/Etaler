@@ -166,7 +166,7 @@ inline Shape foldIndex(size_t index, const ShapeType& shape)
 
 static inline intmax_t convResultSize(intmax_t input, intmax_t kernel, intmax_t stride=1)
 {
-	return (input/kernel)/stride+1;
+	return (input-kernel)/stride+1;
 }
 
 inline Shape convResultShape(const Shape& input, const Shape& kernel, const Shape& stride)
