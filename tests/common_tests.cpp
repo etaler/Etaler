@@ -242,6 +242,13 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(v2.size() == 4);
 		}
 
+		SECTION("continous viewing") {
+			auto q = t[{1}][{3}];
+			auto r = t[{1, 3}];
+			CHECK(q.isSame(r));
+			CHECK(q.item<int>() == 7);
+		}
+
 		SECTION("View write back") {
 			Tensor q = t.view({range(2),range(2)});
 			CHECK_THROWS(q.assign(ones({5,5})));
@@ -968,6 +975,12 @@ TEST_CASE("Complex Tensor operations")
 		Tensor b = Tensor(v2);
 
 		CHECK((a*b).sum().item<int>() == std::inner_product(v1.begin(), v1.end(), v2.begin(), 0));
+	}
+
+	SECTION("copy from view of view to a view of view") {
+		Tensor b = a.copy();
+		b[{3}][{1}] = a[{2}][{0}];
+		CHECK(b[{3, 1}].item<int>() == 4);
 	}
 
 	SECTION("assign column to row") {
