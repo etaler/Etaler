@@ -95,9 +95,9 @@ static std::shared_ptr<TensorImpl> cellActivity(const TensorImpl* x, const Tenso
 	, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse, CPUBackend* backend)
 {
 	//Checks the input are sane
-	requireProperties(x, backend, DType::Bool, IsContingous());
-	requireProperties(connections, backend, DType::Int32, IsContingous());
-	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
+	requireProperties(x, backend, DType::Bool, IsPlain());
+	requireProperties(connections, backend, DType::Int32, IsPlain());
+	requireProperties(permeances, backend, typeToDType<PermType>(), IsPlain());
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(connections->dimentions() >= 2);
 
@@ -149,10 +149,10 @@ template <typename PermType>
 void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections, TensorImpl* permeances
 	, float perm_inc, float perm_dec, bool has_unconnected_synapse, CPUBackend* backend)
 {
-	requireProperties(x, backend, DType::Bool, IsContingous());
-	requireProperties(learn, backend, DType::Bool, IsContingous());
-	requireProperties(connections, backend, DType::Int32, IsContingous());
-	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
+	requireProperties(x, backend, DType::Bool, IsPlain());
+	requireProperties(learn, backend, DType::Bool, IsPlain());
+	requireProperties(connections, backend, DType::Int32, IsPlain());
+	requireProperties(permeances, backend, typeToDType<PermType>(), IsPlain());
 
 	et_assert(connections->shape() == permeances->shape());
 
@@ -189,8 +189,8 @@ void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const Tensor
 template <typename PermType>
 void sortSynapse(TensorImpl* connections, TensorImpl* permeances, CPUBackend* backend)
 {
-	requireProperties(connections, backend, DType::Int32, IsContingous());
-	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
+	requireProperties(connections, backend, DType::Int32, IsPlain());
+	requireProperties(permeances, backend, typeToDType<PermType>(), IsPlain());
 	et_assert(connections->shape() == permeances->shape());
 
 	size_t max_synapse_per_cell = connections->shape().back();
@@ -218,10 +218,10 @@ template <typename PermType>
 void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 	, TensorImpl* permeances, float initial_perm, CPUBackend* backend)
 {
-	requireProperties(x, backend, DType::Bool, IsContingous());
-	requireProperties(y, backend, DType::Bool, IsContingous());
-	requireProperties(connections, backend, DType::Int32, IsContingous());
-	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
+	requireProperties(x, backend, DType::Bool, IsPlain());
+	requireProperties(y, backend, DType::Bool, IsPlain());
+	requireProperties(connections, backend, DType::Int32, IsPlain());
+	requireProperties(permeances, backend, typeToDType<PermType>(), IsPlain());
 
 	et_assert(connections->shape() == permeances->shape());
 	Shape s = connections->shape();
@@ -295,8 +295,8 @@ void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connecti
 template <typename PermType>
 void decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold, CPUBackend* backend)
 {
-	requireProperties(connections, backend, DType::Int32, IsContingous());
-	requireProperties(permeances, backend, typeToDType<PermType>(), IsContingous());
+	requireProperties(connections, backend, DType::Int32, IsPlain());
+	requireProperties(permeances, backend, typeToDType<PermType>(), IsPlain());
 	et_assert(connections->shape() == permeances->shape());
 
 	PermType* perms = (PermType*)permeances->data();
@@ -351,7 +351,7 @@ void CPUBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, 
 
 std::shared_ptr<TensorImpl> CPUBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
-	requireProperties(x, this, DType::Int32, IsContingous());
+	requireProperties(x, this, DType::Int32, IsPlain());
 
 	auto y = createTensor(x->shape(), DType::Bool);
 
@@ -399,7 +399,7 @@ static auto castData(const From* ptr, size_t n)
 
 std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 {
-	requireProperties(x, this, IsContingous());
+	requireProperties(x, this, IsPlain());
 	auto res = createTensor(x->shape(), toType);
 	dispatch(toType, [&](auto v0){
 		using ToType = decltype(v0);
@@ -416,13 +416,13 @@ std::shared_ptr<TensorImpl> CPUBackend::cast(const TensorImpl* x, DType toType)
 
 void CPUBackend::copyToHost(const TensorImpl* t, void* ptr)
 {
-	requireProperties(t, this, IsContingous());
+	requireProperties(t, this, IsPlain());
 	memcpy(ptr, t->data(), t->size()*dtypeToSize(t->dtype()));
 }
 
 std::shared_ptr<TensorImpl> CPUBackend::copy(const TensorImpl* x)
 {
-	requireProperties(x, this, IsContingous());
+	requireProperties(x, this, IsPlain());
 	return createTensor(x->shape(), x->dtype(), x->data());
 }
 
@@ -435,8 +435,8 @@ void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
-	requireProperties(x, this, DType::Bool, IsContingous());
-	requireProperties(s, this, DType::Bool, IsContingous());
+	requireProperties(x, this, DType::Bool, IsPlain());
+	requireProperties(s, this, DType::Bool, IsPlain());
 
 	Shape shape = s->shape();
 	shape.pop_back();
@@ -464,7 +464,7 @@ std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorI
 
 std::shared_ptr<TensorImpl> CPUBackend::reverseBurst(const TensorImpl* x)
 {
-	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(x, this, DType::Bool, IsPlain());
 
 	size_t cells_per_column = x->shape().back();
 	size_t num_columns = x->size()/cells_per_column;
@@ -620,7 +620,7 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
-	requireProperties(x, this, IsContingous());
+	requireProperties(x, this, IsPlain());
 	et_assert(x->size() % chunk_size == 0);
 
 	DType result_dtype = dtype;
