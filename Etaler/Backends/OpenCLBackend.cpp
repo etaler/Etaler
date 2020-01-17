@@ -293,9 +293,9 @@ void KernelManager::addSearchPath(const std::string& path)
 std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, const TensorImpl* connections,
 	const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
-	requireProperties(x, this, DType::Bool, IsContingous());
-	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
+	requireProperties(x, this, DType::Bool, IsPlain());
+	requireProperties(connections, this, DType::Int32, IsPlain());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsPlain());
 	et_assert(connections->shape() == permeances->shape());
 	et_assert(connections->dimentions() >= 2);
 
@@ -342,7 +342,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 
 std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x, float fraction)
 {
-	requireProperties(x, this, DType::Int32, IsContingous());
+	requireProperties(x, this, DType::Int32, IsPlain());
 
 	auto y = createTensor(x->shape(), DType::Bool);
 
@@ -375,7 +375,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::globalInhibition(const TensorImpl* x,
 
 std::shared_ptr<TensorImpl> OpenCLBackend::cast(const TensorImpl* x, DType toType)
 {
-	requireProperties(x, this, IsContingous());
+	requireProperties(x, this, IsPlain());
 	auto param_hash = hashify(x->dtype(), toType, x->dtype() == DType::Half || toType == DType::Half);
 	auto program_name = "cast"+param_hash;
 	if(kernel_manager_.exists(program_name) == false) {
@@ -418,10 +418,10 @@ std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const TensorImpl* connections,
 	TensorImpl* permeances, float perm_inc, float perm_dec, bool has_unconnected_synapse)
 {
-	requireProperties(x, this, DType::Bool, IsContingous());
-	requireProperties(learn, this, DType::Bool, IsContingous());
-	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
+	requireProperties(x, this, DType::Bool, IsPlain());
+	requireProperties(learn, this, DType::Bool, IsPlain());
+	requireProperties(connections, this, DType::Int32, IsPlain());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsPlain());
 
 	et_assert(connections->shape() == permeances->shape());
 
@@ -464,8 +464,8 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 
 void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
-	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsPlain());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsPlain());
 	et_assert(connections->shape() == permeances->shape());
 
 	auto param_hash = hashify(connections->shape().back(), permeances->dtype(), permeances->dtype()==DType::Half);
@@ -497,8 +497,8 @@ void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const TensorImpl* s)
 {
-	requireProperties(x, this, DType::Bool, IsContingous());
-	requireProperties(s, this, DType::Bool, IsContingous());
+	requireProperties(x, this, DType::Bool, IsPlain());
+	requireProperties(s, this, DType::Bool, IsPlain());
 
 	Shape shape = s->shape();
 	shape.pop_back();
@@ -529,7 +529,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const Tens
 
 std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 {
-	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(x, this, DType::Bool, IsPlain());
 
 	size_t cells_per_column = x->shape().back();
 	size_t num_columns = x->size()/cells_per_column;
@@ -569,10 +569,10 @@ std::shared_ptr<TensorImpl> OpenCLBackend::reverseBurst(const TensorImpl* x)
 void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connections
 		, TensorImpl* permeances, float initial_perm)
 {
-	requireProperties(x, this, DType::Bool, IsContingous());
-	requireProperties(y, this, DType::Bool, IsContingous());
-	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsContingous());
+	requireProperties(x, this, DType::Bool, IsPlain());
+	requireProperties(y, this, DType::Bool, IsPlain());
+	requireProperties(connections, this, DType::Int32, IsPlain());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsPlain());
 
 	et_assert(connections->shape() == permeances->shape());
 	Shape s = connections->shape();
@@ -626,7 +626,7 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 
 std::optional<cl::Buffer> OpenCLBackend::toSparse(const TensorImpl* x)
 {
-	requireProperties(x, this, DType::Bool, IsContingous());
+	requireProperties(x, this, DType::Bool, IsPlain());
 
 	auto param_hash = hashify(x->size());
 	auto program_name = "toSparse"+param_hash;
@@ -754,7 +754,7 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 
 std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
-	requireProperties(x, this, IsContingous());
+	requireProperties(x, this, IsPlain());
 	et_assert(x->size() % chunk_size == 0);
 
 	DType result_dtype = dtype;
@@ -817,8 +817,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 
 void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
-	requireProperties(connections, this, DType::Int32, IsContingous());
-	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsContingous());
+	requireProperties(connections, this, DType::Int32, IsPlain());
+	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsPlain());
 	et_assert(connections->shape() == permeances->shape());
 
 	size_t max_synapses_per_cell = connections->shape().back();
