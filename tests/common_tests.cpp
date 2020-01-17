@@ -354,6 +354,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 		// Tensor::iterator should be ramdp,
 		// Reference: http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
+		STATIC_REQUIRE(std::is_same_v<std::iterator_traits<Tensor::iterator>::iterator_category, std::random_access_iterator_tag>);
 		STATIC_REQUIRE(std::is_default_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_assignable_v<Tensor::iterator>);
