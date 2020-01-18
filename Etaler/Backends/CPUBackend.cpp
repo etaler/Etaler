@@ -422,8 +422,9 @@ void CPUBackend::copyToHost(const TensorImpl* t, void* ptr)
 
 std::shared_ptr<TensorImpl> CPUBackend::copy(const TensorImpl* x)
 {
-	requireProperties(x, this, IsPlain());
-	return createTensor(x->shape(), x->dtype(), x->data());
+	requireProperties(x, this, IsContingous());
+	size_t offset_bytes = x->offset()*dtypeToSize(x->dtype());
+	return createTensor(x->shape(), x->dtype(), (const char*)x->data()+offset_bytes);
 }
 
 void CPUBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
