@@ -160,6 +160,18 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(q.isSame(r));
 	}
 
+	SECTION("Copy from offset") {
+		int data[] = {1,2,3,4};
+		Tensor t = Tensor({4}, data);
+		Tensor q = t.view({et::range(2,4)});
+		Tensor r = q.copy();
+
+		auto v = r.toHost<int>();
+		CHECK(v.size() == 2);
+		CHECK(v[0] == 3);
+		CHECK(v[1] == 4);
+	}
+
 	SECTION("Property Check") {
 		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), DType::Int32));
 		CHECK_THROWS(requireProperties(ones(Shape{1}, DType::Float).pimpl(), DType::Int32));
