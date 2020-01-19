@@ -406,7 +406,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 {
 	requireProperties(x, this, IsContingous());
 	size_t buf_size = x->size()*dtypeToSize(x->dtype());
-	size_t offset = x->offset();
+	size_t offset = x->offset()*dtypeToSize(x->dtype());
 	cl::Buffer buf = allocBuffer(buf_size);
 	const cl::Buffer& src = std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer();
 	cl_int err = queue_.enqueueCopyBuffer(src, buf, offset, 0, buf_size);
