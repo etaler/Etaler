@@ -131,14 +131,16 @@ make -j8
 
 Some cmake options are available:
 
-| option                             | description               | default |
-| ---------------------------------- | ------------------------- | ------- |
-| CMAKE_BUILD_TYPE                   | Debug or Release build    | Release |
-| ETALER_ENABLE_OPENCL               | Enable the OpenCL backend | OFF     |
-| ETALER_BUILD_EXAMPLES              | Build the examples        | ON      |
-| ETALER_BUILD_EXAMPLE_VISUALIZER    | Build visualizer example  | OFF     |
-| ETALER_BUILD_TESTS                 | Build the tests           | ON      |
-| ETALER_BUILD_DOCS                  | Build the documents       | OFF     |
+| option                             | description                                | default |
+| ---------------------------------- | ------------------------------------------ | ------- |
+| CMAKE_BUILD_TYPE                   | Debug or Release build                     | Release |
+| ETALER_ENABLE_OPENCL               | Enable the OpenCL backend                  | OFF     |
+| ETALER_BUILD_EXAMPLES              | Build the examples                         | ON      |
+| ETALER_BUILD_EXAMPLE_VISUALIZER    | Build visualizer example                   | OFF     |
+| ETALER_BUILD_TESTS                 | Build the tests                            | ON      |
+| ETALER_BUILD_DOCS                  | Build the documents                        | OFF     |
+| ETALER_ENABLE_SIMD                 | Enable SIMD for CPU backend                | OFF     |
+| ETALER_NATIVE_BUILD                | Enable compiler optimize for the host CPU  | OFF     |
 
 
 ### Building in Docker/VSC
