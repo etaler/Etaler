@@ -404,11 +404,12 @@ void OpenCLBackend::sync() const
 
 std::shared_ptr<TensorImpl> OpenCLBackend::copy(const TensorImpl* x)
 {
-	requireProperties(x, this, IsPlain());
+	requireProperties(x, this, IsContingous());
 	size_t buf_size = x->size()*dtypeToSize(x->dtype());
+	size_t offset = x->offset();
 	cl::Buffer buf = allocBuffer(buf_size);
 	const cl::Buffer& src = std::static_pointer_cast<const OpenCLBuffer>(x->buffer())->buffer();
-	cl_int err = queue_.enqueueCopyBuffer(src, buf, 0, 0, buf_size);
+	cl_int err = queue_.enqueueCopyBuffer(src, buf, offset, 0, buf_size);
 	if(err != CL_SUCCESS)
 		throw EtError("Data copy enqueuing failed. Error " + std::to_string(err));
 

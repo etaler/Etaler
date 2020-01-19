@@ -127,17 +127,24 @@ struct ETALER_EXPORT Tensor
 	template<typename T>
 	std::vector<T> toHost() const
 	{
-		static_assert(std::is_same_v<T, bool> == false && "You should NOT use coptToHost<bool> as std::vector<bool> is a "
-								"specillation. Use copyToHost<uint8_t> instead.");
 		if(pimpl()->isplain() == false)
 			return realize().toHost<T>();
 		if(dtype() != typeToDType<T>()) {
 			throw EtError("toHost() failed. Requested type and dtype mismatch. " + demangle(typeid(T).name())
 				+ " requested but " + to_ctype_string(dtype()) + " is stored.");
 		}
-		std::vector<T> res(size());
-		backend()->copyToHost(pimpl(), res.data());
-		return res;
+
+		if constexpr(std::is_same_v<T, bool>) {
+			std::unique_ptr<bool[]> buffer(new bool[size()]); // Incase copyToHost fails so we don't have memory leak
+			backend()->copyToHost(pimpl(), buffer.get());
+			std::vector<bool> res(buffer.get(), buffer.get()+size());
+			return res;
+		}
+		else {
+			std::vector<T> res(size());
+			backend()->copyToHost(pimpl(), res.data());
+			return res;
+		}
 	}
 
 
