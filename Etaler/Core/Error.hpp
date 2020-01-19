@@ -27,7 +27,7 @@ private:
 #define __GetAtAssrtyMacro(_1,_2,NAME,...) NAME
 
 //et_assert is basically C assert but not efficeted by the NDEBUG flag. Use assert for debug, et_assert for possible user screw-ups.
-#define et_assert(...) __GetAtAssrtyMacro(__VA_ARGS__ ,et_assert_with_message, et_assert_no_message)(__VA_ARGS__)
+#define et_assert(...) __GetAtAssrtyMacro(__VA_ARGS__ ,et_assert_with_message, et_assert_no_message, nullptr)(__VA_ARGS__)
 }
 
 //Replaces stupid C asserts
