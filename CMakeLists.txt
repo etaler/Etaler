@@ -20,15 +20,34 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") #GCC flags
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Wno-unused-function -Wno-unused-but-set-parameter")
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
-elseif(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang") #clang flags
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Wno-unused-function")
+OPTION(ETALER_NATIVE_BUILD OFF)
+OPTION(ETALER_ENABLE_SIMD ON)
+
+# If not building for native archicture: Try to enable SIMD
+if((NOT ETALER_NATIVE_BUILD) AND ETALER_ENABLE_SIMD)
+	# Detect the CPU archicturer and enable SIMD when possible
+	include(EnableSIMD)
+endif()
+
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang") #GCC/clang flags
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Wno-unused-function") # common flags
+	if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") # GCC flags
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-but-set-parameter")
+	else() # clang flags
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-absolute-value -Wno-unused-lambda-capture")
+	endif()
+
+	if(ETALER_BUILD_NATIVE)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+	endif()
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 else()
 	#Add support for MSVC and ICC if needed
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DNOMINMAX")
+	# No -march=native equlivent for MSVC. We just force AVX 
+	if(ETALER_NATIVE_BUILD)
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
+	endif()
 endif()
 
 #Use GOLD if avaliabel (on Linux)
