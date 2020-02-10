@@ -392,6 +392,7 @@ inline Shape brodcast_result_shape(Shape a, Shape b)
 	assert(a.size() == max);
 
 	Shape s;
+	s.reserve(max);
 	for(size_t i=0;i<max;i++)
 		s.push_back(std::max(a[i], b[i]));
 	return s;

@@ -33,6 +33,13 @@ public:
 	Shape(size_t n, intmax_t init=0) : svector<intmax_t, shapeSmallVecSize>(n, init)
 	{}
 
+	void reserve(size_t n)
+	{
+		// only reserve when we can't fit the thing in the small_vector as reserve always allocates.
+		if(n < shapeSmallVecSize)
+			svector<intmax_t, shapeSmallVecSize>::reserve(n);
+	}
+
 	intmax_t volume() const
 	{
 		intmax_t val = 1;
