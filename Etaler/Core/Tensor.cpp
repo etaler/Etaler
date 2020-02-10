@@ -12,7 +12,7 @@ template <typename T>
 static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, size_t depth, size_t max_depth, size_t max_length=0, bool truncate=false) noexcept
 {
 	// Not using std::to_string because std::to_string(0.f) returns "0.00000"
-	auto toStr = [](float val) {
+	auto toStr = [](auto val) {
 		std::stringstream ss;
 		ss << val;
 		return ss.str();
@@ -108,7 +108,7 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 	return ret_depth+1;//return the current depth from the back
 }
 
-static void printTensor(std::ostream& os, const void* ptr, Shape shape, DType dtype)
+static void printTensor(std::ostream& os, const void* ptr, const Shape& shape, DType dtype)
 {
 	bool truncate = size_t(shape.volume()) > g_print_threshold;
 	if(dtype == DType::Float)
@@ -125,21 +125,20 @@ static void printTensor(std::ostream& os, const void* ptr, Shape shape, DType dt
 
 std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 {
-	if(t.pimpl() == nullptr) {
+	if(t.has_value() == false) {
 		os << "{}";
 		return os;
 	}
 
 	Tensor q = ravel(t);
-
 	const void* ptr = q.data();
-	if(ptr == nullptr) {
+	if(ptr == nullptr) { // If direct access of the values is not possible
 		void* buffer = malloc(q.size()*dtypeToSize(q.dtype()));
 		q.backend()->copyToHost(q.pimpl(), buffer);
 		printTensor(os, buffer, q.shape(), q.dtype());
 		free(buffer);
 	}
-	else {
+	else { // Otherwise we just use the pointer
 		printTensor(os, ptr, q.shape(), q.dtype());
 	}
 
@@ -177,6 +176,7 @@ Tensor Tensor::view(const IndexList& rgs) const
 	if(ranges.size() > dimentions())
 		throw EtError("Cannot view a tensor of " + std::to_string(dimentions()) + " with " + std::to_string(ranges.size()) + " dimentions");
 
+	// Fill in the blacks where dimensions are not specified
 	while(ranges.size() != dimentions())
 		ranges.push_back(et::all());
 
@@ -185,22 +185,20 @@ Tensor Tensor::view(const IndexList& rgs) const
 			return size+idx;
 		return idx;
 	};
-
-	auto is_index_valid = [](intmax_t idx, intmax_t size) -> bool {
-		if(idx >= 0)
-			return idx < size;
-		return -idx <= size;
+	auto is_index_valid = [resolve_index](intmax_t idx, intmax_t size) -> bool {
+		return resolve_index(idx, size) < size;
 	};
 
 	Shape result_shape;
 	svector<intmax_t> offset;
-	Shape viewed_strides = pimpl_->stride();
 	Shape result_stride;
-	offset.reserve(dimentions());
-	result_shape.reserve(dimentions());
+	Shape viewed_strides = pimpl_->stride();
 
 	assert(viewed_strides.size() == dimentions());
 
+	// Compute the new shape and stride. Most of the code here exists for check for out-of-bounds access
+	offset.reserve(dimentions());
+	result_shape.reserve(dimentions());
 	for(size_t i=0;i<dimentions();i++) { std::visit([&](auto index_range) { // <- make the code neater
 		const auto& r = index_range;
 		intmax_t dim_size = shape()[i];
@@ -296,7 +294,7 @@ Tensor Tensor::sum(std::optional<intmax_t> dim_id, DType dtype) const
 	result_shape[dim] = result_shape[result_shape.size()-1];
 	result_shape.pop_back();
 
-	if(size_t(dim) == dimentions()-1) { //Special, optimized case for the last dim
+	if(size_t(dim) == dimentions()-1) { //Special, optimized case for summing the last dim
 		Tensor res = backend()->sum(pimpl(), shape().back(), dtype);
 		res.resize(final_shape);
 		return res;
@@ -394,6 +392,7 @@ inline Shape brodcast_result_shape(Shape a, Shape b)
 	assert(a.size() == max);
 
 	Shape s;
+	s.reserve(max);
 	for(size_t i=0;i<max;i++)
 		s.push_back(std::max(a[i], b[i]));
 	return s;

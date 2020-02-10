@@ -20,8 +20,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-OPTION(ETALER_NATIVE_BUILD OFF)
-OPTION(ETALER_ENABLE_SIMD ON)
+option(ETALER_NATIVE_BUILD "Enable compiler optimizing for host processor archicture" OFF)
+option(ETALER_ENABLE_SIMD "Enable SIMD optimizations" ON)
 
 # If not building for native archicture: Try to enable SIMD
 if((NOT ETALER_NATIVE_BUILD) AND ETALER_ENABLE_SIMD)
@@ -29,7 +29,7 @@ if((NOT ETALER_NATIVE_BUILD) AND ETALER_ENABLE_SIMD)
 	include(EnableSIMD)
 endif()
 
-if (${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR ${CMAKE_CXX_COMPILER_ID} STREQUAL "AppleClang") #GCC/clang flags
+if (${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU)|(Clang)|(AppleClang)") #GCC/clang flags
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter -Wno-unused-function") # common flags
 	if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU") # GCC flags
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-but-set-parameter")

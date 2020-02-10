@@ -45,7 +45,7 @@ kernel void learnCorrilation(global bool* restrict x, global bool* restrict y
 			else
 				permeance -= permeance_dec;
 
-			permeances[idx] = max(min(permeance, 1.f), 0.f);
+			permeances[idx] = clamp(permeance, 0.f, 1.f);
 		}
 	}
 }
