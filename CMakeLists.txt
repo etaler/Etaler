@@ -37,14 +37,14 @@ if (${CMAKE_CXX_COMPILER_ID} MATCHES "(GNU)|(Clang)|(AppleClang)") #GCC/clang fl
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-absolute-value -Wno-unused-lambda-capture")
 	endif()
 
-	if(ETALER_BUILD_NATIVE)
+    if(ETALER_NATIVE_BUILD)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 	endif()
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 else()
 	#Add support for MSVC and ICC if needed
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /DNOMINMAX")
-	# No -march=native equlivent for MSVC. We just force AVX 
+	# No -march=native equlivent for MSVC. We just force AVX
 	if(ETALER_NATIVE_BUILD)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /arch:AVX")
 	endif()
