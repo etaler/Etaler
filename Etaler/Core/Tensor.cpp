@@ -31,7 +31,7 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 	if(shape.size() == 1) {
 		os << "{ ";
 		intmax_t size = shape[0];
-		intmax_t max_line_content = intmax_t((80-depth*2-4)/(max_length+2));
+		intmax_t max_line_content = intmax_t((80-depth*2-truncate_symbol.size())/(max_length+2));
 
 		//Print the full content
 		if(size <= max_line_content || !truncate) {
