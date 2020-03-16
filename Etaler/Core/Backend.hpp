@@ -20,6 +20,10 @@ struct Backend;
 struct ETALER_EXPORT Backend : public std::enable_shared_from_this<Backend>
 {
 	virtual ~Backend() = default;
+	// Backends are not copyable
+	Backend() = default;
+	Backend(const Backend&) = delete;
+	Backend& operator=(const Backend&) = delete;
 	virtual std::shared_ptr<TensorImpl> createTensor(const Shape& shape, DType dtype, const void* data = nullptr) {throw notImplemented("createTensor");};
 
 	virtual void sync() const {} //Default empty implemention. For async backends
