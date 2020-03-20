@@ -178,11 +178,11 @@ static inline intmax_t convResultSize(intmax_t input, intmax_t kernel, intmax_t 
 
 inline Shape convResultShape(const Shape& input, const Shape& kernel, const Shape& stride)
 {
-	assert(inptut.size() == kernel.size());
-	assert(inptut.size() == stirde.size());
+	assert(input.size() == kernel.size());
+	assert(input.size() == stride.size());
 
 	Shape res(input.size());
-	for(size_t i=0;i<input.size();i++) 
+	for(size_t i=0;i<input.size();i++)
 		res[i] = convResultSize(input[i], kernel[i], stride[i]);
 	return res;
 }
