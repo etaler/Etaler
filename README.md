@@ -142,6 +142,9 @@ Some cmake options are available:
 | ETALER_ENABLE_SIMD                 | Enable SIMD for CPU backend                | OFF     |
 | ETALER_NATIVE_BUILD                | Enable compiler optimize for the host CPU  | OFF     |
 
+There are also packages available for the following distributions:
+
+* Arch Linux: [Etaler AUR package](https://aur.archlinux.org/packages/etaler-git/)
 
 ### Building in Docker/VSC
 Open the folder in VSC with remote docker extension ( ext install ms-vscode-remote.remote-containers ) - the docker image and container will start automatically. If CMake Tools extension are also installed, the building will be done automaticaly also. Otherwhise, do the regular cmake procedure inside Etaler dir.
