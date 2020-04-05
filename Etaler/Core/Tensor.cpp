@@ -9,7 +9,7 @@ size_t g_print_threshold = 1000;
 size_t g_truncate_size = 3;
 
 template <typename T>
-static size_t prettyPrintTensor(std::ostream& os, const T* arr, const Shape& shape, size_t depth, size_t max_length=0, bool truncate=false) noexcept
+static void prettyPrintTensor(std::ostream& os, const T* arr, const Shape& shape, size_t depth, size_t max_length=0, bool truncate=false) noexcept
 {
 	// Not using std::to_string because std::to_string(0.f) returns "0.00000"
 	auto toStr = [](auto val) {
@@ -21,7 +21,7 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, const Shape& sha
 	//If at the first dimention
 	if(depth == 0) {
 		//Calculatet the max character of printing a single element needs
-		for(int i=0;i<shape.volume();i++)
+		for(intmax_t i=0;i<shape.volume();i++)
 			max_length = std::max(max_length, toStr(arr[i]).size());
 	}
 
@@ -62,49 +62,49 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, const Shape& sha
 		}
 
 		os << "}";
-		return 1;
+		return;
 	}
 
 	// Otherwise (we aren't in the last dimension)
 	// print the curly braces recursively
 	const intmax_t size = shape[0];
 	const intmax_t vol = std::accumulate(shape.begin()+depth+1, shape.end(), intmax_t(1), std::multiplies<intmax_t>());
-
-	size_t ret_depth = 0; // TODO: Do we really need this? Should be deterministic?
+	const size_t remain_recursion = shape.size() - depth - 1;
+	const size_t done_recursion = depth + 1;
 	os << "{";
 
 	if(size < 2*intmax_t(g_truncate_size) || !truncate) {
 		//The full version
 		for(intmax_t i=0;i<size;i++) {
 			//Print the data recursivelly
-			ret_depth = prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_length, truncate);
+			prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_length, truncate);
 			if(i != size-1)
-				os << ", " << std::string(ret_depth, '\n') << (i==size-1 ? std::string("") : std::string(shape.size()-ret_depth, ' '));
+				os << ", " << std::string(remain_recursion, '\n') << (i==size-1 ? std::string("") : std::string(done_recursion, ' '));
 		}
 	}
 	else {
 		//The first half
 		for(intmax_t i=0;i<intmax_t(g_truncate_size);i++) {
 			//Print the data recursivelly
-			ret_depth = prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_length, truncate);
+			prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_length, truncate);
 			if(i != size-1)
-				os << ", " << std::string(ret_depth, '\n') << std::string(shape.size()-ret_depth, ' ');
+				os << ", " << std::string(remain_recursion, '\n') << std::string(done_recursion, ' ');
 		}
 
 		//seperator
-		os << truncate_symbol << '\n' << std::string(shape.size()-ret_depth, ' ');
+		os << truncate_symbol << '\n' << std::string(done_recursion, ' ');
 
 		//The second half
 		for(intmax_t i=size-intmax_t(g_truncate_size);i<size;i++) {
 			//Print the data recursivelly
-			ret_depth = prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_length, truncate);
+			prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_length, truncate);
 			if(i != size-1)
-				os << ", " << std::string(ret_depth, '\n') << (i==size-1 ? std::string("") : std::string(shape.size()-ret_depth, ' '));
+				os << ", " << std::string(remain_recursion, '\n') << (i==size-1 ? std::string("") : std::string(done_recursion, ' '));
 		}
 	}
 	os << "}";
 
-	return ret_depth+1;//return the current depth from the back
+	return;
 }
 
 static void printTensor(std::ostream& os, const void* ptr, const Shape& shape, DType dtype)
