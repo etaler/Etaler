@@ -9,7 +9,7 @@ size_t g_print_threshold = 1000;
 size_t g_truncate_size = 3;
 
 template <typename T>
-static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, size_t depth, size_t max_depth, size_t max_length=0, bool truncate=false) noexcept
+static size_t prettyPrintTensor(std::ostream& os, const T* arr, const Shape& shape, size_t depth, size_t max_depth, size_t max_length=0, bool truncate=false) noexcept
 {
 	// Not using std::to_string because std::to_string(0.f) returns "0.00000"
 	auto toStr = [](auto val) {
@@ -28,9 +28,9 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 	const std::string truncate_symbol = "....";
 
 	//If at the the last dimention, print the content of the tensor
-	if(shape.size() == 1) {
+	if(depth+1 == shape.size()) {
 		os << "{ ";
-		intmax_t size = shape[0];
+		intmax_t size = shape[depth];
 		intmax_t max_line_content = intmax_t((80-depth*2-truncate_symbol.size())/(max_length+2));
 
 		//Print the full content
@@ -67,9 +67,8 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 
 	// Otherwise (we aren't in the last dimension)
 	// print the curly braces recursively
-	intmax_t size = shape[0];
-	shape.erase(shape.begin());
-	intmax_t vol = shape.volume();
+	const intmax_t size = shape[0];
+	const intmax_t vol = std::accumulate(shape.begin()+depth+1, shape.end(), intmax_t(1), std::multiplies<intmax_t>());
 
 	size_t ret_depth = 0; // TODO: Do we really need this? Should be deterministic?
 	os << "{";
@@ -125,7 +124,7 @@ static void printTensor(std::ostream& os, const void* ptr, const Shape& shape, D
 
 std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 {
-	if(t.has_value() == false) {
+	if(t.has_value() == false || t.shape().size() == 0) {
 		os << "{}";
 		return os;
 	}

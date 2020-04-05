@@ -12,13 +12,16 @@ int main()
 {
 	//Create a SP that takes in 128 input bits and generates 32 bit representation
 	//setDefaultBackend(std::make_shared<OpenCLBackend>());
-	SpatialPooler sp({128}, {32});
+	// SpatialPooler sp({128}, {32});
 
-	//Encode the value 0.1 into a 32 bit SDR
-	Tensor x = encoder::scalar(0.1, 0, 1, 128, 12);
+	// //Encode the value 0.1 into a 32 bit SDR
+	// Tensor x = encoder::scalar(0.1, 0, 1, 128, 12);
 
-	std::cout << sp.compute(x) << std::endl;
+	// std::cout << sp.compute(x) << std::endl;
 
-	auto state = sp.states();
-	sp.loadState(state);
+	// auto state = sp.states();
+	// sp.loadState(state);
+
+	Tensor t = ones({4, 4, 2});
+	std::cout << t << std::endl;
 }
