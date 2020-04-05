@@ -9,7 +9,7 @@ size_t g_print_threshold = 1000;
 size_t g_truncate_size = 3;
 
 template <typename T>
-static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, size_t depth, size_t max_depth, size_t max_length=0, bool truncate=false) noexcept
+static void prettyPrintTensor(std::ostream& os, const T* arr, const Shape& shape, size_t depth, size_t max_length=0, bool truncate=false) noexcept
 {
 	// Not using std::to_string because std::to_string(0.f) returns "0.00000"
 	auto toStr = [](auto val) {
@@ -21,17 +21,17 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 	//If at the first dimention
 	if(depth == 0) {
 		//Calculatet the max character of printing a single element needs
-		for(int i=0;i<shape.volume();i++)
+		for(intmax_t i=0;i<shape.volume();i++)
 			max_length = std::max(max_length, toStr(arr[i]).size());
 	}
 
 	const std::string truncate_symbol = "....";
 
 	//If at the the last dimention, print the content of the tensor
-	if(shape.size() == 1) {
+	if(depth+1 == shape.size()) {
 		os << "{ ";
-		intmax_t size = shape[0];
-		intmax_t max_line_content = intmax_t((80-depth*2-4)/(max_length+2));
+		intmax_t size = shape[depth];
+		intmax_t max_line_content = intmax_t((80-depth*2-truncate_symbol.size())/(max_length+2));
 
 		//Print the full content
 		if(size <= max_line_content || !truncate) {
@@ -62,70 +62,69 @@ static size_t prettyPrintTensor(std::ostream& os, const T* arr, Shape shape, siz
 		}
 
 		os << "}";
-		return 1;
+		return;
 	}
 
 	// Otherwise (we aren't in the last dimension)
 	// print the curly braces recursively
-	intmax_t size = shape[0];
-	shape.erase(shape.begin());
-	intmax_t vol = shape.volume();
-
-	size_t ret_depth = 0; // TODO: Do we really need this? Should be deterministic?
+	const intmax_t size = shape[0];
+	const intmax_t vol = std::accumulate(shape.begin()+depth+1, shape.end(), intmax_t(1), std::multiplies<intmax_t>());
+	const size_t remain_recursion = shape.size() - depth - 1;
+	const size_t done_recursion = depth + 1;
 	os << "{";
 
 	if(size < 2*intmax_t(g_truncate_size) || !truncate) {
 		//The full version
 		for(intmax_t i=0;i<size;i++) {
 			//Print the data recursivelly
-			ret_depth = prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_depth, max_length, truncate);
+			prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_length, truncate);
 			if(i != size-1)
-				os << ", " << std::string(ret_depth, '\n') << (i==size-1 ? std::string("") : std::string(max_depth-ret_depth, ' '));
+				os << ", " << std::string(remain_recursion, '\n') << (i==size-1 ? std::string("") : std::string(done_recursion, ' '));
 		}
 	}
 	else {
 		//The first half
 		for(intmax_t i=0;i<intmax_t(g_truncate_size);i++) {
 			//Print the data recursivelly
-			ret_depth = prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_depth, max_length, truncate);
+			prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_length, truncate);
 			if(i != size-1)
-				os << ", " << std::string(ret_depth, '\n') << std::string(max_depth-ret_depth, ' ');
+				os << ", " << std::string(remain_recursion, '\n') << std::string(done_recursion, ' ');
 		}
 
 		//seperator
-		os << truncate_symbol << '\n' << std::string(max_depth-ret_depth, ' ');
+		os << truncate_symbol << '\n' << std::string(done_recursion, ' ');
 
 		//The second half
 		for(intmax_t i=size-intmax_t(g_truncate_size);i<size;i++) {
 			//Print the data recursivelly
-			ret_depth = prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_depth, max_length, truncate);
+			prettyPrintTensor(os, arr+i*vol, shape, depth+1, max_length, truncate);
 			if(i != size-1)
-				os << ", " << std::string(ret_depth, '\n') << (i==size-1 ? std::string("") : std::string(max_depth-ret_depth, ' '));
+				os << ", " << std::string(remain_recursion, '\n') << (i==size-1 ? std::string("") : std::string(done_recursion, ' '));
 		}
 	}
 	os << "}";
 
-	return ret_depth+1;//return the current depth from the back
+	return;
 }
 
 static void printTensor(std::ostream& os, const void* ptr, const Shape& shape, DType dtype)
 {
 	bool truncate = size_t(shape.volume()) > g_print_threshold;
 	if(dtype == DType::Float)
-		prettyPrintTensor(os, (float*)ptr, shape, 0, shape.size(), 0, truncate);
+		prettyPrintTensor(os, (float*)ptr, shape, 0, 0, truncate);
 	else if(dtype == DType::Int32)
-		prettyPrintTensor(os, (int32_t*)ptr, shape, 0, shape.size(), 0, truncate);
+		prettyPrintTensor(os, (int32_t*)ptr, shape, 0, 0, truncate);
 	else if(dtype == DType::Bool)
-		prettyPrintTensor(os, (bool*)ptr, shape, 0, shape.size(), 0, truncate);
+		prettyPrintTensor(os, (bool*)ptr, shape, 0, 0, truncate);
 	else if(dtype == DType::Half)
-		prettyPrintTensor(os, (half*)ptr, shape, 0, shape.size(), 0, truncate);
+		prettyPrintTensor(os, (half*)ptr, shape, 0, 0, truncate);
 	else
 		throw EtError("Printing tensor of this type is not supported.");
 }
 
 std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 {
-	if(t.has_value() == false) {
+	if(t.has_value() == false || t.shape().size() == 0) {
 		os << "{}";
 		return os;
 	}
