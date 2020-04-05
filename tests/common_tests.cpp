@@ -106,7 +106,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 	SECTION("Create Tensor from vector") {
 		std::vector<int> v = {1, 2, 3, 4};
 		Tensor t = Tensor(v);
-		CHECK(t.size() == intmax_t(v.size()));
+		CHECK(t.size() == v.size());
 		CHECK(t.dtype() == DType::Int);
 	}
 
@@ -395,7 +395,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			num_iteration += 1;
 		}
 		CHECK(num_iteration == t.shape()[0]);
-		CHECK(t.sum().item<int>() == 42*t.size());
+		CHECK(t.sum().item<int>() == int(42*t.size()));
 	}
 
 	SECTION("swapping Tensor") {
@@ -438,7 +438,7 @@ TEST_CASE("Testing Encoders", "[Encoder]")
 		CHECK(t.size() == 32);
 		REQUIRE(t.dtype() == DType::Bool);
 		auto v = t.toHost<uint8_t>();
-		CHECK(std::accumulate(v.begin(), v.end(), 0) == num_on_bits);
+		CHECK(std::accumulate(v.begin(), v.end(), size_t(0)) == num_on_bits);
 	}
 
 	SECTION("Category Encoder") {
@@ -449,7 +449,7 @@ TEST_CASE("Testing Encoders", "[Encoder]")
 		CHECK(t.size() == num_categories*bits_per_category);
 		REQUIRE(t.dtype() == DType::Bool);
 		auto v = t.toHost<uint8_t>();
-		CHECK(std::accumulate(v.begin(), v.end(), 0) == bits_per_category);
+		CHECK(std::accumulate(v.begin(), v.end(), size_t(0)) == bits_per_category);
 
 		Tensor q = encoder::category(1, num_categories, bits_per_category);
 		auto u = q.toHost<uint8_t>();
