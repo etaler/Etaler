@@ -371,6 +371,10 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_assignable_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_destructible_v<Tensor::iterator>);
+
+		// TODO: Make us pass the STL test
+		using iterator_tag = std::iterator_traits<Tensor::iterator>::iterator_category;
+		STATIC_REQUIRE(std::is_same_v<iterator_tag, std::bidirectional_iterator_tag>);
 		CHECK(t.begin() != t.end());
 		CHECK(t.begin() == t.begin());
 		CHECK((*t.begin()).shape() == Shape{4});
