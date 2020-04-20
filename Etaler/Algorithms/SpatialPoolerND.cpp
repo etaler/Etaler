@@ -24,4 +24,10 @@ SpatialPoolerND::SpatialPoolerND(const Shape& input_shape, size_t kernel_size, s
 	std::tie(connections_, permanences_) = F::gusianRandomSynapseND(input_shape, kernel_size, stride, potential_pool_pct, 0.11
 		, 1, seed, b);
 	average_activity_ = constant(output_shape, global_density);
+
+	//HACK: Set SP core parameters because derrived calss cannot set them in initalization list
+	global_density_ = global_density;
+	boost_factor_ = boost_factor_;
+	input_shape_ = input_shape;
+	output_shape_ = output_shape;
 }
