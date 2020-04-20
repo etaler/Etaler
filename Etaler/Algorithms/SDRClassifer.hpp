@@ -6,6 +6,7 @@
 #include "Etaler_export.h"
 
 #include <vector>
+#include <mutex>
 
 namespace et
 {
@@ -31,24 +32,33 @@ struct ETALER_EXPORT SDRClassifer
 		et_assert(sdr.dtype() == DType::Bool);
 		et_assert(class_id < num_patterns_.size());
 
+		dirty_flag_ = true;
 		reference_.view({(intmax_t)class_id}) = reference_.view({(intmax_t)class_id}) + sdr;
 		num_patterns_[class_id]++;
 	}
 
-	size_t compute(const Tensor& x, float min_common_frac=0.75) const
+	size_t compute(const Tensor& x) const
 	{
-		const size_t num_classes = num_patterns_.size();
-		std::vector<float> threshold(num_classes);
-		for(size_t i=0;i<num_classes;i++)
-			threshold[i] = num_patterns_[i]*min_common_frac;
-		Tensor thr = Tensor(threshold, reference_.backend())
-			.reshape(Shape{(intmax_t)num_classes} + Shape(input_shape_.size(), 1));
-		const auto overlap = logical_and((reference_ > thr), x.reshape(Shape{1}+x.shape()))
-			.reshape({intmax_t(num_classes), input_shape_.volume()})	
+		const intmax_t num_classes = num_patterns_.size();
+
+		// Grab a reference to ensure the current `mask_` isn't released in the case of race condition.
+		// Then check if new patterns have been added. If so, recalculate the mask
+		Tensor mask = mask_;
+		if(dirty_flag_ == true) {
+			mask_ = zeros_like(reference_.reshape({num_classes, input_shape_.volume()})).cast(DType::Bool);
+			for(intmax_t i=0;i<num_classes;i++)
+				mask_.view({i}) = globalInhibition(reference_.view({i}).flatten(), 1.f/num_classes);
+			mask = mask_;
+			dirty_flag_ = false;
+		}
+
+		assert(mask_.has_value());
+		const auto overlap = logical_and(mask, x.reshape(Shape{1}+intmax_t(x.size())))
+			.reshape({intmax_t(num_classes), input_shape_.volume()})
 			.sum(1)
 			.toHost<int>();
 
-		et_assert(overlap.size() == num_classes);
+		et_assert(overlap.size() == size_t(num_classes));
 		auto it = std::max_element(overlap.begin(), overlap.end());
 		return std::distance(overlap.begin(), it);
 	}
@@ -83,6 +93,13 @@ struct ETALER_EXPORT SDRClassifer
 	Shape input_shape_;
 	Tensor reference_;
 	std::vector<int> num_patterns_;
+
+private:
+	// mask_ and dirty_flag_ are variables for caching expensive-to-compute values
+	// that is used in the inference process
+	// NOTE: They *should* be thrad safe. (But the internal functions are parallel anyway)
+	mutable Tensor mask_;
+	mutable bool dirty_flag_ = true;
 };
 
 // SDRClassifer in Etaler is CLAClassifer in NuPIC
