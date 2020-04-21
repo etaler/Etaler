@@ -18,10 +18,15 @@ using namespace et;
  *
  * Order   : accuray    : boost         : SP size       : #epochs : comment
  * ------------------------------------------------------------------------------------------------------------------------------------------
- * 1       : 80.62%     : 9             : 16384         : 1       : more cells
- * 2       : 80.52%     : 9             : 8192          : 1       : initial setup
+ * 1       : 87.15%     : 4             : 8192          : 1       : 4% SDR density in SP + denser SDR in classifcation, perm_inc = 0.18
+ *                                                                : , perm_dec = 0.004, activation_thr = 32
+ * 2       : 84.63%     : 9             : 8192          : 2       : denser SDR in classifcation + more epochs
+ * 3       : 84.10%     : 9             : 8192          : 1       : denser SDR in classifcation (25% instead of 10%)
+ * 4       : 80.62%     : 9             : 16384         : 1       : more cells
+ * 5       : 80.52%     : 9             : 8192          : 1       : initial setup
+ * 6       : 78.87%     : 9             : 8192          : 1       : sparse SDR in classifcation (5% instead of 10%)
  * Baseline: 
- * Accuracy: 73.09%                     : SP disabled   : 1       : baseline with only classifier on raw images, no SP
+ * No SP   : 73.09%                     : SP disabled   : 1       : baseline with only classifier on raw images, no SP
  *
  */
 
@@ -69,6 +74,8 @@ int main(int argc, char** argv)
 	const float permanence_inc = 0.14; // HTM.core parameters
 	const float permanence_dec = 0.006; // a lot lower than perm inc
 	const float bootsting_factor = 9; // Some high enough value to promote expression
+	const size_t active_threshold = 5; // Default value
+	const float classifer_density = 0.1; // The internal density used by SDRClassifer
 
 	// Other parameters
 	const size_t display_steps = 100;
@@ -80,6 +87,7 @@ int main(int argc, char** argv)
 	sp.setPermanenceInc(permanence_inc);
 	sp.setGlobalDensity(global_density);
 	sp.setBoostingFactor(bootsting_factor);
+	sp.setActiveThreshold(active_threshold);
 
 	// HTM by itself cannot perform classifcation. Thus we need a classifer.
 	// For NuPIC users, SDRClassifer in Eraler is CLAClassifer in NuPIC.
@@ -145,7 +153,7 @@ int main(int argc, char** argv)
 		Tensor y = sp.compute(x);
 
 		intmax_t label = dataset.test_labels[i];
-		intmax_t pred = classifer.compute(y);
+		intmax_t pred = classifer.compute(y, classifer_density);
 
 		if(label == pred)
 			correct += 1;

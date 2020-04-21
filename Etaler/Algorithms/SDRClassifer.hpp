@@ -37,18 +37,19 @@ struct ETALER_EXPORT SDRClassifer
 		num_patterns_[class_id]++;
 	}
 
-	size_t compute(const Tensor& x) const
+	size_t compute(const Tensor& x, float density) const
 	{
 		const intmax_t num_classes = num_patterns_.size();
 
 		// Grab a reference to ensure the current `mask_` isn't released in the case of race condition.
 		// Then check if new patterns have been added. If so, recalculate the mask
 		Tensor mask = mask_;
-		if(dirty_flag_ == true) {
+		if(dirty_flag_ == true || density_ != density) {
 			mask_ = zeros_like(reference_.reshape({num_classes, input_shape_.volume()})).cast(DType::Bool);
 			for(intmax_t i=0;i<num_classes;i++)
-				mask_.view({i}) = globalInhibition(reference_.view({i}).flatten(), 1.f/num_classes);
+				mask_.view({i}) = globalInhibition(reference_.view({i}).flatten(), density);
 			mask = mask_;
+			density_ = density;
 			dirty_flag_ = false;
 		}
 
@@ -100,6 +101,7 @@ private:
 	// NOTE: They *should* be thrad safe. (But the internal functions are parallel anyway)
 	mutable Tensor mask_;
 	mutable bool dirty_flag_ = true;
+	mutable float density_ = -1.f;
 };
 
 // SDRClassifer in Etaler is CLAClassifer in NuPIC
