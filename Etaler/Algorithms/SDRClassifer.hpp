@@ -6,6 +6,7 @@
 #include "Etaler_export.h"
 
 #include <vector>
+#include <mutex>
 
 namespace et
 {
@@ -31,27 +32,36 @@ struct ETALER_EXPORT SDRClassifer
 		et_assert(sdr.dtype() == DType::Bool);
 		et_assert(class_id < num_patterns_.size());
 
+		dirty_flag_ = true;
 		reference_.view({(intmax_t)class_id}) = reference_.view({(intmax_t)class_id}) + sdr;
 		num_patterns_[class_id]++;
 	}
 
-	size_t compute(const Tensor& x, float min_common_frac=0.75) const
+	size_t compute(const Tensor& x, float density) const
 	{
-		const size_t num_classes = num_patterns_.size();
-		std::vector<float> threshold(num_classes);
-		for(size_t i=0;i<num_classes;i++)
-			threshold[i] = num_patterns_[i]*min_common_frac;
-		Tensor thr = Tensor(Shape{(intmax_t)num_classes, 1}, threshold.data(), reference_.backend());
-		const auto match = sum((reference_ > thr) && x.reshape(Shape{1}+x.shape()), 1).toHost<int>();
+		const intmax_t num_classes = num_patterns_.size();
 
-		assert(match.size() == num_classes);
-		size_t best_match_id = 0;
-		int best_match = 0;
-		for(size_t i=0;i<num_classes;i++) {
-			if(best_match < match[i])
-				std::tie(best_match, best_match_id) = std::pair(match[i], i);
+		// Grab a reference to ensure the current `mask_` isn't released in the case of race condition.
+		// Then check if new patterns have been added. If so, recalculate the mask
+		Tensor mask = mask_;
+		if(dirty_flag_ == true || density_ != density) {
+			mask_ = zeros_like(reference_.reshape({num_classes, input_shape_.volume()})).cast(DType::Bool);
+			for(intmax_t i=0;i<num_classes;i++)
+				mask_.view({i}) = globalInhibition(reference_.view({i}).flatten(), density);
+			mask = mask_;
+			density_ = density;
+			dirty_flag_ = false;
 		}
-		return best_match_id;
+
+		assert(mask_.has_value());
+		const auto overlap = logical_and(mask, x.reshape(Shape{1}+intmax_t(x.size())))
+			.reshape({intmax_t(num_classes), input_shape_.volume()})
+			.sum(1)
+			.toHost<int>();
+
+		et_assert(overlap.size() == size_t(num_classes));
+		auto it = std::max_element(overlap.begin(), overlap.end());
+		return std::distance(overlap.begin(), it);
 	}
 
 	StateDict states() const
@@ -84,6 +94,14 @@ struct ETALER_EXPORT SDRClassifer
 	Shape input_shape_;
 	Tensor reference_;
 	std::vector<int> num_patterns_;
+
+private:
+	// mask_ and dirty_flag_ are variables for caching expensive-to-compute values
+	// that is used in the inference process
+	// NOTE: They *should* be thrad safe. (But the internal functions are parallel anyway)
+	mutable Tensor mask_;
+	mutable bool dirty_flag_ = true;
+	mutable float density_ = -1.f;
 };
 
 // SDRClassifer in Etaler is CLAClassifer in NuPIC

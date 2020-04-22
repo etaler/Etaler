@@ -371,6 +371,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_assignable_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_destructible_v<Tensor::iterator>);
+
 		CHECK(t.begin() != t.end());
 		CHECK(t.begin() == t.begin());
 		CHECK((*t.begin()).shape() == Shape{4});
