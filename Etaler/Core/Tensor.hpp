@@ -287,24 +287,28 @@ protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };
 
-inline Tensor operator+ (std::variant<float, int, bool, half> v, const Tensor& t)
+template <typename ScalarType>
+inline Tensor operator+ (ScalarType v, const Tensor& t)
 {
-	return std::visit([&t](auto v) {return Tensor(v)+t;}, v);
+	return Tensor(v)+t;
 }
 
-inline Tensor operator- (std::variant<float, int, bool, half> v, const Tensor& t)
+template <typename ScalarType>
+inline Tensor operator- (ScalarType v, const Tensor& t)
 {
-	return std::visit([&t](auto v) {return Tensor(v)-t;}, v);
+	return Tensor(v)-t;
 }
 
-inline Tensor operator* (std::variant<float, int, bool, half> v, const Tensor& t)
+template <typename ScalarType>
+inline Tensor operator* (ScalarType v, const Tensor& t)
 {
-	return std::visit([&t](auto v) {return Tensor(v)*t;}, v);
+	return Tensor(v)*t;
 }
 
-inline Tensor operator/ (std::variant<float, int, bool, half> v, const Tensor& t)
+template <typename ScalarType>
+inline Tensor operator/ (ScalarType v, const Tensor& t)
 {
-	return std::visit([&t](auto v) {return Tensor(v)/t;}, v);
+	return Tensor(v)/t;
 }
 
 //Procedural  APIs

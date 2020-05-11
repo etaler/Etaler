@@ -18,3 +18,6 @@
 [submodule "Etaler/3rdparty/half_precision"]
 	path = Etaler/3rdparty/half_precision
 	url = https://github.com/marty1885/half_precision
+[submodule "Etaler/3rdparty/backward-cpp"]
+	path = Etaler/3rdparty/backward-cpp
+	url = https://github.com/bombela/backward-cpp
