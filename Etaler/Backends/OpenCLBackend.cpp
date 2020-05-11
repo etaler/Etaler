@@ -294,10 +294,9 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 	const TensorImpl* permeances, float connected_permeance, size_t active_threshold, bool has_unconnected_synapse)
 {
 	requireProperties(x, this, DType::Bool, IsPlain());
-	requireProperties(connections, this, DType::Int32, IsPlain());
+	requireProperties(connections, this, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsPlain());
-	et_assert(connections->shape() == permeances->shape());
-	et_assert(connections->dimentions() >= 2);
+	et_check(connections->dimentions() >= 2);
 
 	Shape s = connections->shape();
 	s.pop_back();
@@ -421,10 +420,8 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 {
 	requireProperties(x, this, DType::Bool, IsPlain());
 	requireProperties(learn, this, DType::Bool, IsPlain());
-	requireProperties(connections, this, DType::Int32, IsPlain());
+	requireProperties(connections, this, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsPlain());
-
-	et_assert(connections->shape() == permeances->shape());
 
 	auto param_hash = hashify(x->size(), connections->shape().back(), !has_unconnected_synapse, learn->size(), permeances->dtype());
 	auto program_name = "learnCorrilation"+param_hash;
@@ -465,9 +462,8 @@ void OpenCLBackend::learnCorrilation(const TensorImpl* x, const TensorImpl* lear
 
 void OpenCLBackend::sortSynapse(TensorImpl* connections, TensorImpl* permeances)
 {
-	requireProperties(connections, this, DType::Int32, IsPlain());
+	requireProperties(connections, this, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsPlain());
-	et_assert(connections->shape() == permeances->shape());
 
 	auto param_hash = hashify(connections->shape().back(), permeances->dtype(), permeances->dtype()==DType::Half);
 	auto program_name = "sortSynapse"+param_hash;
@@ -503,7 +499,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::burst(const TensorImpl* x, const Tens
 
 	Shape shape = s->shape();
 	shape.pop_back();
-	et_assert(shape == x->shape());
+	requireProperties(x, shape);
 
 	auto res = copy(s);
 
@@ -572,13 +568,12 @@ void OpenCLBackend::growSynapses(const TensorImpl* x, const TensorImpl* y, Tenso
 {
 	requireProperties(x, this, DType::Bool, IsPlain());
 	requireProperties(y, this, DType::Bool, IsPlain());
-	requireProperties(connections, this, DType::Int32, IsPlain());
+	requireProperties(connections, this, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, this, IsDType{DType::Float, DType::Int32}, IsPlain());
 
-	et_assert(connections->shape() == permeances->shape());
 	Shape s = connections->shape();
 	s.pop_back();
-	et_assert(s == y->shape());
+	requireProperties(y, s);
 
 	size_t max_synapses_per_cell = connections->shape().back();
 	size_t input_cell_count = x->size();
@@ -756,7 +751,7 @@ void OpenCLBackend::assign(TensorImpl* dest, const TensorImpl* src)
 std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
 	requireProperties(x, this, IsPlain());
-	et_assert(x->size() % chunk_size == 0);
+	et_check(x->size() % chunk_size == 0);
 
 	DType result_dtype = dtype;
 	if(dtype == DType::Unknown) {
@@ -818,9 +813,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::sum(const TensorImpl* x, size_t chunk
 
 void OpenCLBackend::decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold)
 {
-	requireProperties(connections, this, DType::Int32, IsPlain());
+	requireProperties(connections, this, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsPlain());
-	et_assert(connections->shape() == permeances->shape());
 
 	size_t max_synapses_per_cell = connections->shape().back();
 	size_t input_cell_count = connections->size()/max_synapses_per_cell;
@@ -926,9 +920,8 @@ std::shared_ptr<TensorImpl> OpenCLBackend::applyUnaryOp(const TensorImpl* x, std
 
 std::shared_ptr<TensorImpl> OpenCLBackend::applyBinaryOp(const TensorImpl* x1, const TensorImpl* x2, std::string f, DType resType)
 {
-	requireProperties(x1, this);
+	requireProperties(x1, this, x2->shape());
 	requireProperties(x2, this);
-	et_assert(x1->shape() == x2->shape());
 
 	auto to_str = [](auto x){
 		return std::to_string(x->offset())+to_string(x->shape())+to_string(x->stride())+to_string(x->dtype());

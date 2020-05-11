@@ -25,7 +25,7 @@ SpatialPooler::SpatialPooler(const Shape& input_shape, const Shape& output_shape
 
 Tensor SpatialPooler::compute(const Tensor& x) const
 {
-	et_assert(x.shape() == input_shape_);
+	et_check(x.shape() == input_shape_, "Input tensor shape " + to_string(x.shape()) +" does not match expected shape " + to_string(input_shape_));
 
 	Tensor activity = cellActivity(x, connections_, permanences_
 		, connected_permanence_, active_threshold_, false);

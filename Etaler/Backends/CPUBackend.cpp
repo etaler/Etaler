@@ -96,10 +96,9 @@ static std::shared_ptr<TensorImpl> cellActivity(const TensorImpl* x, const Tenso
 {
 	//Checks the input are sane
 	requireProperties(x, backend, DType::Bool, IsPlain());
-	requireProperties(connections, backend, DType::Int32, IsPlain());
+	requireProperties(connections, backend, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, backend, typeToDType<PermType>(), IsPlain());
-	et_assert(connections->shape() == permeances->shape());
-	et_assert(connections->dimentions() >= 2);
+	et_check(connections->dimentions() >= 2);
 
 	Shape s = connections->shape();
 	s.pop_back();
@@ -151,10 +150,8 @@ void learnCorrilation(const TensorImpl* x, const TensorImpl* learn, const Tensor
 {
 	requireProperties(x, backend, DType::Bool, IsPlain());
 	requireProperties(learn, backend, DType::Bool, IsPlain());
-	requireProperties(connections, backend, DType::Int32, IsPlain());
+	requireProperties(connections, backend, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, backend, typeToDType<PermType>(), IsPlain());
-
-	et_assert(connections->shape() == permeances->shape());
 
 	const bool* input = (const bool*)x->data();
 	const bool* learning = (const bool*)learn->data();
@@ -220,13 +217,12 @@ void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connecti
 {
 	requireProperties(x, backend, DType::Bool, IsPlain());
 	requireProperties(y, backend, DType::Bool, IsPlain());
-	requireProperties(connections, backend, DType::Int32, IsPlain());
+	requireProperties(connections, backend, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, backend, typeToDType<PermType>(), IsPlain());
 
-	et_assert(connections->shape() == permeances->shape());
 	Shape s = connections->shape();
 	s.pop_back();
-	et_assert(s == y->shape());
+	et_check(s == y->shape());
 
 	size_t max_synapses_per_cell = connections->shape().back();
 	size_t input_cell_count = x->size();
@@ -295,9 +291,8 @@ void growSynapses(const TensorImpl* x, const TensorImpl* y, TensorImpl* connecti
 template <typename PermType>
 void decaySynapses(TensorImpl* connections, TensorImpl* permeances, float threshold, CPUBackend* backend)
 {
-	requireProperties(connections, backend, DType::Int32, IsPlain());
+	requireProperties(connections, backend, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, backend, typeToDType<PermType>(), IsPlain());
-	et_assert(connections->shape() == permeances->shape());
 
 	PermType* perms = (PermType*)permeances->data();
 	uint32_t* conns = (uint32_t*)connections->data();
@@ -441,7 +436,7 @@ std::shared_ptr<TensorImpl> CPUBackend::burst(const TensorImpl* x, const TensorI
 
 	Shape shape = s->shape();
 	shape.pop_back();
-	et_assert(shape == x->shape());
+	requireProperties(x, shape);
 
 	auto y = createTensor(s->shape(), DType::Bool);
 
@@ -622,7 +617,7 @@ void CPUBackend::assign(TensorImpl* dest, const TensorImpl* src)
 std::shared_ptr<TensorImpl> CPUBackend::sum(const TensorImpl* x, size_t chunk_size, DType dtype)
 {
 	requireProperties(x, this, IsPlain());
-	et_assert(x->size() % chunk_size == 0);
+	et_check(x->size() % chunk_size == 0);
 
 	DType result_dtype = dtype;
 

@@ -21,14 +21,21 @@ private:
 	std::string msg_;
 };
 
-//No namespace
+}
+
+// Asserts
 #define et_assert_with_message(expression, msg) do{if((expression) == false) {std::cerr << msg; std::abort();}}while(0)
 #define et_assert_no_message(expression) do{if((expression) == false){std::cerr << "Assertion " << #expression << " failed"; std::abort();}}while(0)
-#define __GetAtAssrtyMacro(_1,_2,NAME,...) NAME
-
+#define __GetEtAssrtyMacro(_1,_2,NAME,...) NAME
 //et_assert is basically C assert but not efficeted by the NDEBUG flag. Use assert for debug, et_assert for possible user screw-ups.
-#define et_assert(...) __GetAtAssrtyMacro(__VA_ARGS__ ,et_assert_with_message, et_assert_no_message, nullptr)(__VA_ARGS__)
-}
+#define et_assert(...) __GetEtAssrtyMacro(__VA_ARGS__ ,et_assert_with_message, et_assert_no_message, nullptr)(__VA_ARGS__)
+
+// Checks. These are higer level APIs. Which when condition fails, they unwind the stack and throws an excpetion
+#define et_check_with_message(expression, msg) do{if((expression) == false) {throw EtError(msg);}}while(0)
+#define et_check_no_message(expression) do{if((expression) == false){throw EtError(std::string("Check ")+#expression+" failed");}}while(0)
+#define __GetEtCheckyMacro(_1,_2,NAME,...) NAME
+#define et_check(...) __GetEtCheckyMacro(__VA_ARGS__ ,et_check_with_message, et_check_no_message, nullptr)(__VA_ARGS__)
+
 
 //Replaces stupid C asserts
 #ifdef NDEBUG
