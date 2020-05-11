@@ -11,6 +11,9 @@
 //Use EtError for recoverable exceptions. Avoid using EtError in core functionalitys
 namespace et
 {
+
+std::string genStackTrace();
+
 class EtError : public std::exception
 {
 public:
