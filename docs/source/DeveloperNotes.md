@@ -11,6 +11,10 @@ This file documents some facts about the codebase that might be useful for it's 
   * More overhead
   * Recoverable
 * `ASSERT` is C assert but doesn't cause unused variable warning.
+* `et::enableTraceOnException(bool)` sets if a stack trace is generated while creating a `EtError` exception
+   * On by default. Can be disabled in runtime in production.
+   * Very useful in debugging and interactive coding
+   * Stack trace appends to the error message
 
 * Address Sanitizer is your good friend to debug buffer overflows if you are on Linux or OS X.
   * But it might cause Etaler not able to detect OpenCL platforms.

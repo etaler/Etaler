@@ -14,12 +14,15 @@ namespace et
 class EtError : public std::exception
 {
 public:
-	explicit EtError(const std::string &msg) : msg_(msg) {}
+	explicit EtError(const std::string &msg);
 	const char *what() const throw() override { return msg_.c_str(); }
 
 private:
 	std::string msg_;
 };
+
+void enableTraceOnException(bool enable);
+bool getEnableTraceOnException();
 
 }
 
