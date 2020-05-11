@@ -18,11 +18,15 @@ using namespace et;
  *
  * Order   : accuray    : boost         : SP size       : #epochs : comment
  * ------------------------------------------------------------------------------------------------------------------------------------------
- * 1       : 75.87%     : 0             : 16384         : 1       : more cells
- * 2       : 70.06%     : 0             : 8192          : 1       : initial setup
- * 
+ * 1       : 87.15%     : 4             : 8192          : 1       : 4% SDR density in SP + denser SDR in classifcation, perm_inc = 0.18
+ *                                                                : , perm_dec = 0.004, activation_thr = 32
+ * 2       : 84.63%     : 9             : 8192          : 2       : denser SDR in classifcation + more epochs
+ * 3       : 84.10%     : 9             : 8192          : 1       : denser SDR in classifcation (25% instead of 10%)
+ * 4       : 80.62%     : 9             : 16384         : 1       : more cells
+ * 5       : 80.52%     : 9             : 8192          : 1       : initial setup
+ * 6       : 78.87%     : 9             : 8192          : 1       : sparse SDR in classifcation (5% instead of 10%)
  * Baseline: 
- * Accuracy: 40.54%                     : SP disabled   : 1       : baseline with only classifier on raw images, no SP
+ * No SP   : 73.09%                     : SP disabled   : 1       : baseline with only classifier on raw images, no SP
  *
  */
 
@@ -65,22 +69,25 @@ int main(int argc, char** argv)
 
 	// HTM hyper parameters
 	const size_t epochs = 1;
-	const intmax_t sp_cells = 16384; // More cells, better accuracy
+	const intmax_t sp_cells = 8192; // More cells, better accuracy
 	const float global_density = 0.06; // slightly lesser than 0.1
 	const float permanence_inc = 0.14; // HTM.core parameters
 	const float permanence_dec = 0.006; // a lot lower than perm inc
-	const float bootsting_factor = 0.1; // Leave it at 0, boosting doesn't help in this case
+	const float bootsting_factor = 9; // Some high enough value to promote expression
+	const size_t active_threshold = 5; // Default value
+	const float classifer_density = 0.1; // The internal density used by SDRClassifer
 
 	// Other parameters
 	const size_t display_steps = 100;
 
 	// Create a Spatial Pooler with the paremeters we desire
-	// TOOD: Use topology. It should make the SP perform better
+	// Topology (aka SpatialPoolerND does not seem to do better job)
 	SpatialPooler sp(Shape{28,28}, Shape{sp_cells});
 	sp.setPermanenceDec(permanence_dec);
 	sp.setPermanenceInc(permanence_inc);
 	sp.setGlobalDensity(global_density);
 	sp.setBoostingFactor(bootsting_factor);
+	sp.setActiveThreshold(active_threshold);
 
 	// HTM by itself cannot perform classifcation. Thus we need a classifer.
 	// For NuPIC users, SDRClassifer in Eraler is CLAClassifer in NuPIC.
@@ -120,6 +127,8 @@ int main(int argc, char** argv)
 	// Phase 2, we train the SDRClassifer. In this phase, we send whatever the SP generates into the 
 	// classifer and tell the classifer what class the SDR belongs to. Since SDRClassifer is a lazy
 	// learning algorithm, one iteration of traning is enough (it makes no difference doing more).
+	// We also set boosting factor to 0 for a more stable SDR
+	sp.setBoostingFactor(0);
 	std::cout << "Traning SDRClassifer" << std::endl;
 	disp.reset();
 	for(size_t j=0;j<dataset.training_images.size();j++) {
@@ -144,7 +153,7 @@ int main(int argc, char** argv)
 		Tensor y = sp.compute(x);
 
 		intmax_t label = dataset.test_labels[i];
-		intmax_t pred = classifer.compute(y);
+		intmax_t pred = classifer.compute(y, classifer_density);
 
 		if(label == pred)
 			correct += 1;

@@ -36,14 +36,12 @@ inline std::vector<uint8_t> gcm2d(std::array<float, 2> p, float scale, float the
 					,sinf(theta), cosf(theta)});
 
 	std::array<float, 2> np = mvmul2(mat, p, scale);
-	std::vector<std::pair<size_t, float>> cell_distances;
-	cell_distances.reserve(res.size());
+	std::vector<std::pair<size_t, float>> cell_distances(res.size());
 
 	float px = std::fmod(np[0], axis_length[0]) + (np[0] < 0 ? axis_length[0] : 0);
 	float py = std::fmod(np[1], axis_length[1]) + (np[1] < 0 ? axis_length[1] : 0);
 
 	for(size_t i=0;i<res.size();i++) {
-
 		float x = i%axis_length[0] + 0.5;
 		float y = axis_length[1] - ((float)i/axis_length[0] + 0.5); //Flip axis for math convention
 		float dx = px - x;
@@ -51,7 +49,7 @@ inline std::vector<uint8_t> gcm2d(std::array<float, 2> p, float scale, float the
 
 		float dist = std::sqrt(dx*dx + dy*dy);
 
-		cell_distances.push_back({i, dist});
+		cell_distances[i] = std::pair<size_t, float>({i, dist});
 	}
 
 	std::nth_element(cell_distances.begin(), cell_distances.begin()+active_cells, cell_distances.end(),[](auto a, auto b){return a.second < b.second;});

@@ -81,6 +81,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 	SECTION("Empty Tensor") {
 		CHECK(Tensor().has_value() == false);
+		CHECK(Tensor().shape() == Shape());
 		int n = 1;
 		CHECK(Tensor({1}, &n).has_value() == true);
 	}
@@ -364,13 +365,14 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		Tensor q = zeros({3, 4});
 		STATIC_REQUIRE(std::is_same_v<Tensor::iterator::value_type, Tensor>);
 
-		// Tensor::iterator should be ramdp,
+		// Tensor::iterator should be random,
 		// Reference: http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
 		STATIC_REQUIRE(std::is_same_v<std::iterator_traits<Tensor::iterator>::iterator_category, std::random_access_iterator_tag>);
 		STATIC_REQUIRE(std::is_default_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_assignable_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_destructible_v<Tensor::iterator>);
+
 		CHECK(t.begin() != t.end());
 		CHECK(t.begin() == t.begin());
 		CHECK((*t.begin()).shape() == Shape{4});
