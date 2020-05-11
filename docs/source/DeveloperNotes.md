@@ -2,13 +2,19 @@
 
 This file documents some facts about the codebase that might be useful for it's developers and users.
 
-* The `Error.hpp` file provides the `et_assert()` macro for function pre/post condition checking. It should be replaced with C++20 contracts when avaliable.
-  * Use it to check for function pre and post condition fails.
-  * You can also throw an `EtError` if you like it for recoverable errors.
-  * Not disabled in release builds
-
-* `Error.hpp` also provides the `ASSERT()` macro that works exactly like C `assert()`. But
-  * Does not generate a unused variable warning in a release build
+* `Error.hpp` provides a few ways to check if the program is runnign correctly.
+* `et_assert` works like C asserts. But it is not dieabled in a release build.
+  * Aborts the entire program when condition check fails.
+  * The least overhead
+  * Use it in core/lowlevel code
+* `et_check` throws an `EtError` exception.
+  * More overhead
+  * Recoverable
+* `ASSERT` is C assert but doesn't cause unused variable warning.
+* `et::enableTraceOnException(bool)` sets if a stack trace is generated while creating a `EtError` exception
+   * On by default. Can be disabled in runtime in production.
+   * Very useful in debugging and interactive coding
+   * Stack trace appends to the error message
 
 * Address Sanitizer is your good friend to debug buffer overflows if you are on Linux or OS X.
   * But it might cause Etaler not able to detect OpenCL platforms.

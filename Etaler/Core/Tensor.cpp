@@ -274,7 +274,7 @@ Tensor et::ones(const Shape& shape, DType dtype, Backend* backend)
 
 Tensor Tensor::sum(std::optional<intmax_t> dim_id, DType dtype) const
 {
-	et_assert(dim_id.has_value() || dim_id.value_or(0) < (intmax_t)dimentions());
+	et_check(dim_id.value_or(0) < (intmax_t)dimentions(), "Dim " + std::to_string(dim_id.value_or(0)) + " is out of range");
 
 	// dim_id has no value means sum the entire tensor
 	if(dim_id.has_value() == false)
@@ -343,9 +343,7 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 	Tensor res = Tensor(res_shape, base_dtype, base_backend);
 	
 	intmax_t pos = 0;
-	IndexList ranges;
-	for(size_t i=0;i<res_shape.size();i++)
-		ranges.push_back(et::all());
+	IndexList ranges(res_shape.size(), et::all());
 
 	for(const auto& t : tensors) {
 		ranges[dim] = range(pos, pos+t.shape()[dim]);

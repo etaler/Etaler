@@ -9,7 +9,8 @@ namespace et
 
 Tensor from_afarray(const af::array& arr, bool transpose=true)
 {
-	et_assert(arr.type() == f32 || arr.type() == s32 || arr.type() == b8);
+	et_check(arr.type() == f32 || arr.type() == s32 || arr.type() == b8
+                , "Etaler does not support the data type");
 
         auto a = arr;
         //ArrayFire stores data in fortran order, we might want to transpose it to make it C order

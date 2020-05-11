@@ -13,7 +13,7 @@ TemporalMemory::TemporalMemory(const Shape& input_shape, size_t cells_per_column
 
 std::pair<Tensor, Tensor> TemporalMemory::compute(const Tensor& x, const Tensor& last_state)
 {
-	et_assert(x.shape() == input_shape_);
+	et_check(x.shape() == input_shape_, "Input tensor shape " + to_string(x.shape()) +" does not match expected shape " + to_string(input_shape_));
 	Tensor active_cells;
 	if(last_state.has_value() == true)
 		active_cells = burst(x, last_state);

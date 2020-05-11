@@ -81,6 +81,8 @@ bool checkProperty(const TensorImpl* x, const T& value)
 		return x->iscontiguous();
 	else if constexpr(std::is_same_v<T, IsPlain>)
 		return x->iscontiguous();
+	else if constexpr(std::is_same_v<T, Shape>)
+		return x->shape() == value;
 	else if constexpr(is_specialization<std::remove_pointer_t<std::decay_t<T>>, IsDType>::value)
 		return (std::find(value.types.begin(), value.types.end(), x->dtype()) != value.types.end());
 	else
@@ -104,6 +106,8 @@ void requireProperty(const TensorImpl* x, const T value, const std::string& line
 		throw EtError(msg + ".iscontiguous() == true");
 	else if constexpr(std::is_same_v<T, IsPlain>)
 		throw EtError(msg + ".isplain() == true");
+	else if constexpr(std::is_same_v<T, Shape>)
+		throw EtError(msg + " is expected to have shape " + to_string(value));
 	else if constexpr(is_specialization<std::remove_pointer_t<std::decay_t<T>>, IsDType>::value) {
 		throw EtError(msg + ".dtype() is in {" + std::accumulate(value.types.begin(), value.types.end(), std::string()
 			, [](auto v, auto a){return v + to_ctype_string(a) + ", ";}));

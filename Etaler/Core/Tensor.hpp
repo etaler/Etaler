@@ -172,8 +172,10 @@ struct ETALER_EXPORT Tensor
 
 	Tensor swapaxis(size_t axis1, size_t axis2) const
 	{
-		et_assert(axis1 < dimentions());
-		et_assert(axis2 < dimentions());
+		if(axis1 < dimentions())
+			throw EtError("Axis " + std::to_string(axis1) + " is out of range.");
+		if(axis2 < dimentions())
+			throw EtError("Axis " + std::to_string(axis2) + " is out of range.");
 		Shape stride = pimpl_->stride();
 		Shape s = shape();
 		std::swap(stride[axis1], stride[axis2]);
@@ -287,24 +289,28 @@ protected:
 	std::shared_ptr<TensorImpl> pimpl_;
 };
 
-inline Tensor operator+ (std::variant<float, int, bool, half> v, const Tensor& t)
+template <typename ScalarType>
+inline Tensor operator+ (ScalarType v, const Tensor& t)
 {
-	return std::visit([&t](auto v) {return Tensor(v)+t;}, v);
+	return Tensor(v)+t;
 }
 
-inline Tensor operator- (std::variant<float, int, bool, half> v, const Tensor& t)
+template <typename ScalarType>
+inline Tensor operator- (ScalarType v, const Tensor& t)
 {
-	return std::visit([&t](auto v) {return Tensor(v)-t;}, v);
+	return Tensor(v)-t;
 }
 
-inline Tensor operator* (std::variant<float, int, bool, half> v, const Tensor& t)
+template <typename ScalarType>
+inline Tensor operator* (ScalarType v, const Tensor& t)
 {
-	return std::visit([&t](auto v) {return Tensor(v)*t;}, v);
+	return Tensor(v)*t;
 }
 
-inline Tensor operator/ (std::variant<float, int, bool, half> v, const Tensor& t)
+template <typename ScalarType>
+inline Tensor operator/ (ScalarType v, const Tensor& t)
 {
-	return std::visit([&t](auto v) {return Tensor(v)/t;}, v);
+	return Tensor(v)/t;
 }
 
 //Procedural  APIs

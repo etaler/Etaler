@@ -197,7 +197,7 @@ We're happy that you can use the library and are having fun. Please attribute us
 @misc{etaler2019,
 	abstract = "Implementation of Hierarchical Temporal Memory and related algorithms in C++ and OpenCL",
 	author = "An-Pang Clang",
-	commit = 0226cdac1f03a642a4849ad8b9d4574ef35c943c,
+	commit = {0226cdac1f03a642a4849ad8b9d4574ef35c943c},
 	howpublished = "\url{https://github.com/etaler/Etaler}",
 	journal = "GitHub repository",
 	keywords = "HTM; Hierarchical Temporal Memory; Numenta; NuPIC; cortical; sparse distributed representation; SDR; anomaly; prediction; bioinspired; neuromorphic",

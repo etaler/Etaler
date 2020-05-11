@@ -16,7 +16,7 @@ SpatialPoolerND::SpatialPoolerND(const Shape& input_shape, size_t kernel_size, s
 	, float global_density, float boost_factor, Backend* b)
 {
 	for(size_t i=0;i<input_shape.size();i++)
-		et_assert(input_shape[i] >= (intmax_t)kernel_size);
+		et_check(input_shape[i] >= (intmax_t)kernel_size, "Input dimension" + std::to_string(i) + " is smaller than the kernel size");
 
 	size_t ndims = input_shape.size();
 	Shape output_shape = convResultShape(input_shape, Shape(ndims, intmax_t(kernel_size)), Shape(ndims, intmax_t(stride)));

@@ -6,7 +6,7 @@ project(Etaler CXX)
 
 add_library(Etaler SHARED Backends/CPUBackend.cpp Core/DefaultBackend.cpp Core/Serialize.cpp Core/Tensor.cpp
 	Algorithms/SpatialPooler.cpp Algorithms/SpatialPoolerND.cpp Algorithms/TemporalMemory.cpp Core/TypeHelpers.cpp
-	Algorithms/Synapse.cpp)
+	Algorithms/Synapse.cpp Core/Error.cpp)
 
 set_target_properties(Etaler PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
@@ -17,6 +17,7 @@ generate_export_header(Etaler EXPORT_FILE_NAME Etaler_export.h)
 target_include_directories(Etaler PRIVATE 3rdparty/pcg-cpp/include)
 target_include_directories(Etaler PRIVATE 3rdparty/cereal/include)
 target_include_directories(Etaler PRIVATE 3rdparty/half_precision)
+target_include_directories(Etaler PRIVATE 3rdparty/backward-cpp)
 target_include_directories(Etaler PRIVATE 3rdparty)
 
 if(${TBB_FOUND})
