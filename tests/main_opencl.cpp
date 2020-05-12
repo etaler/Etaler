@@ -7,6 +7,7 @@
 
 int main( int argc, char* argv[] )
 {
+	et::enableTraceOnException(false); // Cleaner exception message
 	Catch::Session session;
 	size_t platform_id = 0;
 	size_t device_id = 0;
