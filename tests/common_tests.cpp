@@ -186,6 +186,9 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), IsPlain()));
 		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).view({0}).pimpl(), IsPlain()));
 		CHECK_THROWS(requireProperties(ones(Shape{4,4}, DType::Int32).view({range(2), range(2)}).pimpl(), IsPlain()));
+
+		CHECK_NOTHROW(requireProperties(ones({Shape{4, 4}}).pimpl(), Shape{4, 4}));
+		CHECK_THROWS(requireProperties(ones({Shape{4, 4}}).pimpl(), Shape{4}));
 	}
 
 	SECTION("Views") {
