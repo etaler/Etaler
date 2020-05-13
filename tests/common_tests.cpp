@@ -361,24 +361,39 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 	}
 
 	SECTION("iterator") {
+		// Reference: http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
 		Tensor t = ones({3, 4});
 		Tensor q = zeros({3, 4});
+		REQUIRE(t.shape() == Shape{3, 4});
 		STATIC_REQUIRE(std::is_same_v<Tensor::iterator::value_type, Tensor>);
 
-		// Tensor::iterator should be random,
-		// Reference: http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
+		// Tensor::iterator should be a ramdom access iterator
 		STATIC_REQUIRE(std::is_same_v<std::iterator_traits<Tensor::iterator>::iterator_category, std::random_access_iterator_tag>);
+
+		//Is default-constructible, copy-constructible, copy-assignable and destructible
 		STATIC_REQUIRE(std::is_default_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_assignable_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_destructible_v<Tensor::iterator>);
-
+		
+		//Can be compared for equivalence using the equality/inequality operators
 		CHECK(t.begin() != t.end());
 		CHECK(t.begin() == t.begin());
+
+		//Can be dereferenced as an rvalue
 		CHECK((*t.begin()).shape() == Shape{4});
 		CHECK(t.begin()->shape() == Shape{4});
+
+		//Can be dereferenced as an lvalue
+		CHECK((*t.begin() = zeros({4})).isSame(zeros({4})));
+		CHECK((*t.begin() = ones({4})).isSame(ones({4}))); // Try a second time
+
+		//Supports the arithmetic operators + and - between an iterator and an integer value, or subtracting an iterator from another.
 		CHECK(t.end() - t.begin() == t.shape()[0]);
-		CHECK(t.begin()[2].isSame(*t.back()) == true);
+		CHECK(t.begin() + t.shape()[0] == t.end());
+		CHECK(t.end() - t.shape()[0] == t.begin());
+
+		//Can be incremented
 		auto it1 = t.begin(), it2 = t.begin();
 		it1++;
 		++it2;
@@ -387,9 +402,27 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		it2--;
 		CHECK(it1 == it2);
 
+		//Can be compared with inequality relational operators
+		CHECK(t.begin() < t.end());
+		CHECK(t.end() > t.begin());
+		CHECK(t.begin() <= t.begin());
+		CHECK(t.begin() >= t.begin());
+
+		//Supports compound assignment operations 
+		it1 = t.begin();
+		it1 += 3;
+		CHECK(it1 == t.end());
+		it2 = t.end();
+		it2 -= 3;
+		CHECK(it2 == t.begin());
+
+		//Supports the offset dereference operator
+		CHECK(t.begin()[2].isSame(*t.back()) == true);
+
 		swap(*t.begin(), *q.begin());
 		CHECK(t[{0}].isSame(zeros({4})));
 
+		// Other misc I came up
 		int num_iteration = 0;
 		for(auto s : t) {
 			CHECK(s.shape() == Shape({4}));
