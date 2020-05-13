@@ -88,6 +88,11 @@ inline void dispatch2d(DType t1, DType t2, Func f)
 	});
 }
 
+CPUBuffer::~CPUBuffer()
+{
+	std::visit([](auto& ptr){delete [] ptr;}, storage_);
+}
+
 namespace et::detail
 {
 template <typename PermType>
