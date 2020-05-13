@@ -11,7 +11,7 @@ static bool g_enable_trace_on_exception = true;
 
 ETALER_EXPORT void et::enableTraceOnException(bool enable)
 {
-	g_enable_trace_on_exception = true;
+	g_enable_trace_on_exception = enable;
 }
 
 ETALER_EXPORT bool et::getEnableTraceOnException()
