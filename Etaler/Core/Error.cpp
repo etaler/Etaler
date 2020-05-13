@@ -19,11 +19,14 @@ ETALER_EXPORT bool et::getEnableTraceOnException()
 	return g_enable_trace_on_exception;
 }
 
-std::string et::genStackTrace()
+std::string et::genStackTrace(size_t skip)
 {
 #ifndef BACKWARD_SYSTEM_UNKNOWN
 	std::stringstream ss;
 	StackTrace st;
+	// Skip the at least function calls we don't want
+	// 1. unwind 2. load_here, 3. genStackTrace
+	st.skip_n_firsts(3+skip);
 	st.load_here(32);
 	Printer p;
 	p.color_mode = ColorMode::never;
@@ -44,5 +47,5 @@ ETALER_EXPORT EtError::EtError(const std::string &msg)
 	: msg_(msg)
 {
 	if(getEnableTraceOnException())
-		msg_ += "\n"+genStackTrace();
+		msg_ += "\n"+genStackTrace(1); // Skip the EtError ctor
 }
