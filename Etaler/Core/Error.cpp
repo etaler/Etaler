@@ -44,5 +44,5 @@ ETALER_EXPORT EtError::EtError(const std::string &msg)
 	: msg_(msg)
 {
 	if(getEnableTraceOnException())
-		msg_ += genStackTrace();
+		msg_ += "\n"+genStackTrace();
 }
