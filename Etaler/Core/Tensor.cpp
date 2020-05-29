@@ -175,7 +175,7 @@ Tensor Tensor::view(const IndexList& rgs) const
 	if(ranges.size() > dimentions())
 		throw EtError("Cannot view a tensor of " + std::to_string(dimentions()) + " with " + std::to_string(ranges.size()) + " dimentions");
 
-	// Fill in the blacks where dimensions are not specified
+	// Fill in the blncks where dimensions are not specified
 	while(ranges.size() != dimentions())
 		ranges.push_back(et::all());
 
@@ -195,12 +195,12 @@ Tensor Tensor::view(const IndexList& rgs) const
 
 	assert(viewed_strides.size() == dimentions());
 
-	// Compute the new shape and stride. Most of the code here exists for check for out-of-bounds access
+	// Compute the new shape and stride. Most of the code here exists to check for out-of-bounds access
 	offset.reserve(dimentions());
 	result_shape.reserve(dimentions());
 	for(size_t i=0;i<dimentions();i++) { std::visit([&](auto index_range) { // <- make the code neater
 		const auto& r = index_range;
-		intmax_t dim_size = shape()[i];
+		const intmax_t dim_size = shape()[i];
 
 		// Try to resolve the indexing details
 		auto [start, stop, step, keep_dim] = [&r, dim_size]() -> std::tuple<intmax_t, intmax_t, intmax_t, bool> {
@@ -212,17 +212,21 @@ Tensor Tensor::view(const IndexList& rgs) const
 
 		intmax_t real_start = resolve_index(start, dim_size);
 		intmax_t real_stop = resolve_index(stop, dim_size);
+
+		// Attempt to fix out-of-bounds indices (The same way NumPy and PyTorch works)
+		if(real_stop > dim_size)
+			real_stop = dim_size;
+		else if(real_stop < 0)
+			real_stop = 0;
 		intmax_t size = (std::abs(real_stop - real_start) - 1) / std::abs(step) + 1;
 
 		// Indexing validations
-		if(is_index_valid(stop, dim_size+1) == false)
-			throw EtError("Stopping index " + std::to_string(stop) + " is out of range in dimension " + std::to_string(i));
 		if(step == 0)
-			throw EtError("Error: Step size is zero in dimension " + std::to_string(i));
+			throw EtError("Step size is zero in dimension " + std::to_string(i));
 		if(is_index_valid(start, dim_size) == false)
-			throw EtError("Starting index " + std::to_string(start) + " is out of range in dimension " + std::to_string(i));
+			throw EtError("Index " + std::to_string(start) + " is out of range for dimension " + std::to_string(i) + " with size " + std::to_string(dim_size));
 		if((real_stop - real_start) * step < 0)
-			throw EtError("Step is going in the wrong direction. Will cause infinate loop");
+			throw EtError("Step is going in the wrong direction.");
 
 		viewed_strides[i] *= step;
 
