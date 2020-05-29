@@ -226,7 +226,7 @@ Tensor Tensor::view(const IndexList& rgs) const
 		if(is_index_valid(start, dim_size) == false)
 			throw EtError("Index " + std::to_string(start) + " is out of range for dimension " + std::to_string(i) + " with size " + std::to_string(dim_size));
 		if((real_stop - real_start) * step < 0)
-			throw EtError("Step is going in the wrong direction.");
+			throw EtError("Step is going in the wrong direction in dimension " + std::to_string(i));
 
 		viewed_strides[i] *= step;
 
