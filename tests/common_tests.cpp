@@ -854,6 +854,15 @@ TEST_CASE("brodcast")
 		b = ones({7});
 		CHECK_THROWS(a+b);
 	}
+
+	SECTION("Manual brodcast") {
+		a = ones({2, 4});
+		b = ones({1, 1, 4});
+		auto [x, y] = a.brodcast(b);
+		CHECK(x.shape() == Shape({1, 2, 4}));
+		CHECK(y.shape() == Shape({1, 2, 4}));
+		CHECK(x.iscontiguous() == false);
+	}
 }
 
 TEST_CASE("SDRClassifer")
