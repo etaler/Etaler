@@ -172,9 +172,9 @@ struct ETALER_EXPORT Tensor
 
 	Tensor swapaxis(size_t axis1, size_t axis2) const
 	{
-		if(axis1 < dimentions())
+		if(axis1 >= dimentions())
 			throw EtError("Axis " + std::to_string(axis1) + " is out of range.");
-		if(axis2 < dimentions())
+		if(axis2 >= dimentions())
 			throw EtError("Axis " + std::to_string(axis2) + " is out of range.");
 		Shape stride = pimpl_->stride();
 		Shape s = shape();

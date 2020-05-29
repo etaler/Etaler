@@ -91,13 +91,14 @@ bool checkProperty(const TensorImpl* x, const T& value)
 }
 
 template <typename T>
-void requireProperty(const TensorImpl* x, const T value, const std::string& line, const std::string& v_name)
+void requireProperty(const TensorImpl* x, const T& value, const std::string_view line, const std::string_view v_name)
 {
 	if(checkProperty(x, value) == true)
 		return;
 	
-	//Otherwise assertion failed
-	const std::string msg = line + " Tensor property requirment not match. Expecting " + v_name;
+	// Otherwise assertion failed
+	// Workarround string_view limitations
+	const std::string msg = (std::string(line) + " Tensor property requirment not match. Expecting ").append(v_name);
 	if constexpr(std::is_base_of_v<Backend, std::remove_pointer_t<std::decay_t<T>>>)
 		throw EtError(msg + ".backend() == " + value->name());
 	else if constexpr(std::is_same_v<T, DType>)
@@ -115,13 +116,13 @@ void requireProperty(const TensorImpl* x, const T value, const std::string& line
 }
 
 template <typename ... Args>
-bool checkProperties(const TensorImpl* x, Args... args)
+bool checkProperties(const TensorImpl* x, const Args& ... args)
 {
 	return (checkProperty(x, args) && ...);
 }
 
 template <typename ... Args>
-void requirePropertiesInternal(const TensorImpl* x, const std::string& line, const std::string& v_name, Args... args)
+void requirePropertiesInternal(const TensorImpl* x, const std::string_view line, const std::string_view v_name, const Args& ... args)
 {
 	(requireProperty(x, args, line, v_name), ...);
 }

@@ -186,6 +186,9 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).pimpl(), IsPlain()));
 		CHECK_NOTHROW(requireProperties(ones(Shape{1}, DType::Int32).view({0}).pimpl(), IsPlain()));
 		CHECK_THROWS(requireProperties(ones(Shape{4,4}, DType::Int32).view({range(2), range(2)}).pimpl(), IsPlain()));
+
+		CHECK_NOTHROW(requireProperties(ones({Shape{4, 4}}).pimpl(), Shape{4, 4}));
+		CHECK_THROWS(requireProperties(ones({Shape{4, 4}}).pimpl(), Shape{4}));
 	}
 
 	SECTION("Views") {
@@ -216,7 +219,9 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK_THROWS(t.view({0,0,0,0,0}));
 			CHECK_THROWS(t.view({300}));
 			CHECK_THROWS(t.view({0, 300}));
-			CHECK_THROWS(t.view({range(100)}));
+
+			// NumPy and PyTorch allows np.ones(4, 4)[:100]
+			CHECK_NOTHROW(t.view({range(100)}));
 
 			Tensor q = t.view({2,2});
 			CHECK(q.size() == 1);
@@ -361,24 +366,39 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 	}
 
 	SECTION("iterator") {
+		// Reference: http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
 		Tensor t = ones({3, 4});
 		Tensor q = zeros({3, 4});
+		REQUIRE(t.shape() == Shape{3, 4});
 		STATIC_REQUIRE(std::is_same_v<Tensor::iterator::value_type, Tensor>);
 
-		// Tensor::iterator should be random,
-		// Reference: http://www.cplusplus.com/reference/iterator/RandomAccessIterator/
+		// Tensor::iterator should be a ramdom access iterator
 		STATIC_REQUIRE(std::is_same_v<std::iterator_traits<Tensor::iterator>::iterator_category, std::random_access_iterator_tag>);
+
+		//Is default-constructible, copy-constructible, copy-assignable and destructible
 		STATIC_REQUIRE(std::is_default_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_constructible_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_copy_assignable_v<Tensor::iterator>);
 		STATIC_REQUIRE(std::is_destructible_v<Tensor::iterator>);
-
+		
+		//Can be compared for equivalence using the equality/inequality operators
 		CHECK(t.begin() != t.end());
 		CHECK(t.begin() == t.begin());
+
+		//Can be dereferenced as an rvalue
 		CHECK((*t.begin()).shape() == Shape{4});
 		CHECK(t.begin()->shape() == Shape{4});
+
+		//Can be dereferenced as an lvalue
+		CHECK((*t.begin() = zeros({4})).isSame(zeros({4})));
+		CHECK((*t.begin() = ones({4})).isSame(ones({4}))); // Try a second time
+
+		//Supports the arithmetic operators + and - between an iterator and an integer value, or subtracting an iterator from another.
 		CHECK(t.end() - t.begin() == t.shape()[0]);
-		CHECK(t.begin()[2].isSame(*t.back()) == true);
+		CHECK(t.begin() + t.shape()[0] == t.end());
+		CHECK(t.end() - t.shape()[0] == t.begin());
+
+		//Can be incremented
 		auto it1 = t.begin(), it2 = t.begin();
 		it1++;
 		++it2;
@@ -387,9 +407,27 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		it2--;
 		CHECK(it1 == it2);
 
+		//Can be compared with inequality relational operators
+		CHECK(t.begin() < t.end());
+		CHECK(t.end() > t.begin());
+		CHECK(t.begin() <= t.begin());
+		CHECK(t.begin() >= t.begin());
+
+		//Supports compound assignment operations 
+		it1 = t.begin();
+		it1 += 3;
+		CHECK(it1 == t.end());
+		it2 = t.end();
+		it2 -= 3;
+		CHECK(it2 == t.begin());
+
+		//Supports the offset dereference operator
+		CHECK(t.begin()[2].isSame(*t.back()) == true);
+
 		swap(*t.begin(), *q.begin());
 		CHECK(t[{0}].isSame(zeros({4})));
 
+		// Other misc I came up
 		int num_iteration = 0;
 		for(auto s : t) {
 			CHECK(s.shape() == Shape({4}));
@@ -817,6 +855,15 @@ TEST_CASE("brodcast")
 		a = ones({2, 4});
 		b = ones({7});
 		CHECK_THROWS(a+b);
+	}
+
+	SECTION("Manual brodcast") {
+		a = ones({2, 4});
+		b = ones({1, 1, 4});
+		auto [x, y] = a.brodcast(b);
+		CHECK(x.shape() == Shape({1, 2, 4}));
+		CHECK(y.shape() == Shape({1, 2, 4}));
+		CHECK(x.iscontiguous() == false);
 	}
 }
 

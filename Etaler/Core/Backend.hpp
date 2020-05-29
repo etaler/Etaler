@@ -73,3 +73,12 @@ struct ETALER_EXPORT Backend : public std::enable_shared_from_this<Backend>
 
 }
 
+namespace cling
+{
+
+inline std::string printValue(const et::Backend* backend)
+{
+	return "<Etaler backend on " + backend->name() + ">";
+}
+
+}

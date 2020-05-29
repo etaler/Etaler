@@ -12,7 +12,7 @@
 namespace et
 {
 
-std::string genStackTrace();
+std::string genStackTrace(size_t skip = 0);
 
 class EtError : public std::exception
 {

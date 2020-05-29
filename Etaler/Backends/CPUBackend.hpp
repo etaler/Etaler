@@ -39,7 +39,7 @@ struct ETALER_EXPORT CPUBuffer : public BufferImpl
 			memcpy(ptr, src_ptr, shape.volume()*dtypeToSize(dtype));
 	}
 
-	virtual ~CPUBuffer() {std::visit([](auto& ptr){delete [] ptr;}, storage_);}
+	virtual ~CPUBuffer();
 
 	virtual void* data() const override;
 

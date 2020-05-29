@@ -40,7 +40,7 @@ struct ETALER_EXPORT SpatialPooler
 	size_t activeThreshold() const { return active_threshold_; }
 
 	void setGlobalDensity(float d) { global_density_ = d; }
-	size_t globalDensity() const { return global_density_; }
+	float globalDensity() const { return global_density_; }
 
 	void setBoostingFactor(float f) { boost_factor_ = f; }
 	float boostFactor() const { return boost_factor_; }

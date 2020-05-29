@@ -74,6 +74,29 @@ root [0] gSystem->Load("/usr/local/lib/libEtaler.so");
 root [1] #include <Etaler/Etaler.hpp>
 ```
 
+Or use a macro to load Etaler conveniently
+```c++
+// /usr/share/root/macros/load_etaler.C
+#include <Etaler/Etaler.hpp>
+#include <Etaler/Algorithms/SpatialPooler.hpp>
+#include <Etaler/Algorithms/TemporalMemory.hpp>
+#include <Etaler/Encoders/Scalar.hpp>
+#include <Etaler/Encoders/GridCell1d.hpp>
+#include <Etaler/Encoders/GridCell2d.hpp> // Add or remove headers as you want
+#pragma cling load("/usr/local/lib/libEtaler.so") // Repalce this with your path to Etaler
+using namespace et;
+
+void load_etaler(){}
+```
+
+Then call the macro in ROOT to load all of Etaler.
+
+```cpp
+> root
+root [0] .x load_etaler.C
+root [1] // Etaler is fully loaded
+```
+
 ## Using Etaler under an interactive C++ shell
 
 After loading the library. You can use the library as you would normally. (And ROOT imports the `std` namespace by default.)
