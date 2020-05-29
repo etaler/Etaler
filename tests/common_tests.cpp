@@ -219,7 +219,9 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK_THROWS(t.view({0,0,0,0,0}));
 			CHECK_THROWS(t.view({300}));
 			CHECK_THROWS(t.view({0, 300}));
-			CHECK_THROWS(t.view({range(100)}));
+
+			// NumPy and PyTorch allows np.ones(4, 4)[:100]
+			CHECK_NOTHROW(t.view({range(100)}));
 
 			Tensor q = t.view({2,2});
 			CHECK(q.size() == 1);
