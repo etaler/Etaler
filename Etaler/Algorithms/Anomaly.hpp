@@ -5,7 +5,7 @@
 namespace et
 {
 
-static float anomaly(const Tensor& pred, const Tensor& real)
+inline float anomaly(const Tensor& pred, const Tensor& real)
 {
 	et_assert(real.dtype() == DType::Bool);
 	et_assert(pred.dtype() == DType::Bool);
