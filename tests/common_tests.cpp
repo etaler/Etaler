@@ -7,6 +7,7 @@
 #include <Etaler/Encoders/GridCell2d.hpp>
 #include <Etaler/Core/Serialize.hpp>
 #include <Etaler/Algorithms/SDRClassifer.hpp>
+#include <Etaler/Algorithms/Anomaly.hpp>
 
 #include <numeric>
 
@@ -1016,6 +1017,30 @@ TEST_CASE("Type system")
 				}
 			}
 		}
+	}
+}
+
+TEST_CASE("Anomaly")
+{
+	Tensor real = zeros({256}, DType::Bool);
+	real[{range(30, 40)}] = true;
+	SECTION("All zeros") {
+		Tensor pred = zeros({256}, DType::Bool);
+		CHECK(anomaly(pred, real) == 1);
+	}
+
+	SECTION("Totally correct") {
+		CHECK(anomaly(real, real) == 0);
+	}
+
+	SECTION("Totally wrong") {
+		CHECK(anomaly(!real, real) == 1);
+	}
+
+	SECTION("Partially correct") {
+		Tensor pred = zeros({256}, DType::Bool);
+		pred[{range(30, 35)}] = true;
+		CHECK(anomaly(pred, real) == 0.5);
 	}
 }
 
