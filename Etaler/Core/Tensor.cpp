@@ -198,6 +198,7 @@ Tensor Tensor::view(const IndexList& rgs) const
 	// Compute the new shape and stride. Most of the code here exists to check for out-of-bounds access
 	offset.reserve(dimentions());
 	result_shape.reserve(dimentions());
+        result_stride.reserve(dimentions());
 	for(size_t i=0;i<dimentions();i++) { std::visit([&](auto index_range) { // <- make the code neater
 		const auto& r = index_range;
 		const intmax_t dim_size = shape()[i];
@@ -329,16 +330,16 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 		}
 
 		if(base_dtype != t.dtype())
-			throw EtError("DType mismatch when concatenate.");
+			throw EtError("Cannot concat tensors of different types.");
 		
 		if(base_backend != t.backend())
-			throw EtError("Backend mismatch when concatenate.");
+			throw EtError("Cannot concat tensors on different backends.");
 
 		auto shape = t.shape();
 		assert((intmax_t)shape.size() > dim);
 		shape[dim] = base_shape[dim];
 		if(shape != base_shape)
-			throw EtError("Tensors must have the same shape along all axises besides the concatenating axis.");
+			throw EtError("Tensors must have the same shape along all dimensions besides the concatenating dimension.");
 	}
 
 	Shape res_shape = base_shape;
