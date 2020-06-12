@@ -19,7 +19,7 @@ ETALER_EXPORT bool et::getEnableTraceOnException()
 	return g_enable_trace_on_exception;
 }
 
-std::string et::genStackTrace(size_t skip)
+ETALER_EXPORT std::string et::genStackTrace(size_t skip)
 {
 #ifndef BACKWARD_SYSTEM_UNKNOWN
 	std::stringstream ss;
