@@ -5,13 +5,13 @@
 #include "Etaler/Core/Tensor.hpp"
 #include "TypeHelpers.hpp"
 
-using namespace et;
-
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/archives/json.hpp>
 #include <cereal/archives/portable_binary.hpp>
+
+using namespace et;
 
 namespace cereal
 {
