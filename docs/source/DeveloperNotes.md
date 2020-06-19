@@ -23,3 +23,16 @@ This file documents some facts about the codebase that might be useful for it's 
 * Nvidia's OpenCL implementation although very optimized, has piles upon piles of problems.
   * Use POCL w/ CUDA backend for debugging. POCL is a lot slower, but very stable.
   * Or use Intel/AMD's OpenCL SDK
+
+## Programing style
+
+* Use LF line ending, CRLF is evil
+* Respect PyTorch/NumPy's naming
+* Respect C++STL's naming
+* Unless violating the 2 previous rules
+   * Variables use snake_case
+   * Functions use camalCase
+   * Types use PascalCase
+   * Macros are ALL_CAPS
+   * Unless the macro is intended to be used as a type or function. Then use the respective case
+   * Lambda functions/callable class instances use snake_case
