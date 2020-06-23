@@ -14,7 +14,7 @@ namespace et
 
 ETALER_EXPORT std::string genStackTrace(size_t skip = 0);
 
-class ETLAER_EXPORT EtError : public std::exception
+class EtError : public std::exception
 {
 public:
 	explicit EtError(const std::string &msg);
