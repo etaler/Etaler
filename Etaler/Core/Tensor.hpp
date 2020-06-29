@@ -157,8 +157,24 @@ struct ETALER_EXPORT Tensor
 
 	Tensor reshape(Shape shape) const
 	{
-		if(size() != (size_t)shape.volume())
-			throw EtError("Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
+		size_t num_unknown = std::count_if(shape.begin(), shape.end(), [](auto v){return v == -1;}); // -1 indicates unknown size
+		et_check(num_unknown <= 1, "Can only have 0 or 1 unknown dimentions. Got " + std::to_string(num_unknown));
+		if(num_unknown == 1) {
+			intmax_t known_volume = 1;
+			size_t unknown_index = -1;
+			for(size_t i=0;i<shape.size();i++) {
+				if(shape[i] == -1)
+					unknown_index = i;
+				else
+					known_volume *= shape[i];
+			}
+			assert(int(unknown_index) != -1);
+			et_check(size() % known_volume == 0, "Cannot solve the unknown volume. Volume not divisible");
+			shape[unknown_index] = size() / known_volume;
+		}
+
+
+		et_check(size() == (size_t)shape.volume(), "Cannot reshape from " + to_string(this->shape()) + " to " + to_string(shape));
 		Tensor res = realize();
 		res.resize(shape);
 		return res;
