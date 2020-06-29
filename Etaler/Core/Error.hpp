@@ -12,9 +12,9 @@
 namespace et
 {
 
-std::string genStackTrace(size_t skip = 0);
+ETALER_EXPORT std::string genStackTrace(size_t skip = 0);
 
-class EtError : public std::exception
+class ETLAER_EXPORT EtError : public std::exception
 {
 public:
 	explicit EtError(const std::string &msg);
@@ -24,8 +24,8 @@ private:
 	std::string msg_;
 };
 
-void enableTraceOnException(bool enable);
-bool getEnableTraceOnException();
+ETALER_EXPORT void enableTraceOnException(bool enable);
+ETALER_EXPORT bool getEnableTraceOnException();
 
 }
 

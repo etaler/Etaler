@@ -5,15 +5,16 @@
 namespace et
 {
 
-static float anomaly(const Tensor& pred, const Tensor& real)
+inline float anomaly(const Tensor& pred, const Tensor& real)
 {
-	et_assert(real.dtype() == DType::Bool);
-	et_assert(pred.dtype() == DType::Bool);
-	et_assert(real.shape() == pred.shape());
+	checkProperties(real.pimpl(), DType::Bool);
+	checkProperties(pred.pimpl(), DType::Bool);
+	et_check(real.shape() == pred.shape()
+		, "The 1st and 2nd arguments should have to same shape");
 
-	Tensor should_predict = sum(real);
-	Tensor not_predicted = sum(!pred && real).cast(DType::Float);
-	return (not_predicted/should_predict).toHost<float>()[0];
+	int should_predict = sum(real).item<int>();
+	int not_predicted = sum((!pred) && real).item<int>();
+	return float(not_predicted)/should_predict;
 }
 
 }

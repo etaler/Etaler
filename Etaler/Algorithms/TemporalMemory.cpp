@@ -44,6 +44,10 @@ void TemporalMemory::loadState(const StateDict& states)
 	input_shape_ = std::any_cast<Shape>(states.at("input_shape"));
 	connections_ = std::any_cast<Tensor>(states.at("connections"));
 	permanences_ = std::any_cast<Tensor>(states.at("permanences"));
+
+	// Sort the synapse in case the synapses are not pre-sorted. 
+	// Presorting is a requirment for the GPU but not the CPU
+	sortSynapse(connections_, permanences_);
 }
 
 TemporalMemory TemporalMemory::to(Backend* b) const
@@ -51,6 +55,7 @@ TemporalMemory TemporalMemory::to(Backend* b) const
 	TemporalMemory tm = *this;
 	tm.connections_ = connections_.to(b);
 	tm.permanences_ = permanences_.to(b);
+	sortSynapse(tm.connections_, tm.permanences_);
 
 	return tm;
 }
