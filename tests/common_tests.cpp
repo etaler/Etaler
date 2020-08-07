@@ -216,6 +216,9 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 			CHECK_THROWS(t.reshape({65, -1}));
 			CHECK_THROWS(t.reshape({-1, -1}));
+
+                        CHECK_THROWS(t.reshape({-2})); // Bad dimenstion sizes
+                        CHECK_THROWS(t.reshape({0}));
 		}
 
 		SECTION("flatten") {

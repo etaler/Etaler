@@ -149,7 +149,7 @@ struct ETALER_EXPORT Tensor
 
 
 	Tensor to(Backend* dest_backend) const;
-	Tensor to(std::shared_ptr<Backend> dest_backend) const {return to(dest_backend.get());}
+	Tensor to(const std::shared_ptr<Backend> dest_backend) const {return to(dest_backend.get());}
 	Tensor copy() const;
 
 	//View/Indexing
@@ -157,6 +157,8 @@ struct ETALER_EXPORT Tensor
 
 	Tensor reshape(Shape shape) const
 	{
+		if(std::find_if(shape.begin(), shape.end(), [](auto v){ return v < -1;}) != shape.end())
+                        throw EtError("Sizes of each dimension should be gerater than one or is -1 (unknown). Got " + to_string(shape));
 		size_t num_unknown = std::count_if(shape.begin(), shape.end(), [](auto v){return v == -1;}); // -1 indicates unknown size
 		et_check(num_unknown <= 1, "Can only have 0 or 1 unknown dimentions. Got " + std::to_string(num_unknown));
 		if(num_unknown == 1) {
