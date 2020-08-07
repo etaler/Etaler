@@ -208,6 +208,19 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 			CHECK(realize(q).isSame(t));
 		}
 
+		SECTION("reshape with unknown") {
+			CHECK(t.reshape({-1}).shape() == Shape{16});
+			CHECK(t.reshape({1, -1}).shape() == Shape{1, 16});
+			CHECK(t.reshape({4, -1}).shape() == Shape{4, 4});
+			CHECK(t.reshape({8, 2, -1}).shape() == Shape{8, 2, 1});
+
+			CHECK_THROWS(t.reshape({65, -1}));
+			CHECK_THROWS(t.reshape({-1, -1}));
+
+                        CHECK_THROWS(t.reshape({-2})); // Bad dimenstion sizes
+                        CHECK_THROWS(t.reshape({0}));
+		}
+
 		SECTION("flatten") {
 			Tensor q = t.flatten();
 			CHECK(q.size() == t.size());

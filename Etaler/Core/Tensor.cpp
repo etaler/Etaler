@@ -129,7 +129,7 @@ std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 		return os;
 	}
 
-	Tensor q = ravel(t);
+	const Tensor q = ravel(t);
 	const void* ptr = q.data();
 	if(ptr == nullptr) { // If direct access of the values is not possible
 		void* buffer = malloc(q.size()*dtypeToSize(q.dtype()));
