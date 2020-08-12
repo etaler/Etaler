@@ -39,7 +39,7 @@ struct ETALER_EXPORT TensorImpl : public std::enable_shared_from_this<TensorImpl
 	Shape shape() const {return shape_;}
 	Shape stride() const {return stride_;}
 	std::shared_ptr<BufferImpl> buffer() const {return buffer_;}
-	size_t dimentions() const {return shape_.size();}
+	size_t dimensions() const {return shape_.size();}
 	size_t size() const {return shape_.volume();}
 	size_t offset() const {return offset_;}
 	void resize(Shape s) {if(isplain() && s.volume() == shape_.volume()){ shape_ = s; stride_ = shapeToStride(s);} else throw EtError("Cannot resize");}
