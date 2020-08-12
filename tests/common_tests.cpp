@@ -126,9 +126,9 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 		CHECK(t.size() == 1*2*5*6*7);
 		CHECK(t.dtype() == DType::Float);
-		CHECK(t.dimentions() == 5);
+		CHECK(t.dimensions() == 5);
 		CHECK(t.backend() == defaultBackend());
-		CHECK(t.dimentions() == t.shape().size());
+		CHECK(t.dimensions() == t.shape().size());
 
 		//Should not be able to convert from shape {1,2,5,3,7} to {60}
 		CHECK_THROWS_AS(t.resize({60}), EtError);
@@ -239,12 +239,12 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 			Tensor q = t.view({2,2});
 			CHECK(q.size() == 1);
-			CHECK(q.dimentions() == 1);
+			CHECK(q.dimensions() == 1);
 			CHECK(realize(q).toHost<int32_t>()[0] == 10);
 
 			Tensor r = t.view({range(2), range(2)});
 			CHECK(r.size() == 4);
-			CHECK(r.dimentions() == 2);
+			CHECK(r.dimensions() == 2);
 			CHECK(r.shape() == Shape({2,2}));
 			int a[] = {0,1,4,5};
 			Tensor pred = Tensor({2,2}, a);
@@ -677,14 +677,14 @@ TEST_CASE("Backend functions", "[Backend]")
 
 		Tensor s0 = sum(t, 0);
 		CHECK(s0.size() == 4);
-		CHECK(s0.dimentions() == 1);
+		CHECK(s0.dimensions() == 1);
 		CHECK(s0.dtype() == DType::Int32);
 		int32_t pred0[] = {24, 28, 32, 36};
 		CHECK(s0.isSame(Tensor({4}, pred0)));
 
 		Tensor s1 = sum(t, 1);
 		CHECK(s1.size() == 4);
-		CHECK(s1.dimentions() == 1);
+		CHECK(s1.dimensions() == 1);
 		CHECK(s1.dtype() == DType::Int32);
 		int32_t pred1[] = {6, 22, 38, 54};
 		CHECK(s1.isSame(Tensor({4}, pred1)));

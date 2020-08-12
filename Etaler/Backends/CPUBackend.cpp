@@ -103,7 +103,7 @@ static std::shared_ptr<TensorImpl> cellActivity(const TensorImpl* x, const Tenso
 	requireProperties(x, backend, DType::Bool, IsPlain());
 	requireProperties(connections, backend, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, backend, typeToDType<PermType>(), IsPlain());
-	et_check(connections->dimentions() >= 2);
+	et_check(connections->dimensions() >= 2);
 
 	Shape s = connections->shape();
 	s.pop_back();

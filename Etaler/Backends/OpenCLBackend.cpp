@@ -41,7 +41,7 @@ typedef struct __attribute__ ((packed)) _OpenCLView
 
 static void makeOpenCLView(const TensorImpl* x, OpenCLView* v)
 {
-	int dims = int(x->dimentions());
+	int dims = int(x->dimensions());
 	et_assert(dims <= OPENCL_TENSOR_MAX_DIMS, "Too much dimensions for OpenCL backend.");
 	auto stride = x->stride();
 	auto shape_stride = shapeToStride(x->shape());
@@ -296,7 +296,7 @@ std::shared_ptr<TensorImpl> OpenCLBackend::cellActivity(const TensorImpl* x, con
 	requireProperties(x, this, DType::Bool, IsPlain());
 	requireProperties(connections, this, DType::Int32, IsPlain(), permeances->shape());
 	requireProperties(permeances, this, IsDType{DType::Float, DType::Half}, IsPlain());
-	et_check(connections->dimentions() >= 2);
+	et_check(connections->dimensions() >= 2);
 
 	Shape s = connections->shape();
 	s.pop_back();
@@ -694,7 +694,7 @@ int location_func$ID(int index)
 	const auto shape_stride = shapeToStride(x->shape());
 	replaceAll(func, "$ID", std::to_string(id));
 	replaceAll(func, "$SHAPE_STRIDE", to_string(shape_stride));
-	replaceAll(func, "$DIMS", std::to_string(x->dimentions()));
+	replaceAll(func, "$DIMS", std::to_string(x->dimensions()));
 	replaceAll(func, "$STRIDE", to_string(x->stride()));
 	replaceAll(func, "$OFFSET", std::to_string(x->offset()));
 	return func;

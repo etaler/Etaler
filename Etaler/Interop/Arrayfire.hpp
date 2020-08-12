@@ -58,13 +58,13 @@ Tensor from_afarray(const af::array& arr, bool transpose=true)
 
 af::array to_afarray(const Tensor& t, bool transpose=true)
 {
-	et_assert(t.dimentions() <= 4);
+	et_assert(t.dimensions() <= 4);
 	af::dim4 dims;
 	//Initalize the dims (not Initalized by default)
 	for(int i=0;i<4;i++)
 		dims[i] = 1;
-	for(size_t i=0;i<t.dimentions();i++)
-		dims[t.dimentions()-i] = t.shape()[i];
+	for(size_t i=0;i<t.dimensions();i++)
+		dims[t.dimensions()-i] = t.shape()[i];
 
 	af::dtype dtype = [](DType dtype) {
 		if(dtype == DType::Float)

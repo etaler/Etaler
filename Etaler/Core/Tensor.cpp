@@ -18,7 +18,7 @@ static void prettyPrintTensor(std::ostream& os, const T* arr, const Shape& shape
 		return ss.str();
 	};
 
-	//If at the first dimention
+	//If at the first dimension
 	if(depth == 0) {
 		//Calculatet the max character of printing a single element needs
 		for(intmax_t i=0;i<shape.volume();i++)
@@ -27,7 +27,7 @@ static void prettyPrintTensor(std::ostream& os, const T* arr, const Shape& shape
 
 	const std::string truncate_symbol = "....";
 
-	//If at the the last dimention, print the content of the tensor
+	//If at the the last dimension, print the content of the tensor
 	if(depth+1 == shape.size()) {
 		os << "{ ";
 		intmax_t size = shape[depth];
@@ -172,11 +172,11 @@ bool Tensor::isSame(const Tensor& other) const
 Tensor Tensor::view(const IndexList& rgs) const
 {
 	auto ranges = rgs;
-	if(ranges.size() > dimentions())
-		throw EtError("Cannot view a tensor of " + std::to_string(dimentions()) + " with " + std::to_string(ranges.size()) + " dimentions");
+	if(ranges.size() > dimensions())
+		throw EtError("Cannot view a tensor of " + std::to_string(dimensions()) + " with " + std::to_string(ranges.size()) + " dimensions");
 
 	// Fill in the blncks where dimensions are not specified
-	while(ranges.size() != dimentions())
+	while(ranges.size() != dimensions())
 		ranges.push_back(et::all());
 
 	auto resolve_index = [](intmax_t idx, intmax_t size) -> intmax_t {
@@ -193,13 +193,13 @@ Tensor Tensor::view(const IndexList& rgs) const
 	Shape result_stride;
 	Shape viewed_strides = pimpl_->stride();
 
-	assert(viewed_strides.size() == dimentions());
+	assert(viewed_strides.size() == dimensions());
 
 	// Compute the new shape and stride. Most of the code here exists to check for out-of-bounds access
-	offset.reserve(dimentions());
-	result_shape.reserve(dimentions());
-        result_stride.reserve(dimentions());
-	for(size_t i=0;i<dimentions();i++) { std::visit([&](auto index_range) { // <- make the code neater
+	offset.reserve(dimensions());
+	result_shape.reserve(dimensions());
+        result_stride.reserve(dimensions());
+	for(size_t i=0;i<dimensions();i++) { std::visit([&](auto index_range) { // <- make the code neater
 		const auto& r = index_range;
 		const intmax_t dim_size = shape()[i];
 
@@ -279,7 +279,7 @@ Tensor et::ones(const Shape& shape, DType dtype, Backend* backend)
 
 Tensor Tensor::sum(std::optional<intmax_t> dim_id, DType dtype) const
 {
-	et_check(dim_id.value_or(0) < (intmax_t)dimentions(), "Dim " + std::to_string(dim_id.value_or(0)) + " is out of range");
+	et_check(dim_id.value_or(0) < (intmax_t)dimensions(), "Dim " + std::to_string(dim_id.value_or(0)) + " is out of range");
 
 	// dim_id has no value means sum the entire tensor
 	if(dim_id.has_value() == false)
@@ -287,8 +287,8 @@ Tensor Tensor::sum(std::optional<intmax_t> dim_id, DType dtype) const
 
 	intmax_t dim = dim_id.value();
 	// negative index means counting from back
-	dim = dim < 0 ? dimentions() + dim : dim;
-	if(dim >= (intmax_t)dimentions() || dim < 0)
+	dim = dim < 0 ? dimensions() + dim : dim;
+	if(dim >= (intmax_t)dimensions() || dim < 0)
 		throw EtError("Dimension " + std::to_string(dim_id.value()) + " is out of range.");
 
 	Shape final_shape = shape();
@@ -298,13 +298,13 @@ Tensor Tensor::sum(std::optional<intmax_t> dim_id, DType dtype) const
 	result_shape[dim] = result_shape[result_shape.size()-1];
 	result_shape.pop_back();
 
-	if(size_t(dim) == dimentions()-1) { //Special, optimized case for summing the last dim
+	if(size_t(dim) == dimensions()-1) { //Special, optimized case for summing the last dim
 		Tensor res = backend()->sum(pimpl(), shape().back(), dtype);
 		res.resize(final_shape);
 		return res;
 	}
 
-	Tensor res = backend()->sum(swapaxis(dimentions()-1, dim).realize().pimpl(), sum_size, dtype);
+	Tensor res = backend()->sum(swapaxis(dimensions()-1, dim).realize().pimpl(), sum_size, dtype);
 	res.resize(result_shape);
 	return res.swapaxis(res.shape().size()-1, dim).reshape(final_shape);
 }
@@ -324,9 +324,9 @@ Tensor et::cat(const svector<Tensor>& tensors, intmax_t dim)
 	auto base_dtype = tensors[0].dtype();
 	auto base_backend = tensors[0].backend();
 	for(const auto& t : tensors) {
-		if((intmax_t)t.dimentions() <= dim) {
+		if((intmax_t)t.dimensions() <= dim) {
 			throw EtError("Requesting to concat along dim="+std::to_string(dim)
-				+", but tensor is "+std::to_string(t.dimentions())+"D.");
+				+", but tensor is "+std::to_string(t.dimensions())+"D.");
 		}
 
 		if(base_dtype != t.dtype())
@@ -402,7 +402,7 @@ inline Shape brodcast_result_shape(Shape a, Shape b)
 
 Tensor et::brodcast_to(const Tensor& t, Shape s)
 {
-	et_assert(s.size() >= t.dimentions());
+	et_assert(s.size() >= t.dimensions());
 	Shape stride = leftpad(t.stride(), s.size(), 0);
 	Shape shape = leftpad(t.shape(), s.size(), 0);
 	for(size_t i=0;i<s.size();i++) {
