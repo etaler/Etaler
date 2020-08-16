@@ -87,6 +87,11 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 		CHECK(Tensor({1}, &n).has_value() == true);
 	}
 
+	SECTION("constants") {
+		CHECK(constant(Shape{4, 4}, 0).shape() == Shape{4, 4});
+		CHECK(constant(Shape{}, 0).shape() == Shape{});
+	}
+
 	SECTION("Create Tensor from scalar") {
 		Tensor t = 7;
 		CHECK(t.dtype() == DType::Int32);
@@ -234,13 +239,6 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 			// But getting it's values are allowed
 			CHECK(s.item<int32_t>() == 0);
-
-			// Summing a 0D tensor shold also work
-			CHECK(s.sum().item<int32_t>() == 0);
-
-			// Misc test that should also work
-			CHECK((s == s).item<bool>() == true);
-			CHECK((s+1).item<int32_t>() == 1);
                 }
 
 		SECTION("flatten") {
@@ -858,6 +856,29 @@ TEST_CASE("Tensor operations")
 			CHECK_THROWS(cat({a, d}));
 		}
 	}
+
+	SECTION("0D tensors") {
+		Tensor s = zeros(Shape());
+		REQUIRE(s.dimensions() == 0);
+		REQUIRE(s.size() == 1);
+
+		// Summing a 0D tensor shold also work
+		CHECK(s.sum().item<int32_t>() == 0);
+
+		// Misc test that should also work
+		CHECK((s == s).item<bool>() == true);
+		CHECK((s+1).item<int32_t>() == 1);
+
+		// Adding 0D tensors together resulting in a 0D tensor
+		CHECK((s+s).dimensions() == 0);
+
+		// Flattening 0D gives 1D
+		CHECK(s.flatten().shape() == Shape{1});
+
+		// Reshape 0D
+		CHECK(s.reshape({1, 1, 1, 1}).dimensions() == 4);
+		CHECK(s.reshape({1, 1, -1, 1, 1}).dimensions() == 5);
+	}
 }
 
 TEST_CASE("brodcast")
@@ -900,6 +921,17 @@ TEST_CASE("brodcast")
 		CHECK(x.shape() == Shape({1, 2, 4}));
 		CHECK(y.shape() == Shape({1, 2, 4}));
 		CHECK(x.iscontiguous() == false);
+	}
+
+	SECTION("Brodcasting 0D tensors") {
+		Tensor a = zeros({});
+		Tensor b = zeros({4, 5});
+		CHECK((a+b).shape() == Shape{4, 5});
+		CHECK((b+a).shape() == Shape{4, 5});
+
+		Tensor c = zeros({1});
+		CHECK((a+c).shape() == Shape{1});
+		CHECK((c+a).shape() == Shape{1});
 	}
 }
 
