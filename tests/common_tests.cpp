@@ -221,6 +221,28 @@ TEST_CASE("Testing Tensor", "[Tensor]")
                         CHECK_THROWS(t.reshape({0}));
 		}
 
+                SECTION("View into scalars") {
+                        auto s = t[{0, 0}];
+
+                        // s should be a 0D tensors
+                        CHECK(s.size() == 1);
+                        CHECK(s.dimensions() == 0);
+
+			// You should not be able to index into a 0D tensor
+			CHECK_THROWS(s[{0}]);
+			CHECK_THROWS(s[{500, 200}]);
+
+			// But getting it's values are allowed
+			CHECK(s.item<int32_t>() == 0);
+
+			// Summing a 0D tensor shold also work
+			CHECK(s.sum().item<int32_t>() == 0);
+
+			// Misc test that should also work
+			CHECK((s == s).item<bool>() == true);
+			CHECK((s+1).item<int32_t>() == 1);
+                }
+
 		SECTION("flatten") {
 			Tensor q = t.flatten();
 			CHECK(q.size() == t.size());
@@ -239,7 +261,7 @@ TEST_CASE("Testing Tensor", "[Tensor]")
 
 			Tensor q = t.view({2,2});
 			CHECK(q.size() == 1);
-			CHECK(q.dimensions() == 1);
+			CHECK(q.dimensions() == 0);
 			CHECK(realize(q).toHost<int32_t>()[0] == 10);
 
 			Tensor r = t.view({range(2), range(2)});

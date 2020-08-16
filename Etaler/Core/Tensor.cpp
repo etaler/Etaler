@@ -18,6 +18,13 @@ static void prettyPrintTensor(std::ostream& os, const T* arr, const Shape& shape
 		return ss.str();
 	};
 
+	// Have a 0D tensor - print the value
+	// NOTE: Printing elements of a non-0D tenors is not handled by this
+	if(shape.size() == 0) {
+		os << *arr;
+		return;
+	}
+
 	//If at the first dimension
 	if(depth == 0) {
 		//Calculatet the max character of printing a single element needs
@@ -124,7 +131,7 @@ static void printTensor(std::ostream& os, const void* ptr, const Shape& shape, D
 
 std::ostream& et::operator<< (std::ostream& os, const Tensor& t)
 {
-	if(t.has_value() == false || t.shape().size() == 0) {
+	if(t.has_value() == false) {
 		os << "{}";
 		return os;
 	}
@@ -238,13 +245,6 @@ Tensor Tensor::view(const IndexList& rgs) const
 		}
 	}, ranges[i]); }
 
-	//If all dims are 1, thus no shape. Give it a shape
-	if(result_shape.empty() == true) {
-		et_assert(result_stride.size() == result_shape.size());
-		result_shape.push_back(1);
-		result_stride.push_back(1);
-	}
-
 	size_t initial_offset = unfold(offset, pimpl_->stride())+pimpl_->offset();
 	return std::make_shared<TensorImpl>(pimpl_->buffer(), result_shape, result_stride, initial_offset);
 }
@@ -279,7 +279,12 @@ Tensor et::ones(const Shape& shape, DType dtype, Backend* backend)
 
 Tensor Tensor::sum(std::optional<intmax_t> dim_id, DType dtype) const
 {
-	et_check(dim_id.value_or(0) < (intmax_t)dimensions(), "Dim " + std::to_string(dim_id.value_or(0)) + " is out of range");
+	// HACK: Special case for 0D tensor
+	if(dimensions() == 0)
+		return this->cast(this->dtype() == DType::Bool ? DType::Int : this->dtype());
+
+	et_check(dim_id.value_or(0) < (intmax_t)dimensions()
+		, "Dim " + std::to_string(dim_id.value_or(0)) + " is out of range");
 
 	// dim_id has no value means sum the entire tensor
 	if(dim_id.has_value() == false)
@@ -368,9 +373,6 @@ Tensor Tensor::copy() const
 
 inline bool brodcastable(Shape a, Shape b)
 {
-	if(a.size() == 0 || b.size() == 0)
-		return false;
-
 	size_t min = std::min(a.size(), b.size());
 
 	for(size_t i=0;i<min;i++) {
@@ -402,7 +404,7 @@ inline Shape brodcast_result_shape(Shape a, Shape b)
 
 Tensor et::brodcast_to(const Tensor& t, Shape s)
 {
-	et_assert(s.size() >= t.dimensions());
+	et_check(s.size() >= t.dimensions() || (t.dimensions() == 1 && s.size() == 0));
 	Shape stride = leftpad(t.stride(), s.size(), 0);
 	Shape shape = leftpad(t.shape(), s.size(), 0);
 	for(size_t i=0;i<s.size();i++) {
@@ -419,7 +421,7 @@ std::pair<Tensor, Tensor> et::brodcast_tensors(const Tensor& a, const Tensor& b)
 
 	Shape result_shape = brodcast_result_shape(a.shape(), b.shape());
 
-	return {brodcast_to(a, result_shape), brodcast_to(b, result_shape)};
+        return {brodcast_to(a, result_shape), brodcast_to(b, result_shape)};
 }
 
 std::pair<Tensor, Tensor> Tensor::brodcast(const Tensor& other) const
