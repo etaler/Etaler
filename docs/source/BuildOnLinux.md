@@ -36,3 +36,11 @@ mkdir build && cd build
 cmake ..
 make -j4
 ```
+
+## Using the AUR
+
+Etaler is avaliable on AUR as [etaler-git](https://aur.archlinux.org/packages/etaler-git/). Use a AUR helper like `yay` and it will sort out the dependencies for you.
+
+```shell
+yay etaler-git
+```
