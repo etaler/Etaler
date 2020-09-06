@@ -139,6 +139,8 @@ inline size_t unfold(const IdxType& index, const StrideType& stride)
 
 inline Shape shapeToStride(const Shape& shape)
 {
+	if(shape.empty())
+		return {};
 	Shape v;
 	v.resize(shape.size());
 	size_t acc = 1;

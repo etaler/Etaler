@@ -960,6 +960,10 @@ void SmallVectorBase::grow_pod(void *FirstEl, size_t MinSizeInBytes,
   void *NewElts;
   if (BeginX == FirstEl) {
     NewElts = malloc(NewCapacityInBytes);
+    if(NewElts == NULL) {
+      fprintf(stderr, "SmallVectorBase::grow_pod failed: mad malloc");
+      abort();
+    }
 
     // Copy the elements over.  No need to run dtors on PODs.
     memcpy(NewElts, this->BeginX, CurSizeBytes);
