@@ -60,7 +60,7 @@ struct ETALER_EXPORT TensorIterator
 Tensor ETALER_EXPORT brodcast_to(const Tensor& t, Shape s);
 
 ETALER_EXPORT std::ostream& operator<< (std::ostream& os, const Tensor& t);
-std::string to_string(const Tensor& t);
+ETALER_EXPORT std::string to_string(const Tensor& t);
 
 using IndexList = svector<std::variant<Range, intmax_t, int, size_t, unsigned int>>;
 
