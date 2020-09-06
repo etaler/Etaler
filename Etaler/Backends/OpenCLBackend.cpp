@@ -42,7 +42,9 @@ typedef struct __attribute__ ((packed)) _OpenCLView
 static void makeOpenCLView(const TensorImpl* x, OpenCLView* v)
 {
 	int dims = int(x->dimensions());
-	et_assert(dims <= OPENCL_TENSOR_MAX_DIMS, "Too much dimensions for OpenCL backend.");
+	et_check(dims <= OPENCL_TENSOR_MAX_DIMS
+		, "The OpenCL backend can only handle up to" + std::to_string(OPENCL_TENSOR_MAX_DIMS) + "D view"
+		"got " + std::to_string(dims) + "D");
 	auto stride = x->stride();
 	auto shape_stride = shapeToStride(x->shape());
 	for(int i=0;i<dims;i++) {
