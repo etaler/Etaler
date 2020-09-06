@@ -23,6 +23,7 @@ This file documents some facts about the codebase that might be useful for it's 
 * Nvidia's OpenCL implementation although very optimized, has piles upon piles of problems.
   * Use POCL w/ CUDA backend for debugging. POCL is a lot slower, but very stable.
   * Or use Intel/AMD's OpenCL SDK
+  * Mesa's `clover` [OpenCL SDK](https://cgit.freedesktop.org/mesa/mesa/log/?qt=grep&q=clover) works, but quite slow.
 
 ## Programing style
 
