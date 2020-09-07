@@ -88,10 +88,13 @@ Documents are avalible online on [Read the Docs](https://etaler.readthedocs.io/e
 | Linux      | Yes | Yes    |
 | OS X       | Yes | Yes    |
 | Windows    | Yes | Yes    |
+| FreeBSD    | Yes | *Yes   |
 
 * Build with GCC and libstdc++ on OS X 10.11.
 * Clang should work after OS X 10.14. See [BuildOnOSX.md](docs/BuildOnOSX.md)
 * Build with Visual Studio 2019 on Windows. See [BuildOnMSVC.md](docs/BuildOnMSVC.md)
+* OpenCL on FreeBSD is tested using POCL. Which has know bugs preventing Etaler to fully function on ARM.
+   * See [#151](https://github.com/etaler/Etaler/issues/151)
 
 ### Dependencies
 

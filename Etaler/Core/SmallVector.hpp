@@ -960,6 +960,10 @@ void SmallVectorBase::grow_pod(void *FirstEl, size_t MinSizeInBytes,
   void *NewElts;
   if (BeginX == FirstEl) {
     NewElts = malloc(NewCapacityInBytes);
+    if(NewElts == NULL) {
+      fprintf(stderr, "SmallVectorBase::grow_pod failed: mad malloc");
+      abort();
+    }
 
     // Copy the elements over.  No need to run dtors on PODs.
     memcpy(NewElts, this->BeginX, CurSizeBytes);
@@ -981,5 +985,10 @@ namespace et
 	template <typename T, unsigned N=3>//3 is an arbitrary value
 	using svector = llvm_vecsmall::SmallVector<T, N>;
 }
+
+// Undef LLVM macros
+#undef LLVM_VECSMALL_NODISCARD
+#undef LLVM_VECSMALL_ATTRIBUTE_ALWAYS_INLINE
+#undef LLVM_VECSMALL_UNLIKELY
 
 #endif
