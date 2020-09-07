@@ -161,7 +161,7 @@ inline size_t unfoldIndex(const IdxType& index, const ShapeType& shape)
 template <typename ShapeType>
 inline Shape foldIndex(size_t index, const ShapeType& shape)
 {
-	assert(shape.size() != 0);
+	assert(shape.size() != 0 || index == 0);
 	svector<intmax_t> v = shapeToStride(shape);
 	Shape res;
 	res.resize(v.size());
