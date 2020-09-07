@@ -986,4 +986,9 @@ namespace et
 	using svector = llvm_vecsmall::SmallVector<T, N>;
 }
 
+// Undef LLVM macros
+#undef LLVM_VECSMALL_NODISCARD
+#undef LLVM_VECSMALL_ATTRIBUTE_ALWAYS_INLINE
+#undef LLVM_VECSMALL_UNLIKELY
+
 #endif
