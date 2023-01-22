@@ -27,6 +27,10 @@ else()
 	target_link_libraries(Etaler tbb)
 endif()
 
+if(${CMAKE_VERSION} VERSION_GREATER "3.15")
+	target_precompile_headers(Etaler PRIVATE pch.hpp)
+endif()
+
 if(ETALER_ENABLE_OPENCL)
 	target_sources(Etaler PRIVATE Backends/OpenCLBackend.cpp)
 
