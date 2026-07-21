@@ -4,7 +4,7 @@
 
 ---
 
-Etaler is a library for machine intelligence based on [HTM theory](https://numenta.com/assets/pdf/biological-and-machine-intelligence/BAMI-Complete.pdf). Providing two main features.
+Etaler is a library for machine intelligence based on [HTM theory](https://www.numenta.com/assets/pdf/biological-and-machine-intelligence/BaMI-Complete.pdf). Providing two main features.
 
 * HTM algorithms with modern API
 * A minimal cross-platform (CPU, GPU, etc..) Tensor implementation
